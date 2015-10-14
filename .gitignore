@@ -10,6 +10,7 @@ system/*
 bootstrap/*
 css/*
 application/cache/*
+application/config/*
 application/logs/*
 application/core/*
 application/helpers/*
