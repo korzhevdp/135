@@ -8,8 +8,8 @@ class Admin extends CI_Controller {
 			$this->load->helper('url');
 			redirect('login/index/auth');
 		}
-		(!$this->session->userdata('filter')) ? $this->session->set_userdata('filter','') : "";
-		(!$this->session->userdata('uid')) ? $this->session->set_userdata('uid',1) : "";
+		(!$this->session->userdata('filter')) ? $this->session->set_userdata('filter', '') : "";
+		(!$this->session->userdata('uid'))    ? $this->session->set_userdata('uid', 1) : "";
 		$this->load->model('adminmodel');
 		$this->load->model('usefulmodel');
 		$this->load->model('licensemodel');
@@ -19,13 +19,17 @@ class Admin extends CI_Controller {
 	}
 
 	public function index($user_id=0, $page=1){
+		$data = array('tickets' => 0);
+		
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->adminmodel->startscreen_show(),
 			'footer'  => $this->load->view('page_footer', '', true)
 		);
 		$this->load->view('page_container', $act);
 	}
+
+
 
 	public function applyitem($id = 0){
 		$result = $this->db->query("UPDATE
@@ -36,7 +40,7 @@ class Admin extends CI_Controller {
 		`resources_items`.applyer = ?
 		WHERE
 		`resources_items`.id = ?", array($this->session->userdata('base_id'), $id));
-		$this->load->view('page_container', $act);
+		//$this->load->view('page_container', $act);
 		$this->usefulmodel->insert_audit("Помечена исполненной заявка #".$id." на доступ к информационному ресурсу. Исполнитель: #".$this->session->userdata("admin_id")." (b#".$this->session->userdata('base_id'));
 		$this->load->helper('url');
 		redirect("");
@@ -52,7 +56,7 @@ class Admin extends CI_Controller {
 		$user['userid'] = $user['id'];
 		$user['arm'] = $this->adminmodel->user_arm_get($user['id']);
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->load->view('user_details', $user, true),
 			'footer'  => $this->load->view('page_footer', '', true)
 		);
@@ -88,8 +92,8 @@ class Admin extends CI_Controller {
 	}
 
 	######## AJAX-секция
-	public function apply_filter($filter=""){
-		$this->session->set_userdata('filter',$filter);
+	public function apply_filter($filter = ""){
+		$this->session->set_userdata('filter', $filter);
 		$this->usefulmodel->filter_users($filter);
 	}
 
@@ -126,12 +130,12 @@ class Admin extends CI_Controller {
 			if(!$email){
 				//print 111;
 				$this->db->query("DELETE FROM resources_pid WHERE resources_pid.item_id = ? AND resources_pid.pid NOT IN (12,2)", array($id));
-				$this->db->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,INET_ATON('".$ipappend.".".$ipflex."'),?)", array(6,$id));
+				$this->db->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,INET_ATON('".$ipappend.".".$ipflex."'),?)", array(6, $id));
 				$this->aclgen();
 			}else{
 				$this->db->query("DELETE FROM resources_pid WHERE resources_pid.item_id = ? AND resources_pid.pid NOT IN (12,2)", array($id));
-				$this->db->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,INET_ATON('".$ipappend.".".$ipflex."'),?)", array(6,$id));
-				$this->db->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,?,?)", array(1,$email,$id));
+				$this->db->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,INET_ATON('".$ipappend.".".$ipflex."'),?)", array(6, $id));
+				$this->db->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,?,?)", array(1, $email, $id));
 			}
 		}
 		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") выполнил заявку #".$id);
@@ -155,10 +159,10 @@ class Admin extends CI_Controller {
 		$result = $this->db->query("UPDATE 
 			resources_items 
 			SET 
-			resources_items.ok = 0,
-			resources_items.exp = 1,
-			resources_items.expdate = NOW(),
-			resources_items.apply = 1,
+			resources_items.ok        = 0,
+			resources_items.exp       = 1,
+			resources_items.expdate   = NOW(),
+			resources_items.apply     = 1,
 			resources_items.applydate = NOW()
 			WHERE
 			resources_items.id = ?", array($id));
@@ -184,7 +188,7 @@ class Admin extends CI_Controller {
 		$result = $this->db->query("UPDATE 
 			resources_items 
 			SET 
-			resources_items.apply = ?,
+			resources_items.apply     = ?,
 			resources_items.applydate = NOW()
 			WHERE
 			resources_items.id = ?", array($this->session->userdata('admin_id'), $id));
@@ -229,7 +233,7 @@ class Admin extends CI_Controller {
 		SET
 		users.fired = 1 
 		WHERE users.id = ?", array(trim($id)));
-		if($this->db->affected_rows()){
+		if ($this->db->affected_rows()) {
 			$result = $this->db->query("UPDATE
 			`arm`
 			SET
@@ -262,16 +266,16 @@ class Admin extends CI_Controller {
 				`arm`
 				SET
 				active  = 1,
-				out_ts  = 0000-00-00
+				out_ts  = '0000-00-00'
 				WHERE
 				arm.uid = ?", array(trim($id)));
 				//print "arm active\n<br>";
 			}else{
 				//не уволен если
-				$this->db->query("UPDATE 
+				$this->db->query("UPDATE
 				users
 				SET
-				users.fired = 1 
+				users.fired = 1
 				WHERE users.id = ?", array(trim($id)));
 				//print "fired set\n<br>";
 				$this->db->query("UPDATE
@@ -340,47 +344,13 @@ class Admin extends CI_Controller {
 	}
 
 	public function stuck($id=0){
-		$act = array();
-		$act['menu'] = $this->load->view('menu/navigation', '', true);
-		$act['content'] = $this->adminmodel->stuck_orders();
-		$act['footer'] = $this->load->view('page_footer', '', true);
+		$act = array(
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
+			'content' => $this->adminmodel->stuck_orders(),
+			'footer'  => $this->load->view('page_footer', '', true)
+		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
-	}
-
-	public function postmessage(){
-		$result = $this->db->query("INSERT INTO events (
-		events.text,
-		events.created,
-		events.owner,
-		events.enddate
-		) VALUES (?, NOW(), ?, ?)", array(
-			$this->input->post('text'),
-			$this->session->userdata('uid'),
-			implode(array_reverse(explode(".", $this->input->post('enddate'))), "-")
-		));
-		$id = $this->db->insert_id();
-		$output = array("(".$id.", 1, NOW())");
-		foreach($this->input->post("rec") as $val){
-			$string = "(".$id.", ".$val.", NOW())";
-			array_push($output, $string);
-		}
-		if(sizeof($output)){
-			$result = $this->db->query("INSERT INTO events_r (events_r.eid, events_r.uid, events_r.ok_ts) VALUES ".implode($output,",\n"));
-		}
-		$this->load->helper("url");
-		redirect("admin");
-	}
-
-	public function markdone($eid, $uid){
-		if($uid == $this->session->userdata("admin_id")){
-			$this->db->query("UPDATE events_r SET events_r.ok = 1 WHERE events_r.eid = ? AND events_r.uid = ?", array($eid, $uid));
-		}
-		$tickets = $this->session->userdata('tickets');
-		unset($tickets[$eid]);
-		$this->session->set_userdata('tickets', $tickets); // id оператора для модулей
-		$this->load->helper("url");
-		redirect("admin");
 	}
 
 	public function phpinfo(){

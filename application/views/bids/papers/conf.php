@@ -182,7 +182,7 @@ p.MsoNormal
   </span></p>
   <div>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><b><span
-  style='font-size:14.0pt'>В.С. Гармашову<o:p></o:p></span></b></p>
+  style='font-size:14.0pt'>С.М. Ковалеву<o:p></o:p></span></b></p>
   </div>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><span
   style='font-size:14.0pt'><o:p>&nbsp;</o:p></span></p>
@@ -204,7 +204,7 @@ p.MsoNormal
  <tr style='mso-yfti-irow:1'>
   <td colspan=4 style='padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>Прошу
-  пользователю локальной вычислительной сети мэрии города:</p>
+  пользователю локальной вычислительной сети муниципалитета:</p>
   </td>
  </tr>
  <tr style='mso-yfti-irow:2'>
@@ -617,7 +617,7 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>&nbsp;</p>
   </td>
   <td style='border:none;border-bottom:solid black 1.0pt;mso-border-bottom-alt:solid black .75pt;padding:0cm 0cm 0cm 0cm;vertical-align:bottom'>
-  <p class=MsoNormal align=center style='margin:0cm;text-align:center'><b>В.С. Гармашов&nbsp;<o:p></o:p></b></p>
+  <p class=MsoNormal align=center style='margin:0cm;text-align:center'><b>С.М. Ковалев&nbsp;<o:p></o:p></b></p>
   </td>
  </tr>
  <tr style='mso-yfti-irow:2;mso-yfti-lastrow:yes'>

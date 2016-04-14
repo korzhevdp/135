@@ -28,14 +28,15 @@
 	<div class="control-group">
 		<label for="login" class="control-label span2">Ћогин</label>
 		<div class="controls">
-			<input type="text" name="login" id="login" class="span3" placeholder="¬ведите новый логин" value="<?=$user;?>">&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" name="description" id="login" class="span7" placeholder="¬ведите описание" value="<?=$description;?>">
+			<input type="text" name="login" id="login" class="span3" placeholder="¬ведите новый логин" value="<?=$user;?>">&nbsp;&nbsp;&nbsp;&nbsp;
+			<input type="text" name="description" id="login" class="span7" placeholder="¬ведите описание" value="<?=$description;?>">
 		</div>
 	</div>
 
 	<div class="control-group">
 		<label class="control-label span2">&nbsp;&nbsp;</label>
 		<div class="controls">
-			<label class="checkbox inline"><?=$rank;?>јдминистратор</label>
+			<label class="checkbox inline" style="cursor:pointer;"><input type="checkbox" name="rank" id="rank" style="margin-top:2px;" <?=$adminrank?>> јдминистратор</label>
 		</div>
 	</div>
 

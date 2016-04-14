@@ -13,25 +13,25 @@ class Arm extends CI_Controller {
 		//$this->output->enable_profiler(TRUE);
 	}
 
-	public function index($dep=0){
+	public function index($dep = 0){
 		$this->showdep($dep);
 	}
 
-	public function warehouse($dep=0){
+	public function warehouse(){
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->armmodel->show_warehouse(),
-			'footer'  => $this->load->view('page_footer', '', true)
+			'footer'  => $this->load->view('page_footer', array(), true)
 		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
 	}
 
-	public function invunits($dep=0){
+	public function invunits($dep = 0){
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->armmodel->show_invunits(),
-			'footer'  => $this->load->view('page_footer', '', true)
+			'footer'  => $this->load->view('page_footer', array(), true)
 		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
@@ -45,11 +45,11 @@ class Arm extends CI_Controller {
 		$this->armmodel->get_inv_unit();
 	}
 
-	public function showdep($dep=0){
+	public function showdep($dep = 0){
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->armmodel->showdep(),
-			'footer'  => $this->load->view('page_footer', '', true)
+			'footer'  => $this->load->view('page_footer', array(), true)
 		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
@@ -72,15 +72,15 @@ class Arm extends CI_Controller {
 	}
 
 	## AJAX broadcast informer FX
-	public function pc_list_get($print=0){
+	public function pc_list_get($print = 0){
 		$this->armmodel->pc_list_get($print);
 	}
 
-	public function pc_grid($user=0, $print=0){
+	public function pc_grid($user = 0, $print = 0){
 		$this->armmodel->pc_grid($user, $print);
 	}
 
-	public function userlist($print=0){
+	public function userlist($print = 0){
 		$this->armmodel->userlist($print);
 	}
 

@@ -15,10 +15,11 @@ class Reports extends CI_Controller {
 		//$this->output->enable_profiler(TRUE);
 	}
 
-	public function index($user_id=0, $page=1){
+	public function index($user_id=0, $page=1) {
 		$lists = $this->armmodel->param_lists_get();
+		$lists['cios'] = $this->get_cio();
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', array(), true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->load->view('reports/standardreports', $lists, true),
 			'footer'  => $this->load->view('page_footer', array(), true),
 		);
@@ -26,7 +27,7 @@ class Reports extends CI_Controller {
 		$this->load->view('page_container', $act);
 	}
 
-	function get_dc( $year = 0, $month = 0){
+	function get_dc( $year = 0, $month = 0 ) {
 		$year = ($year) ? $year : date("Y");
 		$month = ($month) ? $month : date("n");
 		$day_count = array(
@@ -50,7 +51,7 @@ class Reports extends CI_Controller {
 		}
 	}
 
-	function get_month($month = 0){
+	function get_month($month = 0) {
 		$month = ($month) ? $month : date("n");
 		$months = array(
 			1  => 'Январь',
@@ -69,7 +70,7 @@ class Reports extends CI_Controller {
 		return $months[$month];
 	}
 
-	function get_wd($daynum = 0, $mode="short"){
+	function get_wd($daynum = 0, $mode="short") {
 		$daynum = ($daynum) ? $daynum : date("N");
 		$days = array(
 			1  => array('day' => 'Понедельник', 'short' => 'пн'),
@@ -83,7 +84,7 @@ class Reports extends CI_Controller {
 		return $days[$daynum][$mode];
 	}
 
-	public function timetable($year = 0, $month = 0, $mode="html"){
+	public function timetable($year = 0, $month = 0, $mode="html") {
 		$year      = ($year)  ? $year  : date("Y");
 		$month     = ($month) ? $month : date("n");
 		$pm        = mktime(0, 0, 0, $month-1, 1, $year);
@@ -97,7 +98,7 @@ class Reports extends CI_Controller {
 		$sqllow    = $year.str_pad($month, 2, "0", STR_PAD_LEFT)."00";
 		$sqlhigh   = $year.str_pad($month, 2, "0", STR_PAD_LEFT)."45";
 		$wkstat    = array();
-		$statuses = array(
+		$statuses  = array(
 			1 => 'Я',
 			4 => 'К',
 			2 => 'В',
@@ -178,7 +179,7 @@ class Reports extends CI_Controller {
 		);
 		$this->usefulmodel->no_cache();
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => ($mode == "html") ? $this->load->view('reports/timetable', $data, true) : $this->load->view('reports/timetableword', $data, true),
 			'footer'  => $this->load->view('page_footer', '', true)
 		);
@@ -197,8 +198,8 @@ class Reports extends CI_Controller {
 		//$this->load->view('page_container', $act);
 	}
 
-	public function insert_wkt_data(){
-		$this->output->enable_profiler(TRUE);
+	public function insert_wkt_data() {
+		//$this->output->enable_profiler(TRUE);
 		if($this->input->post('dh') && is_array($this->input->post('dh'))){
 			$this->db->query("DELETE 
 			FROM `wkt` 
@@ -239,11 +240,62 @@ class Reports extends CI_Controller {
 		}
 	}
 	// AJAX Section
-	public function selectpc(){
+	public function selectpc() {
 		print $this->armmodel->param_table_get();
 	}
-	public function selectparams(){
+
+	public function selectparams() {
 		print $this->armmodel->subparam_table_get();
+	}
+
+	/* get CIO List*/
+
+	private function get_cio() {
+		//$this->output->enable_profiler(TRUE);
+		$staff_list = array( 8, 9, 10, 4, 11, 21, 22, 23, 27, 32, 45, 28, 29, 40 );
+		$output     = array();
+		$i          = 1;
+		$result     = $this->db->query("SELECT DISTINCT
+		LOWER(CONCAT(resources_pid.pid_value, '@arhcity.ru')) AS mail,
+		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio,
+		CONCAT(IF(users.io, 'и.о. ', ''), staff.staff) AS staff,
+		departments.dn
+		FROM
+		resources_pid
+		RIGHT OUTER JOIN resources_items ON (resources_pid.item_id = resources_items.id)
+		RIGHT OUTER JOIN users ON (resources_items.uid = users.id)
+		LEFT OUTER JOIN staff ON (users.staff_id = staff.id)
+		LEFT OUTER JOIN departments ON (users.dep_id = departments.id)
+		WHERE
+		(users.staff_id IN (".implode($staff_list, ", ")."))
+		AND (resources_pid.pid = 1)
+		AND (resources_items.rid = 100)
+		AND (NOT (users.fired))
+		AND (NOT (resources_items.`exp`))
+		AND (NOT (resources_items.del))
+		ORDER BY mail");
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				array_push($output, "<tr><td>".$i++.". ".$row->mail."</td><td>".$row->fio."</td><td>".$row->staff."</td><td>".$row->dn."</td></tr>");
+			}
+		}
+		return implode($output, "\n");
+	}
+
+	public function cfstest(){
+		$DB1 = $this->load->database('12', TRUE);
+		$result = $DB1->db->query("SELECT 
+		`files`.fid,
+		`files`.folder,
+		`files`.new_filename
+		FROM
+		`files`
+		LIMIT 10");
+		if($result->num_rows()){
+			foreach($result->result() as $row){
+				print 1123;
+			}
+		}
 	}
 
 }

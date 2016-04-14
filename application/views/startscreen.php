@@ -1,14 +1,35 @@
-<h2>Обработанные отделом СА заявки</h2>
+<ul class="nav nav-tabs">
+	<li class="active" title="Обработанные отделом СА заявки"><a href="#tab1" data-toggle="tab">Обработанные отделом СА заявки</a></li>
+	<li title="Ожидается получение СА заявок"><a href="#tab2" data-toggle="tab">Ожидается получение СА заявок</a></li>
+</ul>
 
-<table class="table table-condensed table-bordered">
-	<tr>
-		<th>Пользователь</th>
-		<th>Информационный ресурс</th>
-		<th>Обработано ОСА</th>
-		<th>Действия</th>
-	</tr>
-	<?=$last_approved;?>
-</table>
+<div class="tab-content" style="margin-bottom:60px;">
+
+	<div class="tab-pane active" id="tab1">
+		<table class="table table-condensed table-bordered">
+			<tr>
+				<th>Пользователь</th>
+				<th>Информационный ресурс</th>
+				<th>Обработано ОСА</th>
+				<th>Действия</th>
+			</tr>
+			<?=$last_approved;?>
+		</table>
+	</div>
+
+	<div class="tab-pane" id="tab2">
+		<table class="table table-condensed table-bordered">
+			<tr>
+				<th>Пользователь</th>
+				<th>Информационный ресурс</th>
+				<th>Обработано ОСА</th>
+				<th>Действия</th>
+			</tr>
+			<?=$awaiting;?>
+		</table>
+	</div>
+
+</div>
 
 <script type="text/javascript" src="/jscript/users.js"></script>
 <script type="text/javascript">

@@ -75,13 +75,20 @@
 </tr>
 <tr>
 	<td class="fullcell">2.</td>
+	<td class="fullcell">Отдел по защите информации</td>
+	<td class="fullcell">начальник отдела<br>Титов Г.А.<br><br><br></td>
+	<td class="fullcell">&nbsp;</td>
+	<td class="fullcell">&nbsp;</td>
+</tr>
+<tr>
+	<td class="fullcell">3.</td>
 	<td class="fullcell">Управление информационных ресурсов и систем</td>
 	<td class="fullcell">начальник управления<br>Глебов А.Ю.<br><br><br></td>
 	<td class="fullcell">&nbsp;</td>
 	<td class="fullcell">&nbsp;</td>
 </tr>
 <tr>
-	<td class="fullcell">3.</td>
+	<td class="fullcell">4.</td>
 	<td class="fullcell">Управление информационных ресурсов и систем</td>
 	<td class="fullcell">Начальник отдела сетевого администрирования<br>Екимов К.С.<br><br><br></td>
 	<td class="fullcell">&nbsp;</td>
@@ -99,6 +106,6 @@
 <tr>
 	<td style="width:70mm;font-size:11pt">"____" ______________ <?=date("Y");?> </td>
 	<td style="width:60mm;"></td>
-	<td>В.С. Гармашов</td>
+	<td>С.М. Ковалев</td>
 </tr>
 </table>

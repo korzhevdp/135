@@ -8,11 +8,11 @@ class Licenses extends CI_Controller {
 			$this->load->helper('url');
 			redirect('login/index/auth');
 		}
-		(!$this->session->userdata('filter')) ? $this->session->set_userdata('filter','') : "";
-		(!$this->session->userdata('uid')) ? $this->session->set_userdata('uid',1) : "";
+		(!$this->session->userdata('filter')) ? $this->session->set_userdata('filter', '') : "";
+		(!$this->session->userdata('uid')) ? $this->session->set_userdata('uid', 1) : "";
 		$this->load->model('usefulmodel');
 		$this->load->model('licensemodel');
-		if($this->session->userdata("admin_id") == 1){
+		if($this->session->userdata("admin_id") === 1){
 			//$this->output->enable_profiler(TRUE);
 		}
 	}
@@ -22,7 +22,6 @@ class Licenses extends CI_Controller {
 
 	public function user($userid = 0, $dep_id = 0){
 		//$this->output->enable_profiler(TRUE);
-
 		$userid = ($this->input->post('userid')) ? $this->input->post('userid') : $userid;
 		$dep_id = ($this->input->post('dep_id')) ? $this->input->post('dep_id') : $dep_id;
 		if(!$userid && $dep_id){
@@ -34,7 +33,7 @@ class Licenses extends CI_Controller {
 		$data['userid'] = $userid;
 		$data['dep_id'] = $dep_id;
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->load->view('license/license', $data, true),
 			'footer'  => $this->load->view('page_footer', '', true)
 		);
@@ -43,7 +42,6 @@ class Licenses extends CI_Controller {
 	}
 
 	public function dept($dep_id = 1){
-
 		//$this->output->enable_profiler(TRUE);
 		//$this->input->post('userid');
 		$userid = ($this->input->post('userid')) ? $this->input->post('userid') : 0;
@@ -53,43 +51,45 @@ class Licenses extends CI_Controller {
 			$this->load->helper("url");
 			redirect("licenses/user/0/".$userid);
 		}
-
 		$data = $this->licensemodel->hostlist_get(0, $dep_id); // возвращает массив с 2 подмассивами
 		$data['licenselist'] = $this->licensemodel->deptlicenses_get($dep_id);
 		$data['userid'] = 0;
 		$data['dep_id'] = $dep_id;
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->load->view('license/license', $data, true),
-			'footer'  => $this->load->view('page_footer', '', true)
+			'footer'  => $this->load->view('page_footer', array(), true)
 		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
 	}
 
 	public function statistics($lid=0){
-		$act = array();
-		$act['menu'] = $this->load->view('menu/navigation', '', true);
-		$act['content'] = ($lid) ? $this->licensemodel->stat_get($lid) : $this->licensemodel->full_stat_get();
-		$act['footer'] = $this->load->view('page_footer', '', true);
+		$act = array(
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
+			'content' => ($lid) ? $this->licensemodel->stat_get($lid) : $this->licensemodel->full_stat_get(),
+			'footer'  => $this->load->view('page_footer', array(), true)
+		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
 	}
 
 	public function usage(){
-		$act = array();
-		$act['menu'] = $this->load->view('menu/navigation', '', true);
-		$act['content'] = $this->licensemodel->po_usage_get();
-		$act['footer'] = $this->load->view('page_footer', '', true);
+		$act = array(
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
+			'content' => $this->licensemodel->po_usage_get(),
+			'footer'  => $this->load->view('page_footer', array(), true)
+		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
 	}
 
 	public function addnew($id = 0){
-		$act = array();
-		$act['menu'] = $this->load->view('menu/navigation', '', true);
-		$act['content'] = $this->licensemodel->license_form_get($id);
-		$act['footer'] = $this->load->view('page_footer', '', true);
+		$act = array(
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
+			'content' => $this->licensemodel->license_form_get($id),
+			'footer'  => $this->load->view('page_footer', array(), true)
+		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
 	}
@@ -121,30 +121,32 @@ class Licenses extends CI_Controller {
 		$input2  = array();
 		$output  = array('<tr><th>Hostname</th><th>Лицензия</th><th>Номер Лицензии</th></tr>');
 		$setlist = array();
-		$result  = $this->db->query("SELECT DISTINCT
-		ak_licenses.id as akid,
+		$result  = $this->db->query("SELECT DISTINCT 
+		ak_licenses.id AS akid,
 		ak_licenses.hostname,
 		ak_licenses.product_name,
-		`inv_po_types`.name,
-		`inv_po_licenses_sets`.id as `setid`,
-		`inv_po_licenses`.id,
-		`inv_po_licenses`.number,
-		`inv_po_licenses_items`.master,
-		IF(`inv_po_licenses_items`.master, 'прямая', 'даунгрейд') as lmode
+		inv_po_types.name,
+		inv_po_licenses_sets.id AS setid,
+		inv_po_licenses.id,
+		inv_po_licenses.number,
+		inv_po_licenses_items.master,
+		IF(inv_po_licenses_items.master, 'прямая', 'даунгрейд') AS lmode,
+		inv_po_types.serverwise
 		FROM
 		ak_licenses
 		LEFT OUTER JOIN `hosts` ON (ak_licenses.hostname = `hosts`.hostname)
-		LEFT OUTER JOIN `inv_po_licenses_items` ON (ak_licenses.product_key = `inv_po_licenses_items`.value)
-		LEFT OUTER JOIN `inv_po_types` ON (`inv_po_licenses_items`.type_id = `inv_po_types`.id)
-		LEFT OUTER JOIN `inv_po_licenses_sets` ON (`inv_po_licenses_items`.set_id = `inv_po_licenses_sets`.id)
-		LEFT OUTER JOIN `inv_po_licenses` ON (`inv_po_licenses_sets`.license_id = `inv_po_licenses`.id)
+		LEFT OUTER JOIN inv_po_licenses_items ON (ak_licenses.product_key = inv_po_licenses_items.value)
+		LEFT OUTER JOIN inv_po_types ON (inv_po_licenses_items.type_id = inv_po_types.id)
+		LEFT OUTER JOIN inv_po_licenses_sets ON (inv_po_licenses_items.set_id = inv_po_licenses_sets.id)
+		LEFT OUTER JOIN inv_po_licenses ON (inv_po_licenses_sets.license_id = inv_po_licenses.id)
 		WHERE
-		(`hosts`.server = 1)
-		AND (ak_licenses.active = 1)
-		AND NOT (ak_licenses.manual)
-		-- AND LENGTH(`inv_po_licenses_sets`.id)
+		(`hosts`.server) 
+		AND (ak_licenses.active)
+		GROUP BY
+		ak_licenses.id
 		ORDER BY
-		`inv_po_licenses`.`number`, `hosts`.hostname");
+		`hosts`.hostname,
+		inv_po_licenses.number");
 		if($result->num_rows()){
 			foreach($result->result_array() as $row){
 				$input[$row['akid']] = $row;
@@ -168,7 +170,7 @@ class Licenses extends CI_Controller {
 				}
 			}
 			foreach($input as $val){
-				if(strlen($val['setid'])){
+				if(strlen($val['setid']) && isset($input2[$val['setid']])){
 					$val['from']   = $input2[$val['setid']];
 				}else{
 					$val['lmode']  = "";
@@ -187,12 +189,13 @@ class Licenses extends CI_Controller {
 				array_push($output, $string);
 			}
 			//print_r($val);
-
 		}
+		$serverLicenses = $this->licensemodel->serverlicenses_get();
+		$modals = $this->load->view('license/modals', array('dep_id' => 77, 'userid' => 592), true);
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
-			'content' => '<h4>Серверные лицензии</h4><table class="table table-bordered table-condensed">'.implode($output, "\n").'</table><hr>'.$this->licensemodel->serverlicenses_get().$this->load->view('license/modals', array('dep_id' => 77, 'userid' => 592), true).'<script type="text/javascript" src="/jscript/lsmc.js"></script>',
-			'footer'  => $this->load->view('page_footer', '', true)
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
+			'content' => '<h4>Серверные лицензии</h4><table class="table table-bordered table-condensed">'.implode($output, "\n").'</table><hr>'.$serverLicenses.$modals,
+			'footer'  => $this->load->view('page_footer', '', true).'<script type="text/javascript" src="/jscript/lsmc.js"></script>'
 		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
@@ -266,7 +269,7 @@ class Licenses extends CI_Controller {
 		}
 		//print_r($input);
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => '<h4>Лицензии общим списком</h4><table class="table table-bordered table-condensed">
 		<tr>
 			<th style="width:120px;">Лицензия</th>
@@ -333,7 +336,7 @@ class Licenses extends CI_Controller {
 		redirect('/licenses/user/'.$this->input->post('userid').'/'.$this->input->post('dep_id'));
 	}
 
-	public function get_related_licenses($pk){
+	public function get_related_licenses($pk=""){
 		print $this->licensemodel->get_related_licenses($pk);
 		$this->usefulmodel->insert_audit("Оператор #".$this->session->userdata('user_name') .' запросил список лицензий на соответствие ключу (изъятие из пула)');
 	}
@@ -420,7 +423,7 @@ class Licenses extends CI_Controller {
 	}
 
 	public function related_lic_get(){
-		$tbl=array('<table class="table table-bordered table-condensed table-striped table-hover">
+		$tbl          = array('<table class="table table-bordered table-condensed table-striped table-hover">
 		<tr>
 			<td>Лицензиар</td>
 			<td>Номер лицензии</td>
@@ -429,6 +432,10 @@ class Licenses extends CI_Controller {
 			<td>Количество лицензий</td>
 			<td>Остаток</td>
 		</tr>');
+		$df           = "";
+		$direct_count = 0;
+		$total_count  = 0;
+		$master       = 1;
 
 		$set_usage = array();
 		$result = $this->db->query("SELECT 
@@ -438,7 +445,7 @@ class Licenses extends CI_Controller {
 		inv_po_licenses_items
 		INNER JOIN ak_licenses ON (inv_po_licenses_items.id = ak_licenses.item_id)
 		WHERE
-		(LENGTH(ak_licenses.item_id)) 
+		(LENGTH(ak_licenses.item_id))
 		AND NOT(ak_licenses.manual)
 		AND ak_licenses.active
 		GROUP BY
@@ -467,20 +474,21 @@ class Licenses extends CI_Controller {
 		INNER JOIN inv_po_licenses_sets ON (inv_po_licenses.id = inv_po_licenses_sets.license_id)
 		INNER JOIN inv_po_licenses_items ON (inv_po_licenses_sets.id = inv_po_licenses_items.set_id)
 		WHERE
-		inv_po_licenses_items.type_id = ? AND
-		inv_po_licenses_items.type IN ('MAK', 'VLK') AND
-		`inv_po_licenses_items`.`act` AND
-		NOT inv_po_licenses_sets.deleted
+		inv_po_licenses_items.type_id = ?
+		AND inv_po_licenses_items.type IN ('MAK', 'VLK')
+		AND `inv_po_licenses_items`.`act`
+		AND NOT inv_po_licenses_sets.deleted
 		ORDER BY
-		inv_po_licenses.id,
-		inv_po_licenses_items.master DESC", array($this->input->post('id')));
+		inv_po_licenses_items.master DESC,
+		inv_po_licenses.id DESC", array($this->input->post('id')));
 		if($result->num_rows()){
-			$df = "";
+
 			foreach($result->result() as $row){
-				if($row->master){
+				if ($row->master) {
 					$color = "success";
 					$title = "Прямая лицензия";
-				}else{
+					$direct_count += $row->maxcount;
+				} else {
 					$color = "warning";
 					$title = "Даунгрейд";
 					$result2 = $this->db->query("SELECT
@@ -492,27 +500,36 @@ class Licenses extends CI_Controller {
 					INNER JOIN inv_po_licenses_items ON (inv_po_licenses_sets.id = inv_po_licenses_items.set_id)
 					INNER JOIN `inv_po_types` ON (inv_po_licenses_items.type_id = `inv_po_types`.id)
 					WHERE
-					`inv_po_licenses_items`.`master` AND
-					`inv_po_licenses_items`.`type` IN ('MAK', 'VLK') AND
-					`inv_po_licenses_items`.`act` AND
-					`inv_po_licenses_sets`.id = ?", array($row->sid));
-					if($result2->num_rows()){
+					`inv_po_licenses_items`.`master` 
+					AND `inv_po_licenses_items`.`type` IN ('MAK', 'VLK')
+					AND `inv_po_licenses_items`.`act`
+					AND `inv_po_licenses_sets`.id = ?", array($row->sid));
+					if ($result2->num_rows()) {
 						foreach($result2->result() as $row2){
 							$df = $row2->name.' ('.$row2->subclass.')';
 						}
 					}
 				}
+				if ($row->master != $master) {
+					$master = $row->master;
+					array_push($tbl, '<tr><th colspan=4></th><th colspan=2>Всего прямых:&nbsp;&nbsp;'.$direct_count.'</th></tr>');
+				}
 				$color = ($row->maxcount - ((isset($set_usage[$row->sid])) ? $set_usage[$row->sid] : 0 ) > 0) ? $color : 'error';
 				$title = ($row->maxcount - ((isset($set_usage[$row->sid])) ? $set_usage[$row->sid] : 0 ) > 0) ? $title : 'Лицензия исчерпана';
-				array_push($tbl,'<tr class="'.$color.'" title="'.$title.'">
-				<td>'.$row->licensiar.'</td>
-				<td><a href="/licenses/statistics/'.$row->lid.'" target="_blank">'.$row->number.'</a></td>
-				<td>'.$row->reseller.'</td><td>'.$row->program.'</td>
-				<td title="'.$df.'">'.$row->maxcount.'</td>
-				<td class="useCheck" title="set #'.$row->sid.'" ref="'.$row->checkval.'">'.($row->maxcount - ((isset($set_usage[$row->sid])) ? $set_usage[$row->sid] : 0 )).'</td>
-				</tr>');
+				$string = '<tr class="'.$color.'" title="'.$title.'">
+					<td>'.$row->licensiar.'</td>
+					<td><a href="/licenses/statistics/'.$row->lid.'" target="_blank">'.$row->number.'</a></td>
+					<td>'.$row->reseller.'</td><td>'.$row->program.'</td>
+					<td title="'.$df.'">'.$row->maxcount.'</td>
+					<td class="useCheck" title="set #'.$row->sid.'" ref="'.$row->checkval.'">'.($row->maxcount - ((isset($set_usage[$row->sid])) ? $set_usage[$row->sid] : 0 )).'</td>
+				</tr>';
+				array_push($tbl, $string);
+
 			}
+			$total_count += $row->maxcount;
+			array_push($tbl, '<tr><th colspan=4></th><th>Всего даунгрейд</th><th>'.($direct_count - $total_count).'</th></tr>');			
 		}
+
 		print implode($tbl,"\n")."</table>";
 	}
 

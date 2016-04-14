@@ -17,22 +17,24 @@ class Refmodel extends CI_Model {
 		$result = $this->db->query("SELECT 
 		`resources`.name,
 		`resources`.id,
+		`resources`.active,
 		`departments`.alias
 		FROM
 		`departments`
 		RIGHT OUTER JOIN `resources` ON (`departments`.id = `resources`.owner)
 		".$mode."
 		ORDER BY `resources`.name ASC");
-		$options = array('<option value="0">-- Выберите ресурс --</option>');
+		$options_a = array();
+		$options_s = array();
 		if ($result->num_rows()){
 			foreach($result->result() as $row){
 				$checked = ($res == $row->id) ? ' selected="selected"' : '';
 				$string  = '<option value="'.$row->id.'"'.$checked.'>'.$row->name.' - '.$row->alias.'</option>';
-				array_push($options, $string);
+				($row->active) ? array_push($options_a, $string) :  array_push($options_s, $string);
 			}
 		}
 
-		return implode($options, "\n");
+		return '<option value="0">-- Выберите ресурс --</option><optgroup label="Активные">'.implode($options_a, "\n").'</optgroup>'.'<optgroup label="Неактивные">'.implode($options_s, "\n").'</optgroup>';
 	}
 
 	public function res_data_get($resource=0, $tab=1){
@@ -146,7 +148,8 @@ class Refmodel extends CI_Model {
 		resources.f_cat,
 		resources.f_owner,
 		resources.f_dbvol,
-		resources.in_report
+		resources.in_report,
+		resources.f_usermemo
 		FROM
 		resources
 		WHERE
@@ -349,13 +352,12 @@ class Refmodel extends CI_Model {
 				$this->input->post('resID')
 			));
 			$this->usefulmodel->insert_audit("Сохранено описание ресурса #".$this->input->post('resID'));
-			
 	}
 
 	public function res_form_save(){
 		//$this->output->enable_profiler(TRUE);
 		//return false;
-		if($this->input->post('saveMode') == 'save'){
+		if($this->input->post('saveMode') === 'save'){
 			$fdate  = (preg_match("/\d\d\.\d\d\.\d\d\d\d/", $this->input->post('f_date')))      ? $this->input->post('f_date')      : "00.00.0000";
 			$fsdate = (preg_match("/\d\d\.\d\d\.\d\d\d\d/", $this->input->post('f_startdate'))) ? $this->input->post('f_startdate') : "00.00.0000";
 
@@ -382,10 +384,12 @@ class Refmodel extends CI_Model {
 			f_retro = ?,
 			f_datacycle = ?,
 			f_cat = ?,
+			cat = ?,
 			f_owner = ?,
 			owner = ?,
-			f_dbvol = ?
-			WHERE resources.id = ? ", array(
+			f_dbvol = ?,
+			f_usermemo = ?
+			WHERE resources.id = ?", array(
 				$this->input->post('f_depname'),
 				$this->input->post('name'),
 				$this->input->post('f_dbname'),
@@ -406,68 +410,15 @@ class Refmodel extends CI_Model {
 				$this->input->post('f_retro'),
 				$this->input->post('f_datacycle'),
 				$this->input->post('f_category'),
+				$this->input->post('f_category'),
 				$this->input->post('f_owner'),
 				$this->input->post('f_owner'),
 				$this->input->post('f_dbvol'),
+				$this->input->post('f_usermemo'),
 				$this->input->post('resID')
 			));
-
-			/*
-			print "UPDATE
-			resources
-			SET
-			f_depname = ?,
-			name = ?,
-			f_dbname = ?,
-			f_application = ?,
-			f_origin = ?,
-			f_developer = ?,
-			f_reseller = ?,
-			f_date = ?,
-			f_startdate = ?,
-			f_lang = ?,
-			f_stored_at = ?,
-			f_licenses = ?,
-			f_supporter = ?,
-			f_location = ?,
-			f_pc_prereq = ?,
-			f_doc = ?,
-			f_users = ?,
-			f_retro = ?,
-			f_datacycle = ?,
-			f_cat = ?,
-			f_owner = ?,
-			f_dbvol = ?
-			WHERE resources.id = ? ".implode(array(
-				$this->input->post('f_depname'),
-				$this->input->post('name'),
-				$this->input->post('f_dbname'),
-				$this->input->post('f_application'),
-				$this->input->post('f_origin'),
-				$this->input->post('f_developer'),
-				$this->input->post('f_reseller'),
-				implode(array_reverse(explode(".", $fdate)), "-"),
-				implode(array_reverse(explode(".", $fsdate)), "-"),
-				$this->input->post('f_lang'),
-				$this->input->post('f_stored_at'),
-				$this->input->post('f_licenses'),
-				$this->input->post('f_supporter'),
-				$this->input->post('f_location'),
-				$this->input->post('f_pc_prereq'),
-				$this->input->post('f_doc'),
-				$this->input->post('f_users'),
-				$this->input->post('f_retro'),
-				$this->input->post('f_datacycle'),
-				$this->input->post('f_category'),
-				$this->input->post('f_owner'),
-				$this->input->post('f_dbvol'),
-				$this->input->post('resID')
-			), "<br>\n");
-			*/
-			//$this->usefulmodel->insert_audit("Сохранен формуляр ресурса #".$this->input->post('resID'). "(".$this->input->post('name').")");
-
 		}
-		if($this->input->post('saveMode') == 'new'){
+		if($this->input->post('saveMode') === 'new'){
 			$this->db->query("INSERT INTO
 			resources (
 				resources.name,
@@ -690,7 +641,14 @@ class Refmodel extends CI_Model {
 	}
 
 	public function admin_data_get(){
-		$row=array('rank' => $row['rank'] = form_checkbox('rank', 1, 0, ' id="rank"'), 'uid' => $this->session->userdata('uid'), 'base_id' => 0,  'supervisor' => 0, 'user'=>'','description'=>'');
+		$row = array(
+			'adminrank'  => '',
+			'uid'        => $this->session->userdata('uid'),
+			'base_id'    => 0,
+			'supervisor' => 0,
+			'user'       => '',
+			'description'=> ''
+		);
 		$result = $this->db->query("SELECT 
 		admins.user,
 		admins.rank,
@@ -705,7 +663,7 @@ class Refmodel extends CI_Model {
 		));
 		if ($result->num_rows()){
 			$row = $result->row_array();
-			$row['rank'] = form_checkbox('rank', 1, $row['rank'], ' id="rank"');
+			$row['adminrank'] = ($row['rank']) ? ' checked="checked"' : "";
 		}
 		//print $row['uid'];
 		$result = $this->db->query("SELECT
@@ -723,8 +681,8 @@ class Refmodel extends CI_Model {
 		CONCAT(users.name_f,users.name_i,users.name_o)");
 		if ($result->num_rows()){
 			$output=array();
-			foreach($result->result() as $row2){
-				array_push($output,$row2->options);
+			foreach($result->result() as $row2) {
+				array_push($output, $row2->options);
 			}
 			$row['followers'] = implode($output,"\n");
 		}
@@ -754,14 +712,16 @@ class Refmodel extends CI_Model {
 		FROM
 		users
 		WHERE
-		(users.id IN (SELECT DISTINCT users.supervisor FROM users WHERE NOT users.`fired`))");
+		users.superv
+		AND NOT users.fired
+		ORDER BY fio");
 		if ($result->num_rows()){
-			$output=array("<option value=0>выберите руководителя</option>");
-			foreach($result->result() as $row2){
+			$output = array("<option value=0>выберите руководителя</option>");
+			foreach ($result->result() as $row2) {
 				$string="<option value=".$row2->id.(($row2->id == $row['supervisor']) ? " selected" : "").">".$row2->fio."</option>";
-				array_push($output,$string);
+				array_push($output, $string);
 			}
-			$row['sups'] = implode($output,"\n");
+			$row['sups'] = implode($output, "\n");
 		}
 		return $row;
 	}
@@ -929,7 +889,11 @@ class Refmodel extends CI_Model {
 		return $output;
 	}
 
-	public function dept_data_save(){
+	public function dept_data_save() {
+		$dep_qfn = str_replace('"', '&quot;', $this->input->post("dep_qfn"));
+		$dep_fn  = str_replace('"', '&quot;', $this->input->post("dep_fn"));
+		$zakaz   = str_replace('"', '&quot;', $this->input->post("zakaz"));
+		$dep_req = str_replace('"', '&quot;', $this->input->post("dep_req"));
 		if($this->input->post('saveDept')){
 			$this->db->query("UPDATE departments
 			SET 
@@ -944,14 +908,14 @@ class Refmodel extends CI_Model {
 			departments.actual = ?
 			WHERE
 			departments.id = ?",array(
-				$this->input->post("dep_qfn"),
-				$this->input->post("dep_fn"),
+				$dep_qfn,
+				$dep_fn,
 				$this->input->post("curator"),
 				$this->input->post("shortname"),
-				$this->input->post("dep_req"),
+				$dep_req,
 				$this->input->post("dep_parent"),
 				$this->input->post("dep_dn"),
-				$this->input->post("zakaz"),
+				$zakaz,
 				$this->input->post("actual"),
 				$this->input->post("depToSave")
 			));
@@ -970,14 +934,14 @@ class Refmodel extends CI_Model {
 				departments.zakaz,
 				departments.actual
 			) VALUES (?,?,?,?,?,?,?,?,?)",array(
-				$this->input->post("dep_qfn"),
-				$this->input->post("dep_fn"),
+				$dep_qfn,
+				$dep_fn,
 				$this->input->post("curator"),
 				$this->input->post("shortname"),
-				$this->input->post("dep_req"),
+				$dep_req,
 				$this->input->post("dep_parent"),
 				$this->input->post("dep_dn"),
-				$this->input->post("zakaz"),
+				$zakaz,
 				$this->input->post("actual"),
 				$this->input->post("depToSave")
 			));
@@ -990,21 +954,20 @@ class Refmodel extends CI_Model {
 	############################
 	#		Должности
 	############################
-	public function staff_list_get($staff){
+	private function staff_list_get($staff) {
 		$result = $this->db->query("SELECT
-		CONCAT('<option value=',
 		`staff`.id,
-		IF(`staff`.`id` = ?, ' selected>','>'),
-		`staff`.staff,
-		'</option>') as options
+		`staff`.staff
 		FROM
 		`staff`
-		ORDER BY staff",array($staff));
-		$output = array("<option value=0>Выберите должность</option>");
+		ORDER BY staff", array($staff));
+		$output = array('<option value="0">Выберите должность</option>');
 
-		if ($result->num_rows()){
-			foreach($result->result() as $row){
-				array_push($output,$row->options);
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$selected = ($row->id == $staff) ? ' selected="selected"': "";
+				$string   = '<option value="'.$row->id.'"'.$selected.'>'.$row->staff.'</option>';
+				array_push($output, $string);
 			}
 		}
 		return implode($output,"\n");
@@ -1012,7 +975,7 @@ class Refmodel extends CI_Model {
 
 	public function staff_data_get($staff){
 		$output = array(
-			'id' => "",
+			'id'    => "",
 			'staff' => ""
 		);
 		$result = $this->db->query("SELECT 
@@ -1021,14 +984,15 @@ class Refmodel extends CI_Model {
 		FROM
 		`staff`
 		WHERE
-		staff.id = ?",array($staff));
+		staff.id = ?", array($staff));
 		if ($result->num_rows()){
 			$output = $result->row_array();
 		}
+		$output['staff_list'] = $this->staff_list_get($staff);
 		return $output;
 	}
 
-	public function staff_data_save(){
+	public function staff_data_save() {
 		if($this->input->post('saveStaff')){
 			$this->db->query("UPDATE departments
 			SET 

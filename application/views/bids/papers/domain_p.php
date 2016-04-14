@@ -176,8 +176,8 @@ id=pagebody>
   <td width=246 style='width:184.3pt;padding:.75pt .75pt .75pt .75pt'>
   <p class=MsoNormal style='margin-top:0cm;margin-right:0cm;margin-bottom:14.0pt;
   margin-left:0cm'><span style='font-size:14.0pt'>Начальнику<br>
-  управления информационных <br> 
-  ресурсов и систем <br>мэрии города<o:p></o:p></span></p>
+  управления информационных<br>
+  ресурсов и систем<br>Администрации муниципального образования<br>"Город Архангельск"<o:p></o:p></span></p>
   <div>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><b><span
   style='font-size:14.0pt'>А.Ю. Глебову<o:p></o:p></span></b></p>
@@ -226,7 +226,7 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
  <tr style='mso-yfti-irow:1'>
   <td colspan=4 style='padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>Прошу
-  зарегистрировать в локальной вычислительной сети мэрии города пользователя:</p>
+  зарегистрировать в локальной вычислительной сети муниципалитета пользователя:</p>
   </td>
  </tr>
  <tr style='mso-yfti-irow:2'>
@@ -514,7 +514,7 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
   <td valign=top style='padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal align=center style='margin:0cm;margin-bottom:.0001pt;
   text-align:center'><sup><span style='font-size:10.0pt'>(Руководитель органа
-  мэрии, МУП или У)</span></sup><span style='font-size:10.0pt'><o:p></o:p></span></p>
+  Администрации муниципального образования "Город Архангельск", МУП или У)</span></sup><span style='font-size:10.0pt'><o:p></o:p></span></p>
   </td>
   <td style='padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>&nbsp;</p>
@@ -543,8 +543,7 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
  <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes;mso-yfti-lastrow:yes'>
   <td style='padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>Отделу сетевого
-  администрирования предоставить доступ к локальной
-  вычислительной сети мэрии города.</p>
+  администрирования управления информационных ресурсов и систем Администрации муниципального образования "Город Архангельск" предоставить доступ к локальной вычислительной сети муниципалитета.</p>
   </td>
  </tr>
 </table>
@@ -558,7 +557,7 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
   <td width=321 rowspan=3 style='width:241.0pt;padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt;mso-line-height-alt:
   0pt'>Начальник управления информационных ресурсов и
-  систем мэрии города</p>
+  систем Администрации муниципального образования "Город Архангельск"</p>
   </td>
   <td width=189 style='width:5.0cm;padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><span

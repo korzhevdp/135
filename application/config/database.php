@@ -48,9 +48,9 @@
 $active_group = '35';
 $active_record = TRUE;
 
-$db['35']['hostname'] = '192.168.1.35';
-$db['35']['username'] = 'korzhevdp';
-$db['35']['password'] = 'rootpassword';
+$db['35']['hostname'] = 'localhost';
+$db['35']['username'] = 'ci';
+$db['35']['password'] = 'cicicici';
 $db['35']['database'] = 'arhnet';
 $db['35']['dbdriver'] = 'mysql';
 $db['35']['dbprefix'] = '';
@@ -63,6 +63,22 @@ $db['35']['dbcollat'] = 'cp1251_general_ci';
 $db['35']['swap_pre'] = '';
 $db['35']['autoinit'] = TRUE;
 $db['35']['stricton'] = TRUE;
+
+$db['12']['hostname'] = '192.168.1.2';
+$db['12']['username'] = 'ci';
+$db['12']['password'] = 'cicicici';
+$db['12']['database'] = 'file_exchange';
+$db['12']['dbdriver'] = 'mysql';
+$db['12']['dbprefix'] = '';
+$db['12']['pconnect'] = FALSE;
+$db['12']['db_debug'] = TRUE;
+$db['12']['cache_on'] = FALSE;
+$db['12']['cachedir'] = '';
+$db['12']['char_set'] = 'cp1251';
+$db['12']['dbcollat'] = 'cp1251_general_ci';
+$db['12']['swap_pre'] = '';
+$db['12']['autoinit'] = TRUE;
+$db['12']['stricton'] = FALSE;
 
 $db['16']['hostname'] = '192.168.1.6';
 $db['16']['username'] = 'korzhevdp';

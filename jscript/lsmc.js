@@ -1,10 +1,21 @@
-$('.modalRes').modal({
+$('.modal').modal({
 	show: 0
 });
 
+
+$(".makeEvent").click(function(){
+	$("#eventItemID").val($(this).attr("prop"));
+	$("#eventAnnotation").val("");
+	$("#modalEvent").modal("show");
+});
+
+$(".mailEvent").click(function(){
+	$("#eventAnnotation").val($("#eventAnnotation").val() + (($("#eventAnnotation").val().length) ? "\n" : "") + "Пароль почтового ящика: ")
+})
+
 $('.button-take').click(function(){
-	var id = $(this).attr('ref');
-	var refid = $(this).attr('refid');
+	var id = $(this).attr('ref'),
+		refid = $(this).attr('refid');
 	$.ajax({
 		url: "/licenses/get_related_licenses/" + id,
 		dataType: "html",

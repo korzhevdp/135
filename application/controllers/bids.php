@@ -29,7 +29,7 @@ class Bids extends CI_Controller {
 		$res['locs']   = $this->bidsmodel->locs_get();
 
 		$act['menu'] = ($this->session->userdata("base_id"))			// формируем меню
-			? $this->load->view('menu/navigation', '', true)			// либо меню пользовател€
+			? $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true)			// либо меню пользовател€
 			: '';														// либо пустое поле (пользователь "оформление за€вок")
 		
 		$act['content'] = $this->load->view('bids/mainform_dev', $res, true);
@@ -73,6 +73,16 @@ class Bids extends CI_Controller {
 
 	public function getuserresources(){
 		print $this->bidsmodel->user_res_get($this->input->post("uid"));
+	}
+
+	public function insert_to_cfs() {
+		print "“естирование св€зи с CFSX отключено";
+		//$this->bidsmodel->insert_to_cfsX("test", "test", "test");
+	}
+
+	public function resetUID() {
+		$this->session->set_userdata('uid', 0);
+		print "uid unset";
 	}
 
 }

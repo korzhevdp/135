@@ -57,7 +57,8 @@
 	#breadCrumbs{
 		margin-bottom:25px;
 	}
-	#breadCrumbs span{
+	#breadCrumbs span,
+	#breadCrumbs a {
 		cursor:pointer;
 	}
 	#regetOrder, 
@@ -136,7 +137,7 @@
 </h3>
 
 <div id="breadCrumbs" class="acField hide">
-	<span class="stageMarker muted" id="stage0">Начало</span>
+	<a class="stageMarker muted" href="bids">Начало</a>
 	<i class="icon-play"></i>
 	<span class="stageMarker" id="stage2">Данные пользователя</span>
 	<i class="icon-play"></i>
@@ -542,12 +543,12 @@
 	<span id="helpText">Помощь</span>
 </div>
 
-<table id="startScreen" class="acField">
+<table id="startScreen" class="acField" style="border-spacing:4px;border-collapse:separate;">
 	<tr>
 		<th colspan=2><h4 style="margin-top:80px;margin-bottom:20px;">Оформляете заявку в первый раз?</h4></th>
 	</tr>
 	<tr>
-		<td style="vertical-align:top;">
+		<td style="vertical-align:top;border: 1px solid #D6D6D6">
 			<span class="btn btn-large btn-block" id="newUser">Да, будет новый пользователь сети</span>
 			Будут добавлены заявки на доступ:<ol>
 				<li>к локальной сети мэрии г. Архангельска</li>
@@ -555,7 +556,7 @@
 				<li>создан пользователь на файлообменном ресурсе</li>
 			</ol><br>
 		</td>
-		<td style="vertical-align:top;">
+		<td style="vertical-align:top;border: 1px solid #D6D6D6">
 			<span class="btn btn-large btn-block" id="oldUser">Нет, надо добавить прав доступа</span>
 			<ul>
 				<li>Оформление существующим пользователям заявок на доступ к ресурсам локальной сети мэрии г. Архангельска</li>
@@ -738,7 +739,20 @@ $("#newUser").click(function(){
 	$("#breadCrumbs, #userdata, #userOKButtons").fadeIn(700);
 	bmode = "new";
 	$("#r_102").appendTo('#selectedList').removeClass("btn-info").addClass("btn-success");
+	$.ajax({
+			url: "/bids/resetUID",
+			type: "POST",
+			data: {},
+			dataType: "text",
+			success: function (data) {
+				console.log(data);
+			},
+			error: function (data, stat, err) {
+				$("#consoleContent").html([data, stat, err].join("<br>"));
+			}
+		});
 });
+
 $("#office").change(function(){
 	//alert(locs[parseInt($(this).val())].join("\n"));
 	$("#office2").empty().append(locs[parseInt($(this).val())].join("\n"));

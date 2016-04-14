@@ -100,6 +100,23 @@ class Usefulmodel extends CI_Model {
 		($telnet) ? fclose($telnet) : "";
 	}
 
+	public function getNavMenuData(){
+		$data = array();
+		$result = $this->db->query("SELECT 
+		COUNT(events.id) AS `count`
+		FROM
+		events
+		WHERE
+		(events.recipient = ?)
+		AND events.active
+		LIMIT 1", array($this->session->userdata("canSee")));
+		if($result->num_rows()){
+			$row = $result->row(0);
+			$data['tickets'] = $row->count;
+		}
+		return $data;
+	}
+
 }
 
 /* End of file usefulmodel.php */

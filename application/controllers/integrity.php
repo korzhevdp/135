@@ -20,19 +20,21 @@ class Integrity extends CI_Controller {
 	}
 
 	public function show($page=1){
-		$act = array();
-		$data = array();
-		$data['leaderless']=$this->integritymodel->int_leaders_get();
-		$data['deptless']=$this->integritymodel->int_freeworkers_get();
-		$data['irless']=$this->integritymodel->int_irless_get();
-		$data['curless']=$this->integritymodel->int_curless_get();
-		$data['ownerless_hosts']=$this->integritymodel->int_ownerless_hosts_get();
-		$data['yield']=$this->integritymodel->int_labels_get();
-		$data['userlist']=$this->integritymodel->int_userlist_get();
-		$data['page'] = $page;
-		$act['menu'] = $this->load->view('menu/navigation', '', true);
-		$act['content'] = "<h2>Целостность данных</h2><hr>".$this->load->view('integrity/report', $data, true);
-		$act['footer'] = $this->load->view('page_footer', '', true);
+		$data = array(
+			'leaderless'      => $this->integritymodel->int_leaders_get(),
+			'deptless'        => $this->integritymodel->int_freeworkers_get(),
+			'irless'          => $this->integritymodel->int_irless_get(),
+			'curless'         => $this->integritymodel->int_curless_get(),
+			'ownerless_hosts' => $this->integritymodel->int_ownerless_hosts_get(),
+			'yield'           => $this->integritymodel->int_labels_get(),
+			'userlist'        => $this->integritymodel->int_userlist_get(),
+			'page'            => $page
+		);
+		$act = array(
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
+			'content' => "<h2>Целостность данных</h2><hr>".$this->load->view('integrity/report', $data, true),
+			'footer'  => $this->load->view('page_footer', '', true)
+		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
 	}

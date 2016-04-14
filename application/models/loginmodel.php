@@ -49,22 +49,6 @@ class Loginmodel extends CI_Model{
 					if ($result->num_rows()){
 						$row2 = $result->row();
 					}
-					$tickets = array();
-					$result = $this->db->query("SELECT 
-					events_r.eid
-					FROM
-					events
-					INNER JOIN events_r ON (events.id = events_r.eid)
-					WHERE
-					(events_r.uid = ?) AND 
-					(events.active) AND 
-					(NOT (events_r.ok))", array($row->id));
-					if($result->num_rows()){
-						foreach($result->result() as $tc){
-							$tickets[$tc->eid] = 1;
-						}
-					}
-					$this->session->set_userdata('tickets', $tickets); // id оператора для модулей
 					$this->session->set_userdata('admin_id', $row->id); // id оператора для модулей
 					$this->session->set_userdata('canSee', $row->supervisor); // руководитель
 					$this->session->set_userdata('base_id', $row->base_id); // учётный номер в базе данных

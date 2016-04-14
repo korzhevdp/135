@@ -27,7 +27,8 @@
 	#air,
 	#bir,
 	#sman,
-	#servop{
+	#servop,
+	#superv{
 		margin-left:  170px;
 		margin-right: 10px;
 		margin-top:   -2px;
@@ -167,32 +168,56 @@
 
 		<div class="tab-pane <?=($page == 2) ? "active" : "";?>" id="tab2">
 			<h6>Быстрое назначение информационных ресурсов</h6>
-			<input type="hidden" form="Qadd" name="quser" value="<?=$id;?>">
-			<div class="control-group">
-				<select name="quick_reg" form="Qadd" class="span6" id="quick_reg">
-					<option value=0>Выберите из списка</option>
-					<optgroup label="ЛВСМ" style="padding:5px;">
-						<option value=7>Заявка ЛВСМ</option>
-					</optgroup>
-					<optgroup label="Интернет и электронная почта" style="padding:5px;">
-						<option value=1>Интернет</option>
-						<option value=2>Электронная почта</option>
-						<option value=3>Интернет + Электронная почта</option>
-					</optgroup>
-					<optgroup label="АИС" style="padding:5px;">
-						<option value=8>АИС КД 2.0</option>
-					</optgroup>
-					<optgroup label="Табель учёта рабочего времени" style="padding:5px;">
-						<option value=9>Табель учёта рабочего времени</option>
-					</optgroup>
-					<optgroup label="Электронная подпись" style="padding:5px;">
-						<option value=10>Электронная подпись</option>
-					</optgroup>
-				</select>
-				<button type="submit" form="Qadd" class="btn btn-small btn-info" style="margin-top:-8px;margin-left:10px;">Добавить административную заявку</button>
-			</div>
-			<form method="post" id="Qadd" action="/admin/quickadd"></form>
 
+			<form method="post" id="Qadd" action="/admin/quickadd">
+				<input type="hidden" form="Qadd" name="quser" value="<?=$id;?>">
+				<div class="control-group">
+					<select name="quick_reg" form="Qadd" class="span6" id="quick_reg">
+						<option value=0>Выберите из списка</option>
+						<optgroup label="ЛВСМ" style="padding:5px;">
+							<option value=7>Заявка ЛВСМ</option>
+						</optgroup>
+						<optgroup label="Интернет и электронная почта" style="padding:5px;">
+							<option value=1>Интернет</option>
+							<option value=2>Электронная почта</option>
+							<option value=3>Интернет + Электронная почта</option>
+						</optgroup>
+						<optgroup label="АИС" style="padding:5px;">
+							<option value=8>АИС КД 2.0</option>
+						</optgroup>
+						<optgroup label="Табель учёта рабочего времени" style="padding:5px;">
+							<option value=9>Табель учёта рабочего времени</option>
+						</optgroup>
+						<optgroup label="Электронная подпись" style="padding:5px;">
+							<option value=10>Электронная подпись (Token)</option>
+						</optgroup>
+					</select>
+					<button type="submit" form="Qadd" class="btn btn-small btn-info" style="margin-top:-8px;margin-left:10px;">Добавить административную заявку</button>
+				</div>
+			</form>
+
+			<div id="modalEvent" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel4" aria-hidden="true">
+				<form method="post" action="/events/makeevent" accept-charset="UTF-8">
+					<div class="modal-header">
+						<h4>Создание поручение куратору <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button></h4>
+					</div>
+					<div class="modal-body">
+						<small>Пользователь: <?=($id) ? implode(array($name_f,$name_i,$name_o)," ") : "Не выбран пользователь" ;?>&nbsp;</small>
+							<input type="hidden" name="itemID" id="eventItemID" value="">
+							<select name="eventAction[]" multiple="multiple" style="width:500px;" size=4>
+								<option value="Переименовать компьютер">Переименовать компьютер</option>
+								<option value="Подтвердить состав лицензий">Подтвердить состав лицензий</option>
+								<option value="Проверить настройки клиента электронной почты" class="mailEvent">Проверить настройки клиента электронной почты</option>
+								<option value="Проверить настройки прокси-сервера">Проверить настройки прокси-сервера</option>
+							</select>
+							<br>Комментарий<br>
+							<textarea name="eventAnnotation" id="eventAnnotation" rows="6" cols="7" style="width:500px;height:70px;"></textarea>
+					</div>
+					<div class="modal-footer" style="text-align:right">
+						<button type="submit" class="btn btn-primary">Отправить</button>
+					</div>
+				</form>
+			</div>
 
 			<form method="post" class="form-horizontal" action="">
 				<?=$resources;?>
@@ -234,6 +259,7 @@
 			<label><input type="checkbox" id="air"    name="air"    form="userform1" value="1" <?=$air;?>>Администратор ИР</label>
 			<label><input type="checkbox" id="bir"    name="bir"    form="userform1" value="1" <?=$bir;?>>Администратор БИР</label>
 			<label><input type="checkbox" id="sman"   name="sman"   form="userform1" value="1" <?=$sman;?>>Куратор</label>
+			<label><input type="checkbox" id="superv" name="superv" form="userform1" value="1" <?=$superv;?>>Руководитель кураторов</label>
 			<label><input type="checkbox" id="servop" name="servop" form="userform1" value="1" <?=$servop;?>>Оператор муниципальных услуг</label><br><br>
 
 			<button type="button" class="btn btn-<?=(($fired) ? "inverse" : "info");?> <?=($saveable) ? "fireSw" : 'disabled' ;?>" id="fireSw" ref="<?=$id?>" style="width:100px;"><?=(($fired) ? "Уволен(а)" : "Уволить");?></button>
@@ -259,7 +285,7 @@
 			<?if($saveable){?>
 			<!-- контролы управления лицензиями -->
 			<!-- Плашка взятия лицензий из пула по признаку совпадения ключа-->
-			<div id="modalRes" class="modalRes modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+			<div id="modalRes" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 					<h3 id="myModalLabel1">Взять из пула лицензию <small>из следующих возможных</small></h3>
@@ -282,7 +308,7 @@
 			</div>
 
 			<!-- Плашка связывания -->
-			<div id="modalRes2" class="modalRes modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel2" aria-hidden="true">
+			<div id="modalRes2" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel2" aria-hidden="true">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 					<h3 id="myModalLabel2">Заполнить данными <small> из назначенных вручную лицензий</small></h3>
@@ -305,7 +331,7 @@
 			</div>
 
 			<!-- Плашка назначения произвольных лицензий -->
-			<div id="modalRes3" class="modalRes modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel3" aria-hidden="true">
+			<div id="modalRes3" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel3" aria-hidden="true">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 					<h3 id="myModalLabel3">Назначить произвольную лицензию <small>из пула</small></h3>
@@ -338,7 +364,6 @@
 				<input type="hidden" name="userid" value="<?=$userid;?>">
 			</form>
 			<!-- контролы управления лицензиями -->
-
 			<script type="text/javascript" src="/jscript/lsmc.js"></script>
 			<?}?>
 		</div>
@@ -346,9 +371,6 @@
 <? } else { ?>
 	Полный список пользователей ЛВСМ находится выше
 <?}?>
-<!-- <div id="console" class="well span3" style="position:absolute;top:200px;right:10px;height:600px;display:none;">
-	<h5>Консоль</h5>
-	<span class="consoleContent"></span>
-</div> -->
+
 
 <script type="text/javascript" src="/jscript/users.js"></script>

@@ -596,7 +596,7 @@ class Bidsmodel extends CI_Model {
 		//
 		$data['top_header'] = (in_array($real_d, array(10, 52)))
 			? ""
-			: "МЭPИЯ ГОPОДА АPХАНГЕЛЬСКА";
+			: 'АДМИНИСТРАЦИЯ МУНИЦИПАЛЬНОГО ОБРАЗОВАНИЯ "ГОРОД АРХАНГЕЛЬСК"';
 
 		// выборка данных по должности пользователя
 		// $data['staff_id'] пришла из _POST
@@ -627,7 +627,7 @@ class Bidsmodel extends CI_Model {
 		CONCAT(LEFT(users.name_i, 1),'.', LEFT(users.name_o, 1), '. ', users.name_f) AS fio,
 		users.io,
 		`staff`.staff AS `otv_dl`,
-		UCASE(departments.`dn`) AS `org`,
+		UCASE(departments.`dn_blank`) AS `org`,
 		departments.`cred`,
 		departments.`zakaz`
 		FROM
@@ -650,7 +650,7 @@ class Bidsmodel extends CI_Model {
 		if(in_array($data['staff_id'], array(27, 40, 32))){
 			if($data['staff_id'] == 27){
 				$dept['fio']    = "";
-				$dept['otv_dl'] = "Заместитель мэра города";
+				$dept['otv_dl'] = 'Заместитель Главы муниципального образования "Город Архангельск"';
 				$dept['org']    = ""; //"Мэрия города Архангельска";
 				$dept['cred']   = "Не указаны";
 				$dept['zakaz']  = "Общий отдел мэрии г.Архангельска. Заказ 007.  15.03.2010";
@@ -658,14 +658,14 @@ class Bidsmodel extends CI_Model {
 			if($data['staff_id'] == 40){
 				// этот подаёт заявки сам на себя
 				$dept['fio'] = $this->input->post("name_f")." ".strtoupper(substr($this->input->post("name_i"), 0, 1)).".".strtoupper(substr($this->input->post("name_o").".", 0 ,1));
-				$dept['otv_dl'] = "Помощник мэра";
+				$dept['otv_dl'] = 'Помощник Главы муниципального образования "Город Архангельск"';
 				$dept['org']    = ""; //"Мэрия города Архангельска";
 				$dept['cred']   = "Не указаны";
 				$dept['zakaz']  = "Общий отдел мэрии г.Архангельска. Заказ 007.  15.03.2010";
 			}
 			if($data['staff_id'] == 32){
 				$dept['fio']    = $this->input->post("name_f")." ".strtoupper(substr($this->input->post("name_i"), 0, 1)).".".strtoupper(substr($this->input->post("name_o").".", 0 ,1));
-				$dept['otv_dl'] = "Советник мэра";
+				$dept['otv_dl'] = 'Советник Главы муниципального образования "Город Архангельск"';
 				$dept['org']    = ""; //"Мэрия города Архангельска";
 				$dept['cred']   = "Не указаны";
 				$dept['zakaz']  = "Общий отдел мэрии г.Архангельска. Заказ 007.  15.03.2010";
@@ -696,14 +696,15 @@ class Bidsmodel extends CI_Model {
 		// либо здание с кабинетом (признак второго порядка)
 		// либо обобщённый - только здание - первый порядок
 
-		if(!isset($data['addr2'])){
+		if(!isset($data['addr2']) && isset($data['office2'])) {
 			$data['addr2'] = $data['office2']; // нормализуем поля форм - снова вынужденная мера
 		}
 
 		if(!isset($data['addr1'])){
 			$data['addr1'] = $data['office']; // нормализуем поля форм - снова вынужденная мера
 		}
-		$addrtag = (strlen($data['addr2']))
+
+		$addrtag = (isset($data['addr2']) && strlen($data['addr2']))
 			? $data['addr2'] 
 			: $data['addr1'];
 		$result = $this->db->query("SELECT
@@ -781,13 +782,14 @@ class Bidsmodel extends CI_Model {
 
 	public function domain_paper_get(){
 		$genmode = $this->session->userdata('genmode');
-		$data = $this->input->post();									// читаем _POST в переменную
-		$templatedata = $this->fill_template();							// получаем данные для заявки.
-		if($data['uid']){ return ""; }									// прерываем исполнение если есть подозрение, что пользователь уже есть в базе
-		$userID = $this->new_user_insert($templatedata);				// вставляем нового пользователя в базу данных, получаем индекс этой вставки
-		$orderID = $this->new_order_insert();							// вставляем в базу новую заявку, получаем индекс новой заявки
-		$resdata = array(array('uid' => $userID, 'order_id' => $orderID, 'rid' => 102));
-		$this->resource_insert($resdata);								// вставляем сущность ресурса с его привязкой к пользователю и заявке
+		$data    = $this->input->post();										// читаем _POST в переменную
+		$templatedata = $this->fill_template();									// получаем данные для заявки.
+		if (!$this->session->userdata('uid')) {									// прерываем исполнение, если есть подозрение, что пользователь уже есть в базе
+			$userID  = $this->new_user_insert($templatedata);					// вставляем нового пользователя в базу данных, получаем индекс этой вставки
+			$orderID = $this->new_order_insert();								// вставляем в базу новую заявку, получаем индекс новой заявки
+			$resdata = array(array('uid' => $userID, 'order_id' => $orderID, 'rid' => 102));
+			$this->resource_insert($resdata);									// вставляем сущность ресурса с его привязкой к пользователю и заявке
+		}
 		if($this->genmode == "pdf") {
 			// оформляем заявку
 			$string = $this->load->view('bids/2pdf/domain_p', $templatedata, true);
@@ -795,8 +797,6 @@ class Bidsmodel extends CI_Model {
 			// оформляем заявку
 			$string = $this->load->view('bids/papers/domain_p', $templatedata, true);
 		}
-
-		$_POST['uid']= $userID;
 		return $string;
 	}
 
@@ -839,8 +839,8 @@ class Bidsmodel extends CI_Model {
 		`resources_items`.rid
 		FROM
 		`resources_items`
-		WHERE `resources_items`.`order_id` = ? AND
-		`resources_items`.`rid` IN (100,101)", array($orderID));
+		WHERE `resources_items`.`order_id` = ? 
+		AND `resources_items`.`rid` IN (100,101)", array($orderID));
 		if($result->num_rows()){
 			foreach($result->result() as $row){
 				if($row->rid == 100){
@@ -877,8 +877,8 @@ class Bidsmodel extends CI_Model {
 		`resources_items`.id
 		FROM
 		`resources_items`
-		WHERE `resources_items`.`order_id` = ? AND
-		`resources_items`.`rid` IN (274)", array($orderID));
+		WHERE `resources_items`.`order_id` = ?
+		AND `resources_items`.`rid` IN (274)", array($orderID));
 		if($result->num_rows()){
 			foreach($result->result() as $row){
 				array_push($subsdata, array('pid' => 12, 'pid_value' => $this->input->post('wf_reason'), 'item_id' => $row->id));
@@ -920,8 +920,8 @@ class Bidsmodel extends CI_Model {
 		`resources_items`.id
 		FROM
 		`resources_items`
-		WHERE `resources_items`.`order_id` = ? AND
-		`resources_items`.`rid` = ?", array($orderID, 283));
+		WHERE `resources_items`.`order_id` = ? 
+		AND `resources_items`.`rid` = ?", array($orderID, 283));
 		if($result->num_rows()){
 			foreach($result->result() as $row){
 				array_push($subsdata, array('pid' => 12, 'pid_value' => $this->input->post('adm_reason'), 'item_id' => $row->id));
@@ -1235,27 +1235,31 @@ class Bidsmodel extends CI_Model {
 				$data['service'],
 				$data['service'],
 				$data['dept'],
-				(strlen($data['addr2']) || $data['addr2']) ? $data['addr2'] : $data['addr1'],
+				(isset($data['addr2']) && strlen($data['addr2']) && $data['addr2']) ? $data['addr2'] : $data['addr1'],
 				$data['staff_id']
 			));
 			
 			$userID = $this->db->insert_id();
-			//внешний коннект. Создание пользователя на cf
-			$link = mysql_connect('192.168.1.9', 'dbreferer', 'dbreferer');
-			if (!$link) {
-				die('Ошибка соединения: ' . mysql_error());
-			}
-			mysql_select_db('file_exchange', $link);
-			//mysql_set_charset('cp1251', $link);
-			mysql_query("SET NAMES cp1251", $link);
-			//print implode(array($name_f, $name_i, $name_o), " 11 ");
-			$result = mysql_query("SELECT `fios`.`fio` FROM `fios` WHERE TRIM(`fios`.`fio`) = '".implode(array($name_f, $name_i, $name_o), " ")."'", $link);
-			if(!mysql_num_rows($result)){
-				mysql_query("INSERT INTO fios (fios.`fio`) VALUES (TRIM('".implode(array($name_f, $name_i, $name_o), " ")."'))", $link);
-			}
-			mysql_close($link);
+			$this->session->set_userdata('uid', $userID);
+			$_POST['uid'] = $userID; // вообще это неправильно совать и в сессию и в POST. Но функция ожидает uid там, а переписывать пока нет времени 31.03.2016
+			$this->insert_to_cfsX($name_f, $name_i, $name_o);
 		}
+
 		return $userID;
+	}
+
+	private function insert_to_cfsX($name_f, $name_i, $name_o) {
+		//внешний коннект. Создание пользователя на cfs2
+		$DB2 = $this->load->database('12', TRUE);
+		$DB2->query("SET NAMES cp1251");
+		$result = $DB2->query("SELECT
+			`fios`.`fio`
+			FROM
+			`fios` 
+			WHERE TRIM(`fios`.`fio`) = TRIM(?)", array($name_f." ".$name_i." ".$name_o));
+		if (!$result->num_rows()) {
+			$DB2->query("INSERT INTO fios (fios.`fio`) VALUES (TRIM(?))", array($name_f." ".$name_i." ".$name_o));
+		}
 	}
 
 	public function resource_insert($data){
@@ -1414,11 +1418,15 @@ class Bidsmodel extends CI_Model {
 		foreach($orders as $val){
 			if($res[$val]['rid'] == 101 || $res[$val]['rid'] == 100){
 				// выборка содержимого pid12 - обоснования подключения
-				$reason = (isset($res[$val]['pid12'])) 
+				$reason       = (isset($res[$val]['pid12'])) 
 					? $res[$val]['pid12']
-					: '( информации о цели подключения не обнаружено )';
+					: '( данные об обосновании подключения отсутствуют в системе )';
+				$mail_address = (isset($res[$val]['pid1'])) 
+					? $res[$val]['pid1'] 
+					: "______@arhcity.ru";
 				if ($res[$val]['rid'] == 100) {
-					$addon['mailaction'] = "зарегистрировать почтовый ящик с адресом ".$res[$val]['pid1']."<BR>на сервере электронной почты мэрии для ".$reason;
+					
+					$addon['mailaction'] = "зарегистрировать почтовый ящик с адресом ".$mail_address."<BR>на сервере электронной почты мэрии для ".$reason;
 					array_push($addon['decision'], 'зарегистрировать адрес электронной почты');
 					$gen = 1;
 				}

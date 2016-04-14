@@ -10,7 +10,7 @@
 <div class="tabbable"> <!-- Only required for left/right tabs -->
 	<ul class="nav nav-tabs">
 		<li class="active"><a href="#tab1" data-toggle="tab">Текущие конфигурации ПК</a></li>
-		<li><a href="#tab2" data-toggle="tab">Место вакантно</a></li>
+		<li><a href="#tab2" data-toggle="tab">Руководители</a></li>
 	</ul>
 	<div class="tab-content">
 
@@ -34,7 +34,12 @@
 			<br><br><hr>
 		</div>
 		<div class="tab-pane" id="tab2">
-			<p>Пока пусто</p>
+			<table class="table table-bordered table-condensed table-striped">
+			<tr>
+				<th>email</th><th>ФИО</th><th>Должность</th><th>Подразделение</th>
+			</tr>
+			<?=$cios;?>
+			</table>
 		</div>
 	</div>
 </div>

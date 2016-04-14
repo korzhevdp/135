@@ -184,14 +184,14 @@ class Licensemodel extends CI_Model {
 		`users`.`fired`,
 		DATE_FORMAT(ak_licenses.scandate, '%d.%m.%Y') as scandate,
 		ak_licenses.hostname,
-		CONCAT_WS('-',substr(ak_licenses.label,2,5), substr(ak_licenses.label,7,3), substr(ak_licenses.label,10,3), substr(ak_licenses.label,13,3)) as label
+		CONCAT_WS('-', SUBSTR(ak_licenses.label, 2, 5), SUBSTR(ak_licenses.label, 7, 3), SUBSTR(ak_licenses.label, 10, 3), SUBSTR(ak_licenses.label, 13, 3)) AS label
 		FROM
 		`hosts`
 		RIGHT OUTER JOIN ak_licenses ON (`hosts`.hostname = ak_licenses.hostname)
 		INNER JOIN `users` ON (`users`.`id` = `hosts`.`uid`)
 		WHERE
-		(`hosts`.server = 1) AND
-		NOT `hosts`.noise
+		`hosts`.server = 1
+		AND NOT `hosts`.noise
 		GROUP BY `ak_licenses`.`id`
 		ORDER BY `ak_licenses`.`hostname` ASC, `ak_licenses`.`scandate` DESC");
 
@@ -207,89 +207,81 @@ class Licensemodel extends CI_Model {
 					? "" 
 					: '<small class="muted">для получения нужно <a href="#" refid="'.$row->id.'" ref="'.$row->pkshort.'" class="button-take btn btn-mini">изъять из пула</a></small>';
 				$takefrompool = "";
-				if (!isset($input[$row->hostname])){
+				if (!isset($input[$row->hostname])) {
 					$input[$row->hostname] = array();
 				}
-				if($row->manual){ 
+				if ($row->manual) {
 					array_push($class, "info");
 					array_push($annotation, "добавлена вручную");
 					array_push($props, '<span class="btn-info btn-small">РУЧН</span>');
 					$takefrompool = '';
 					$bindto = ' class="hide"';
 					$intinfo = "Назначены вручную: ";
-					if(stristr($row->product_name,"indows")){
+					if (stristr($row->product_name, "indows")) {
 						$intinfo.=' <span class="btn-info">Windows</span>';
 					}
-					if(stristr($row->product_name,"ffic")){
+					if (stristr($row->product_name, "ffice")) {
 						$intinfo.=' <span class="btn-info">Office</span>';
 					}
-				}else{
+				} else {
 					array_push($annotation, "обнаружена при сканировании");
 				}
-				if(!$row->active) {
+				if ($row->active) {
+					array_push($class, "success");
+					array_push($annotation, "активна");
+					array_push($props, '<span class="btn-primary btn-small">АКТ</span>');
+				} else {
 					array_push($class, "muted hide");
 					array_push($annotation, "неактивна");
 					array_push($props, '<span class="btn-small">НЕАКТ</span>');
 					$bindto = ' class="hide"';
 					$takefrompool = ' class="hide"';
 					$label = "";
-				}else{
-					array_push($class, "success");
-					array_push($annotation, "активна");
-					array_push($props, '<span class="btn-primary btn-small">АКТ</span>');
 				}
-				if(strpos($row->product_serial,"-OEM-")){
+				if(strpos($row->product_serial, "-OEM-")) {
 					array_push($annotation, "OEM");
 					array_push($props, '<span class="btn-danger btn-small">OEM</span>');
 				}
 				if($row->item_id && $row->active){
-					$label = ($this->session->userdata('rank') == 1) ? $row->label : " Получите в отделе ОСА";
+					$label = ($this->session->userdata('rank') === 1) ? $row->label : " Получите в отделе ОСА";
 					array_push($props, '<span class="btn-success btn-small">ПУЛ</span>');
 				}
-				if(stristr($row->product_name,"windows") && strlen($row->verify_pk) == 5){
+				if(stristr($row->product_name,"windows") && strlen($row->verify_pk) === 5){
 					array_push($annotation, "Верификация: ".$row->verify_pk);
 				}
-				$string = '<tr class="'.implode($class, " ").'" title="'.implode($annotation,", ").'">
-					<td>'.$row->product_name.'<br>'.$row->product_key.'<br>Номер наклейки: <b>'.$label.'</b> <span class="hide">/ # '.$row->id.'</span><div class="pull-right">'.implode($props,"&nbsp;").'</div></td>
-					<td style="text-align:center;vertical-align:middle;">'.$row->scandate.'</td>
-					<td style="vertical-align:middle;">
-						<div class="btn-group">
-							<a class="btn btn-primary '.(($row->active) ? 'button-reject' : 'button-recall').'" style="width:66%" href="#" title="'.(($row->active) ? 'Отозвать лицензию' : 'Отменить отзыв').'" ref="'.$row->id.'">
-							'.(($row->active) ? 'Отозвать' : 'Отменить отзыв').'
-							</a>
-							<a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></a>
-							<ul class="dropdown-menu">
-								<li'.$bindto.'><a href="#" class="button-bide" title="Заполнить обнаруженную лицензию данными из назначенной вручную" ref="'.$row->id.'">Связать с...</a></li>
-								<li'.$takefrompool.'><a href="#" class="button-take" title="Задействовать лицензию из пула по ключу" refid="'.$row->id.'" ref="'.$row->pkshort.'">Взять из пула...</a></li>
-							</ul>
-						</div>
-					</td>
-				</tr>';
-			array_push($input[$row->hostname], $string);
+				$data = array(
+					'label'       => $label,
+					'poolswitch'  => $takefrompool,
+					'bindto'      => $bindto,
+					'mainclass'   => implode($class, " "),
+					'maintitle'   => implode($annotation, ", "),
+					'properties'  => implode($props, "&nbsp;"),
+					'productname' => $row->product_name,
+					'productkey'  => $row->product_key,
+					'scandate'    => $row->scandate,
+					'pkshort'     => $row->pkshort,
+					'license'     => $row->id,
+					'link'        => ($row->active)
+						? '<a class="btn btn-primary button-reject" style="width:66%" href="#" title="Отозвать лицензию" ref="'.$row->id.'">Отозвать</a>'
+						: '<a class="btn btn-primary button-recall" style="width:66%" href="#" title="Отменить отзыв" ref="'.$row->id.'">Отменить отзыв</a>',
+					
+				);
+				$string = $this->load->view("license/licensecontrols", $data, true);
+				array_push($input[$row->hostname], $string);
 			}
-			foreach($input as $key=>$val){
-				array_push($output,'<h4>'.$key.'
-					<div class="btn-group pull-right" style="margin-bottom:10px;">
-							<a class="btn btn-large" href="#" title="" ref="'.$row->id.'">'.$key.'</a>
-							<a class="btn btn-large dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></a>
-							<ul class="dropdown-menu">
-								<li><a href="#" class="button-order" ref="'.$key.'" title="Назначить произвольную лицензию из пула вручную">Назначить лицензию</a></li>
-								<li><a href="#" class="button-convert" ref="'.$key.'" title="Добавить в список лицензий ПО из списка установленного на ПК">Перевести в лицензию</a></li>
-								<li><a href="#" title="Возврат всех лицензий в пул и исключение из АРМ">Списание</a></li>
-							</ul>
-						</div>
-				</h4>
-				'.$intinfo.'
-				<table class="table table-condensed table-bordered table-hover table-licenses">
-				<tr>
-					<th class="span8">Детали лицензий</th>
-					<th class="span1">Дата</th>
-					<th class="span3">Действия</th>'.
-				"</tr>".implode($val,"\n").'</table>');
+			foreach($input as $key=>$val) {
+				$data = array(
+					'pcref' => $row->id,
+					'ref'   => $key,
+					'info'  => $intinfo,
+					'data'  => implode($val,"\n")
+				);
+				array_push($output, $this->load->view('license/pclicenses', $data, true));
 			}
 		}
-		return implode($output);
+		return implode($output).'<script type="text/javascript" src="/jscript/lsmc.js"></script>';
 	}
+
 	public function deptlicenses_get($depid=0){
 		$input	= array();
 		$output	= array();
@@ -435,17 +427,18 @@ class Licensemodel extends CI_Model {
 		return implode($output);
 	}
 
-	public function get_related_licenses($pk){
+	public function get_related_licenses($pk = ""){
+		$search = (strlen($pk)) ? " AND (inv_po_licenses_items.verify_pk = ?)" : " AND (inv_po_licenses_items.verify_pk = '')";
 		$output = array('<table class="table table-bordered table-hover table-condensed">','<tr><th></th><th class="span9">Лицензия</th><th class="span2">Остаток</th></tr>');
 		$result = $this->db->query("SELECT
 		inv_po_types.name,
 		inv_po_licenses_sets.id AS sid,
-		inv_po_licenses_sets.max,
+		inv_po_licenses_sets.`max`,
 		inv_po_licenses.number,
 		inv_po_licenses_items.value,
 		inv_po_licenses_items.master,
 		inv_po_licenses_items.id,
-		inv_po_licensiars.name as lname
+		inv_po_licensiars.name AS lname
 		FROM
 		inv_po_types
 		INNER JOIN inv_po_licenses_items ON (inv_po_types.id = inv_po_licenses_items.type_id)
@@ -453,21 +446,22 @@ class Licensemodel extends CI_Model {
 		INNER JOIN inv_po_licenses ON (inv_po_licenses_sets.license_id = inv_po_licenses.id)
 		INNER JOIN inv_po_licensiars ON (inv_po_licenses.licensiar_id = inv_po_licensiars.id)
 		WHERE
-		NOT inv_po_licenses_sets.deleted AND
-		(inv_po_licenses_items.verify_pk = ?)", array($pk));
+		(NOT (inv_po_licenses_sets.deleted))
+		".$search, array($pk));
 		if($result->num_rows()){
 			foreach($result->result() as $row){
 				$differ = $row->max;
 				$result2 = $this->db->query("SELECT COUNT(*) as differ
 				FROM ak_licenses
 				WHERE
-				ak_licenses.active AND
-				ak_licenses.item_id IN (
-				SELECT 
-				`inv_po_licenses_items`.`id`
-				FROM 
-				`inv_po_licenses_items` 
-				WHERE `inv_po_licenses_items`.`set_id` = ?)", array($row->sid));
+				ak_licenses.active
+				AND ak_licenses.item_id IN (
+					SELECT 
+					`inv_po_licenses_items`.`id`
+					FROM 
+					`inv_po_licenses_items` 
+					WHERE `inv_po_licenses_items`.`set_id` = ?
+				)", array($row->sid));
 				if($result2->num_rows()){
 					foreach($result2->result() as $row2){
 						$differ -= $row2->differ;
@@ -479,7 +473,7 @@ class Licensemodel extends CI_Model {
 					<td><label for="item'.$row->id.'" style="cursor:pointer;">'.$row->name.'<br>'.$row->lname.', лиц. № '.$row->number.' <b class="hide">Item: '.$row->id.'</b>&nbsp;&nbsp;&nbsp;'.$ordertype.'</label></td>
 					<td style="text-align:center;vertical-align:middle;"><label for="item'.$row->id.'" style="cursor:pointer;">'.($differ).'</label></td>
 				</tr>';
-				array_push($output,$string);
+				array_push($output, $string);
 			}
 		}
 		array_push($output,'</table>');
@@ -507,7 +501,6 @@ class Licensemodel extends CI_Model {
 		WHERE
 		NOT inv_po_licenses_sets.deleted
 		AND inv_po_licenses_items.type NOT IN ('KMS')
-		AND LENGTH(inv_po_licenses_items.value) > 0
 		ORDER BY
 		inv_po_types.name, inv_po_licenses_items.master DESC");
 		if($result->num_rows()){
@@ -1166,8 +1159,8 @@ class Licensemodel extends CI_Model {
 		INNER JOIN inv_po_licenses_sets ON (inv_po_licenses_items.set_id = inv_po_licenses_sets.id)
 		INNER JOIN inv_po_types ON (inv_po_licenses_items.type_id = inv_po_types.id)
 		WHERE
-		NOT inv_po_licenses_sets.deleted AND
-		inv_po_licenses_items.type_id IN (
+		NOT inv_po_licenses_sets.deleted
+		AND inv_po_licenses_items.type_id IN (
 			SELECT
 			`inv_po_types`.`id`
 			FROM `inv_po_types`
@@ -1180,11 +1173,10 @@ class Licensemodel extends CI_Model {
 		inv_po_types.name");
 		if($result->num_rows()){
 			foreach($result->result() as $row){
-				if(!isset($stat[$row->type_id])){
-					$stat[$row->type_id] = array();
-				}
-				$stat[$row->type_id]['name'] = $row->name;
-				$stat[$row->type_id]['totalsum'] = $row->totalsum;
+				$stat[$row->type_id] = array(
+					'name'     => $row->name,
+					'totalsum' => $row->totalsum
+				);
 			}
 		}
 
@@ -1198,9 +1190,9 @@ class Licensemodel extends CI_Model {
 		INNER JOIN inv_po_types ON (inv_po_licenses_items.type_id = inv_po_types.id)
 		INNER JOIN inv_po_licenses ON (inv_po_licenses_sets.license_id = inv_po_licenses.id)
 		WHERE
-		NOT inv_po_licenses_sets.deleted AND
-		inv_po_licenses_items.master AND
-		inv_po_types.id IN (
+		NOT inv_po_licenses_sets.deleted 
+		AND inv_po_licenses_items.master 
+		AND inv_po_types.id IN (
 			SELECT 
 			`inv_po_types`.`id` 
 			FROM `inv_po_types` 
@@ -1232,10 +1224,12 @@ class Licensemodel extends CI_Model {
 		(LENGTH(ak_licenses.item_id))
 		GROUP BY
 		`inv_po_types`.id");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				$use_count[$row->id]['sum']  = $row->usage_sum;
-				$use_count[$row->id]['item'] = $row->item_id;
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$use_count[$row->id] = array(
+					'sum'  => $row->usage_sum,
+					'item' => $row->item_id
+				);
 			}
 		}
 		

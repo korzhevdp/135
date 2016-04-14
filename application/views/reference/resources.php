@@ -48,9 +48,6 @@
 		<select form="resS" id="resource" name="resource">
 			<?=$list;?>
 		</select>
-		<span class="add-on">
-			<label id="withInactive"><input type="checkbox" form="resS" name="d" value="1"<?=(($this->input->post("d")) ? ' checked="checked"' : "");?>> Исключить неактивные </label>
-		</span>
 	</div>
 	<button type="submit" form="resS" id="resSSub" class="btn btn-info">Показать</button>
 </form>
@@ -277,6 +274,11 @@
 				<select multiple form="resP" size=7 name="adm" id="adm">
 					<?=$admins;?>
 				</select>
+			</div>
+
+			<div class="input-prepend">
+				<span class="add-on pre-label">Памятка пользователю</span>
+				<textarea type="text" form="resP" name="f_usermemo" id="f_usermemo" placeholder="Напоминание для пользователя по процедуре оформления заявки выводимое в справочном листе" title="Напоминание для пользователя"><?=$f_dbvol;?></textarea>
 			</div>
 
 			<div class="input-prepend">

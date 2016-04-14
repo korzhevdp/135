@@ -193,7 +193,7 @@ id=pagebody>
   <p class=MsoNormal style='margin-top:0cm;margin-right:0cm;margin-bottom:14.0pt;
   margin-left:0cm'><span style='font-size:14.0pt'>Начальнику<br>
   управления информационных <br> 
-  ресурсов и систем <br>мэрии города</span></p>
+  ресурсов и систем <br>Администрации муниципального образования "Город Архангельск"</span></p>
   <div>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><b><span
   style='font-size:14.0pt'>А.Ю. Глебову<o:p></o:p></span></b></p>
@@ -216,7 +216,7 @@ id=pagebody>
  <tr style='mso-yfti-irow:1'>
   <td colspan=4 style='padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>Прошу
-  пользователю локальной вычислительной сети мэрии города:</p>
+  пользователю локальной вычислительной сети муниципалитета:</p>
   </td>
  </tr>
  <tr style='mso-yfti-irow:2'>

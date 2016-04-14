@@ -18,10 +18,10 @@ class Uvmr extends CI_Controller {
 	public function index($user_id=0,$page=1){
 		$act = array();
 		$data = array();
-		$act['menu'] = $this->load->view('menu/navigation', '', true);
+		$act['menu'] = $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true);
 		$data['imdsp_table'] = $this->uvmrmodel->imdsp_get();
 		$act['content'] = "<h2>Специальные отчёты Отдела по защите информации.</h2><hr>".$this->load->view('uvmr/uvmr', $data, true);
-		$act['footer'] = $this->load->view('page_footer', '', true);
+		$act['footer'] = $this->load->view('page_footer', array(), true);
 		
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
@@ -31,11 +31,12 @@ class Uvmr extends CI_Controller {
 		//$this->output->enable_profiler(TRUE);
 		$act = array();
 		$user = $this->uvmrmodel->passport_get($user_id);
+		//print_r($user);
 		$user['filter'] = urldecode($this->session->userdata("filter"));
 		$user['userid'] = $user['id'];
-		$act['menu']    = $this->load->view('menu/navigation', '', true);
+		$act['menu']    = $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true);
 		$act['content'] = $this->load->view('uvmr/passport' , $user, true);
-		$act['footer']  = $this->load->view('page_footer' , '', true);
+		$act['footer']  = $this->load->view('page_footer' , array(), true);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
 	}

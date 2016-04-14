@@ -103,12 +103,12 @@ class Uvmrmodel extends CI_Model {
 		return $output;
 	}
 
-	public function passport_get($euid){
+	public function passport_get($euid = 0){
 		$user = ($this->input->post('userSelector')) ? $this->input->post('userSelector') : $euid;
 		$input = array();
-
+		$output = array("id" => 0);
 		if(!$user){
-			return $output['content'] = "Ничего не найдено";
+			return array ('content' => "Ничего не найдено", 'id' => 0, 'filter' => urldecode($this->session->userdata("filter")));
 		}
 		$result = $this->db->query("SELECT 
 		CONCAT_WS(' ',`users`.name_f,`users`.name_i,`users`.name_o, if(`users`.fired, '<span class=\"btn btn-danger btn-large\">Уволена</span>','')) AS fio,
@@ -149,7 +149,7 @@ class Uvmrmodel extends CI_Model {
 				array_push($input[$row->hostname], '<li>'.$row->po_name.'<span class="muted pull-right"> ['.$row->scandate.']</span></li>');
 			}
 			foreach($input as $key=>$val){
-				$string = '<h4>ПК: '.$key.'</h4><ul>'.implode($val,"\n").'</ul>';
+				$string = '<h4>ПК: '.$key.'</h4><ul>'.implode($val, "\n").'</ul>';
 				array_push($output['software'],$string);
 			}
 		}
@@ -164,24 +164,25 @@ class Uvmrmodel extends CI_Model {
 		`resources`
 		INNER JOIN `resources_items` ON (`resources`.id = `resources_items`.rid)
 		WHERE
-		`resources_items`.`uid` = ? 
-		AND `resources_items`.`ok` AND
-		NOT `resources_items`.`del` AND
-		NOT `resources_items`.`exp`", array($user));
+		`resources_items`.`uid` = ?
+		AND `resources_items`.`ok`
+		AND NOT `resources_items`.`del`
+		AND NOT `resources_items`.`exp`", array($user));
 		if($result->num_rows()){
 			foreach($result->result() as $row){
 				$class = array();
-				($row->cat > 1) ? array_push($class, 'btn-danger') : "" ;
-				(in_array($row->id, array(100,101))) ? array_push($class, 'btn-warning') : "" ;
-				(!sizeof($class)) ? array_push($class, 'btn-success') : "";
+				($row->cat > 1)							? array_push($class, 'btn-danger')  : "" ;
+				($row->id == 103)						? array_push($class, 'btn-inverse') : "" ;
+				(in_array($row->id, array(100,101)))	? array_push($class, 'btn-warning') : "" ;
+				(!sizeof($class))						? array_push($class, 'btn-success') : "" ;
 				array_push($output['resources'], '<li>'.$row->shortname.'<span style="margin-right:5px;" class="'.implode($class,"").' pull-left">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></li>');
 			}
 		}
-		$output['resources'] = '<ul>'.implode($output['resources'],"\n").'</ul>';
+		$output['resources'] = '<ul>'.implode($output['resources'], "\n").'</ul>';
 
 		$output['os'] = array();
 		$input = array();
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		ak_licenses.product_name,
 		`hosts`.hostname,
 		ak_licenses.product_key
@@ -189,8 +190,8 @@ class Uvmrmodel extends CI_Model {
 		ak_licenses
 		LEFT OUTER JOIN `hosts` ON (ak_licenses.hostname = `hosts`.hostname)
 		WHERE
-		(`hosts`.uid = ?) AND 
-		(ak_licenses.active)
+		(`hosts`.uid = ?)
+		AND (ak_licenses.active)
 		GROUP BY
 		ak_licenses.product_name,
 		`hosts`.hostname,

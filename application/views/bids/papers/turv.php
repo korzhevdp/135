@@ -180,7 +180,7 @@ p.MsoNormal
   <p class=MsoNormal style='margin-top:0cm;margin-right:0cm;margin-bottom:14.0pt;
   margin-left:0cm'><span style='font-size:14.0pt'>Начальнику<br>
   управления информационных <br> 
-  ресурсов и систем <br>мэрии города<o:p></o:p></span></p>
+  ресурсов и систем <br>Администрации муниципального образования "Город Архангельск"</span></p>
   <div>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><b><span
   style='font-size:14.0pt'>А.Ю. Глебову<o:p></o:p></span></b></p>

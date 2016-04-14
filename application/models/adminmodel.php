@@ -5,7 +5,7 @@ class Adminmodel extends CI_Model {
 		parent::__construct();	// Call the Model constructor
 	}
 
-	public function userdata_get($user_id = 0,$page = 1){
+	public function userdata_get($user_id = 0, $page = 1) {
 		$user_id = ($user_id) ? $user_id : (($this->input->post('userSelector')) ? $this->input->post('userSelector') : 0);
 		
 		$user = array(
@@ -31,7 +31,8 @@ class Adminmodel extends CI_Model {
 			'supervisor'	=> 0,
 			'is_io'			=> 0,
 			'io'			=> 0,
-			'servoperator'	=> ''
+			'servoperator'	=> '',
+			'superv'		=> 0
 		);
 
 		$result = $this->db->query("SELECT 
@@ -56,6 +57,7 @@ class Adminmodel extends CI_Model {
 		locations.parent,
 		`admins`.id AS sup_id,
 		users.supervisor,
+		users.superv,
 		users.servoperator
 		FROM
 		users
@@ -71,6 +73,7 @@ class Adminmodel extends CI_Model {
 		$user['air']	= ($user['air'])			? 'checked="checked"' : "" ;
 		$user['bir']	= ($user['bir'])			? 'checked="checked"' : "" ;
 		$user['sman']	= ($user['sman'])			? 'checked="checked"' : "" ;
+		$user['superv']	= ($user['superv'])			? 'checked="checked"' : "" ;
 
 		$user['page'] = $page;
 		
@@ -225,7 +228,7 @@ class Adminmodel extends CI_Model {
 		return $user;
 	}
 
-	public function user_resources_get($user_id){
+	public function user_resources_get($user_id) {
 		$active		= array();
 		$expired	= array();
 		$res		= array();
@@ -239,6 +242,7 @@ class Adminmodel extends CI_Model {
 			resources_items.apply,
 			resources_items.applydate,
 			resources_items.ok,
+			DATE_FORMAT(resources_items.okdate, '%e.%m.%Y %H:%i') AS okdate,
 			resources_items.`exp`,
 			resources.shortname,
 			resources.location,
@@ -265,96 +269,41 @@ class Adminmodel extends CI_Model {
 					$res[$row['id']] = array();
 				}
 				$res[$row['id']]['pid'.$row['pid']] = $row['pid_value'];
-				unset($row['pid'],$row['pid_value']);
-				$res[$row['id']] = array_merge($res[$row['id']],$row);
+				unset( $row['pid'], $row['pid_value'] );
+				$res[$row['id']] = array_merge($res[$row['id']], $row);
 			}
 		}
 		foreach ($res as $key=>$row){
-			$editAllowed = ($this->session->userdata('rank')) ? '' : ' disabled="disabled"';
+			$row['editAllowed'] = ($this->session->userdata('rank') || $this->session->userdata("admin_id") == 26) ? '' : ' disabled="disabled"';
 			####################
-
-			$ipChunk = (in_array($row['rid'], array(100,101))) 
-			? '<div class="control-group row-fluid span8 input-prepend">
-				<label class="control-label span3">IP</label>
-				<div class="controls">
-					<span class="add-on" style="width:30%;font-weight:bold;">192.168.</span>
-					<input class="span8 input-small" ID="ip_'.$row['id'].'" maxlength="20" type="text" value="'.((isset($row['pid6'])) ? $row['pid6'] : "").'"'.$editAllowed.'>
-				</div>
-			</div>' 
-			: '';
-			$mnChunk = (in_array($row['rid'], array(100))) 
-			? '<div class="control-group row-fluid span8 input-append">
-					<label class="control-label span3">адрес</label>
-					<div class="controls">
-						<input class="span6" style="text-align:right;" ID="email_'.$row['id'].'" maxlength="30" type="text" value="'.((isset($row['pid1'])) ? $row['pid1'] : "").'"'.$editAllowed.'>
-						<span class="add-on" style="width:47%;font-weight:bold;">@arhcity.ru</span>
-					</div>
-				</div>' 
-			: '';
+			$row['ipChunk']  = (in_array($row['rid'], array(100,101)))	? $this->load->view("iptemplate", $row, true) : '';
+			$row['mnChunk']  = (in_array($row['rid'], array(100)))		? $this->load->view("mntemplate", $row, true) : '';
+			$row['osa_date'] = ( $row["ok"] ) ? "исполнено ОСА: ".$row['okdate'] : "";
 			#####################
-			$button1 = '<span class="btn btn-'.(($row["ok"]) ? ((!$row["apply"]) ? "inverse" : "success" ) : "primary").' btn-small activate" prop="'.$row['id'].'"
+			$row['button1'] = '<span class="btn btn-'.(($row["ok"]) ? ((!$row["apply"]) ? "inverse" : "success" ) : "primary").' btn-small activate" prop="'.$row['id'].'"
 			title="'.(($row["ok"]) ? ((!$row["apply"]) ? "Обновить данные заявки" : "Архив" ) : "Пометить исполненной отделом СА").'">
 			<i class="'.(($row["ok"]) ? "icon-edit" : "icon-ok-sign").' icon-white"></i>&nbsp;'.(($row["ok"]) ? ((!$row["apply"]) ? "Ждём куратора" : "Исполнено" ) : "Активировать").'</span>';
 
-			$button1 = ($this->session->userdata('rank')) ? $button1 : '<span class="btn btn-'.((!$row["apply"]) ? "warning" : "success").' btn-small'.(($this->session->userdata('canSee') == $row['supervisor']) ? ' hookup': "").'" prop="'.$row['id'].'">
+			$row['button1'] = ($this->session->userdata('rank') || $this->session->userdata("admin_id") == 26) ? $row['button1'] : '<span class="btn btn-'.((!$row["apply"]) ? "warning" : "success").' btn-small'.(($this->session->userdata('canSee') == $row['supervisor']) ? ' hookup': "").'" prop="'.$row['id'].'">
 			<i class="'.(($row["ok"]) ? "icon-edit" : "icon-ok-sign").' icon-white"></i>&nbsp;'.((!$row["apply"]) ? "Доложить об исполнении" : "Исполнено").'&nbsp;</span>';
 
-			$button2 = ($this->session->userdata('rank')) ? '<span class="btn btn-warning btn-small expire" prop="'.$row['id'].'" title="Отменить"><i class="icon-remove-sign icon-white"></i>&nbsp;</span>
-			<span class="btn btn-danger btn-small delete" prop="'.$row['id'].'"  title="Удалить"><i class="icon-trash icon-white"></i>&nbsp;</span>' : '';
+			$row['button2'] = ($this->session->userdata('rank')) ? '<span class="btn btn-warning btn-small expire" prop="'.$row['id'].'" title="Отменить"><i class="icon-remove-sign icon-white"></i>&nbsp;</span>
+			<span class="btn btn-danger btn-small delete" prop="'.$row['id'].'"  title="Удалить"><i class="icon-trash icon-white"></i>&nbsp;</span>
+			<span class="btn btn-info btn-small makeEvent" prop="'.$row['id'].'"  title="Создать поручение"><i class="icon-calendar icon-white"></i>&nbsp;</span>' : '';
 
-			$template = '<div id="ss'.$row['id'].'" class="well well-small row-fluid span12" style="margin-left:0px;">'.
-				'<h4>'.$row['shortname'].'&nbsp;&nbsp;&nbsp;&nbsp;'.(($row['cat'] > 1) ? '<span class="btn-small btn-danger">конфиденциальный</span>' : '').'</h4>
-			<div>
-				<small>'.$row['action'].' '.$row['location'].'</small>
-			</div>
-				'.$ipChunk.'
-				'.$mnChunk.'
-
-				<div class="control-group row-fluid span8">
-					<label class="control-label span3">№ заявки</label>
-					<div class="controls">
-						<input class="span12 input-small" ID="nm_'.$row['id'].'" maxlength="20" type="text" value="'.$row['docnum'].'"'.$editAllowed.'>
-					</div>
-				</div>
-
-				<div class="control-group row-fluid span8">
-					<label class="control-label span3">Дата заявки</label>
-					<div class="controls">
-						<input class="span12 input-small wDate" id="date_'.$row['id'].'" maxlength="20" type="text" value="'.$row['docdate'].'"'.$editAllowed.'>
-					</div>
-				</div>
-
-				<div class="btn-toolbar" style="margin-top:0px;">
-					<div class="btn-group" style="margin-left:20px;">'.$button1.$button2.'
-					</div>
-				</div>
-
-			</div>';
+			$template = $this->load->view("restemplate", $row, true);
 			($row['exp']) ? array_push($expired, $template) : array_push($active, $template);
 		}
-
-		$string = '<div class="accordion" id="accordion2" style="margin-top:10px;">
-			<div class="accordion-group">
-				<div class="accordion-heading">
-					<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">Действующие заявки <span id="actnum" class="badge badge-success">'.sizeof($active).'</span></a>
-				</div>
-				<div id="collapseOne" class="accordion-body collapse in">
-					<div class="accordion-inner" id="actconn">'.implode($active, "\n").'</div>
-				</div>
-			</div>
-			<div class="accordion-group">
-				<div class="accordion-heading">
-					<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseThree">Отменённые заявки <span id="expnum" class="badge badge-info">'.sizeof($expired).'</span></a>
-				</div>
-				<div id="collapseThree" class="accordion-body collapse">
-					<div class="accordion-inner" id="expconn">'.implode($expired,"\n").'</div>
-				</div>
-			</div>
-		</div>';
-		return $string;
+		$output = array(
+			'asize'		=> sizeof($active),
+			'active'	=> implode($active, "\n"),
+			'esize'		=> sizeof($expired),
+			'expired'	=> implode($expired, "\n")
+		);
+		return $this->load->view("reslisttemplate", $output, true);
 	}
 
-	public function user_arm_get($user_id){
+	public function user_arm_get($user_id) {
 		if(!$user_id){
 			$return = array();
 			$return['pcconfs'] = "Не выбран пользователь";
@@ -479,7 +428,7 @@ class Adminmodel extends CI_Model {
 		return $return;
 	}
 
-	public function no_cache(){
+	public function no_cache() {
 		header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
 		header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
 		header("Cache-Control: no-store, no-cache, must-revalidate");
@@ -487,7 +436,7 @@ class Adminmodel extends CI_Model {
 		header("Pragma: no-cache"); 
 	}
 
-	public function filter_users($filter=""){
+	public function filter_users($filter = "") {
 		$uid = ($this->session->userdata("uid")) ? $this->session->userdata("uid") : "1";
 		$filter = iconv('UTF-8', 'Windows-1251' , urldecode($filter)).'%';
 		$mode = (preg_match("/[a-zA-Z]/",$filter)) ? "host" : "name";
@@ -525,7 +474,7 @@ class Adminmodel extends CI_Model {
 		print $list;
 	}
 
-	public function summary_show(){
+	public function summary_show() {
 		$this->db->query("SET lc_time_names = 'ru_RU';");
 		$summary		= array();
 		$usertable		= array();
@@ -728,66 +677,22 @@ class Adminmodel extends CI_Model {
 
 		$summary['receivers'] = implode($output);
 
-		$output = array();
-		$shown  = array();
-		$result = $this->db->query("SELECT 
-		events.`text`,
-		events.active,
-		DATE_FORMAT(events.created, '%d.%m.%Y') AS created,
-		DATE_FORMAT(events.enddate, '%d.%m.%Y') AS enddate,
-		CONCAT(users.name_f, ' ', SUBSTR(users.name_i, 1, 1),'.', SUBSTR(users.name_o, 1, 1),'.') AS fio,
-		events_r.ok,
-		DATEDIFF(events.enddate, NOW()) AS wdate,
-		events.id,
-		events_r.uid,
-		events_r.eid,
-		events_r.shown,
-		events_r.ok_ts
-		FROM
-		events
-		INNER JOIN events_r ON (events.id = events_r.eid)
-		INNER JOIN admins ON (events.owner = admins.id)
-		INNER JOIN users ON (admins.base_id = users.id)
-		WHERE
-		(events_r.uid = ?)", array($a_id));
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				$icon = ($row->ok) 
-					? '<span class="btn btn-mini btn-success"><i class="icon-ok icon-white"></span>'
-					: '<a href="/admin/markdone/'.$row->id.'/'.$a_id.'" class="btn btn-mini btn-warning"><i class="icon-bell icon-white"></a>';
-				$state  = "";
-				$state  = ($row->wdate < 10)  ? "warning" : $state;
-				$state  = ($row->wdate < 3)   ? "error"   : $state;
-				$string = '<tr '.((!$row->ok) ? 'class="'.$state.'"' : "").'>
-				<td>'.$row->text.'</td>
-				<td>'.$row->fio.'</td>
-				<td>'.$row->created.'</td>
-				<td>'.$row->enddate.'</td>
-				<td>'.$icon.'</td>
-				</tr>';
-				array_push($output, $string);
-				array_push($shown, $row->id);
-			}
-			$summary['messages'] = implode($output,"\n");
-		}
-		if(sizeof($shown)){
-			$this->db->query("UPDATE events_r SET events_r.shown = 1 WHERE events_r.eid IN (".implode($shown, ", ").") AND events_r.uid = ?", array($a_id));
-		}
+		
 		return $this->load->view('page_summary', $summary, true);
 	}
 
-	public function startscreen_show(){
+	public function startscreen_show() {
 		$this->db->query("SET lc_time_names = 'ru_RU';");
-		$summary		= array(
-			'last_approved' => "Заявки, обработанные ОСА за последние 7 дней"
+		$summary	= array(
+			'last_approved' => "Заявки, обработанные ОСА (последние 50)",
+			'awaiting'      => "Заявки, стоящие в очереди на получение в ОСА"
 		);
-		$a_id			= $this->session->userdata("admin_id");
-		$is_sup			= $this->session->userdata('is_sup');
-		$base_id		= $this->session->userdata('base_id');
-		$my_sup			= $this->session->userdata('canSee');
-		$rank			= $this->session->userdata('rank');
+		$a_id		= $this->session->userdata("admin_id");
+		$is_sup		= $this->session->userdata('is_sup');
+		$base_id	= $this->session->userdata('base_id');
+		$my_sup		= $this->session->userdata('canSee');
+		$rank		= $this->session->userdata('rank');
 
-		$output = array();
 		$result = $this->db->query("SELECT 
 		CONCAT(users.name_f, ' ', UPPER(LEFT(users.name_i, 1)),'.', UPPER(LEFT(users.name_o, 1)),'.') AS fio,
 		departments.alias,
@@ -816,7 +721,43 @@ class Adminmodel extends CI_Model {
 		-- AND (resources_items.okdate >= DATE_SUB(NOW(), INTERVAL 10 DAY))
 		ORDER BY `resources_items`.okdate DESC
 		LIMIT 50", array($a_id, $my_sup, $rank));
-		if($result->num_rows()){
+		$summary['last_approved'] = $this->make_res_table($result);
+
+		$result = $this->db->query("SELECT 
+		CONCAT(users.name_f, ' ', UPPER(LEFT(users.name_i, 1)),'.', UPPER(LEFT(users.name_o, 1)),'.') AS fio,
+		departments.alias,
+		resources.shortname,
+		resources_items.id,
+		users.phone,
+		users.id AS uid,
+		CONCAT_WS(' ', `locations`.address, locations1.address) AS address,
+		DATE_FORMAT( `resources_items`.okdate, '%d.%m.%Y' ) AS okdate,
+		DATE_FORMAT( `resources_items`.initdate, '%d.%m.%Y' ) AS initdate,
+		`resources_orders`.docnum, '%d.%m.%Y'
+		FROM
+		resources_items
+		LEFT OUTER JOIN users ON (resources_items.uid = users.id)
+		LEFT OUTER JOIN departments ON (users.dep_id = departments.id)
+		LEFT OUTER JOIN resources ON (resources_items.rid = resources.id)
+		LEFT OUTER JOIN `locations` ON (`locations`.id = users.office_id)
+		LEFT OUTER JOIN `locations` locations1 ON (locations1.id = `locations`.parent)
+		LEFT OUTER JOIN `resources_orders` ON (resources_items.order_id = `resources_orders`.id)
+		WHERE
+		NOT (resources_items.ok)
+		AND NOT (resources_items.del)
+		AND NOT (resources_items.exp)
+		AND (users.sman = ? OR users.supervisor = ? OR ? = 1)
+		-- AND (resources_items.okdate >= DATE_SUB(NOW(), INTERVAL 10 DAY))
+		ORDER BY `resources_items`.id DESC
+		LIMIT 50", array($a_id, $my_sup, $rank));
+		$summary['awaiting'] = $this->make_res_table($result);
+
+		return $this->load->view('startscreen', $summary, true);
+	}
+
+	private function make_res_table($result) {
+		$output = array();
+		if ($result->num_rows()) {
 			foreach($result->result() as $row){
 				$docnum = ($row->docnum == "0") ? "б/н" : $row->docnum;
 				$string = '<tr>
@@ -827,12 +768,11 @@ class Adminmodel extends CI_Model {
 				</tr>';
 				array_push($output, $string);
 			}
-			$summary['last_approved'] = implode($output, "\n");
+			return implode($output, "\n");
 		}
-		return $this->load->view('startscreen', $summary, true);
 	}
 
-	public function user_save(){
+	public function user_save() {
 		$result = $this->db->query("UPDATE
 		`users`
 		SET
@@ -852,6 +792,7 @@ class Adminmodel extends CI_Model {
 		`users`.bir = ?,
 		`users`.sman = ?,
 		`users`.servoperator = ?,
+		`users`.superv = ?,
 		`users`.io = ?
 		WHERE
 		`users`.`id` = ?",array(
@@ -867,12 +808,11 @@ class Adminmodel extends CI_Model {
 			$this->input->post('dept'),
 			$this->input->post('host'),
 			$this->input->post('login'),
-
 			$this->input->post('air'),
 			$this->input->post('bir'),
 			$this->input->post('sman'),
 			$this->input->post('servop'),
-
+			$this->input->post('superv'),
 			$this->input->post('io'),
 			$this->input->post('saveID')
 		));
@@ -882,7 +822,7 @@ class Adminmodel extends CI_Model {
 		redirect("admin/users/".$this->input->post('saveID'));
 	}
 
-	public function stuck_orders(){
+	public function stuck_orders() {
 		$is_sup = $this->session->userdata('is_sup');
 		$base_id = $this->session->userdata('base_id');
 		$rank = $this->session->userdata('rank');
@@ -933,7 +873,7 @@ class Adminmodel extends CI_Model {
 		return implode($output,"\n")."</table>";
 	}
 
-	public function quick_add(){
+	public function quick_add() {
 		$this->db->query("INSERT INTO resources_orders (resources_orders.docdate) VALUES (NOW())");
 		$orderID = $this->db->insert_id();
 		$hash = array(
@@ -962,15 +902,15 @@ class Adminmodel extends CI_Model {
 		redirect("admin/users/".$this->input->post("quser")."/"."2");
 	}
 	
-	public function takeuser($user, $newcurator){
+	public function takeuser($user, $newcurator) {
 		$result = $this->db->query("UPDATE `users` SET `users`.service = ? WHERE `users`.id = ?", array($newcurator, $user));
 		$this->load->helper("url");
 		redirect("admin/users/".$user);
 	}
 
-	public function blockpc($invnum, $mode){
-		$this->output->enable_profiler(TRUE);
-		$result = $this->db->query("UPDATE
+	public function blockpc($invnum, $mode) {
+		//$this->output->enable_profiler(TRUE);
+		$this->db->query("UPDATE
 		`hash_items`
 		SET
 		`hash_items`.active = ?

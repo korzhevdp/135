@@ -1,5 +1,5 @@
-<h2>Справочники.&nbsp;&nbsp;<small>Должности</small></h2><hr>
-<form method="post" action="#" class="form-horizontal">
+<h2>Справочники.&nbsp;&nbsp;&nbsp;&nbsp;<small>Должности</small></h2><hr>
+<form method="post" action="/reference/staff" class="form-horizontal">
 	<div class="control-group">
 		<label for="staff" class="control-label span2">Должность</label>
 		<div class="controls">
@@ -17,7 +17,6 @@
 		</div>
 	</div>
 	<input type="hidden" name="staffToSave" value="<?=$id?>">
-	<button type="button" value=1 class="btn offset6 span3" name="newStaff" id="newStaff">Создать новую</button>
-	<button type="button" value=1 class="btn btn-primary span2" name="saveStaff" id="saveStaff">Сохранить</button>
-
+	<button type="submit" value=1 class="btn offset6 span3" name="newStaff" id="newStaff">Создать новую</button>
+	<button type="submit" value=1 class="btn btn-primary span2" name="saveStaff" id="saveStaff">Сохранить</button>
 </form>

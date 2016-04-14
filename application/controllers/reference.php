@@ -19,7 +19,7 @@ class Reference extends CI_Controller {
 		$res          = $this->refmodel->res_data_get($resource);
 		$res['list']  = $this->refmodel->res_list_get($resource);
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', '', true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->load->view('reference/resources', $res, true),
 			'footer'  => $this->load->view('page_footer', '', true)
 		);
@@ -106,7 +106,7 @@ class Reference extends CI_Controller {
 		$res = $this->refmodel->location_data_get($location);
 		$res['locations'] = $this->refmodel->locations_list_get($location);
 		$act = array(
-			'menu'    => $this->load->view('menu/navigation', array(), true),
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->load->view('reference/locations', $res, true),
 			'footer'  => $this->load->view('page_footer', array(), true),
 		);
@@ -125,9 +125,11 @@ class Reference extends CI_Controller {
 		$this->load->helper('form');
 		$res = $this->refmodel->admin_data_get();
 		$res['admin_list'] = $this->refmodel->admins_list_get();
-		$act['menu'] = $this->load->view('menu/navigation', '', true);
-		$act['content'] = $this->load->view('reference/admins', $res, true);
-		$act['footer'] = $this->load->view('page_footer', '', true);
+		$act = array(
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
+			'content' => $this->load->view('reference/admins', $res, true),
+			'footer'  => $this->load->view('page_footer', array(), true)
+		);
 		$this->load->view('page_container', $act);
 		$this->refmodel->no_cache();
 	}
@@ -140,24 +142,25 @@ class Reference extends CI_Controller {
 		$this->load->helper('form');
 		$res = $this->refmodel->dept_data_get($dept);
 		$res['dept_list'] = $this->refmodel->dept_list_get($dept);
-		$act['menu'] = $this->load->view('menu/navigation', '', true);
+		$act['menu'] = $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true);
 		$act['content'] = $this->load->view('reference/depts', $res, true);
 		$act['footer'] = $this->load->view('page_footer', '', true);
 		$this->load->view('page_container', $act);
 		$this->refmodel->no_cache();
 	}
 
-	public function staff($staff=0){
+	public function staff($staff = 0) {
 		$staff = ($this->input->post("staffSelector")) ? $this->input->post("staffSelector") : $staff;
 		if($this->input->post("newStaff") || $this->input->post("saveStaff")){
 			$this->refmodel->staff_data_save();
 		}
 		$this->load->helper('form');
 		$res = $this->refmodel->staff_data_get($staff);
-		$res['staff_list'] = $this->refmodel->staff_list_get($staff);
-		$act['menu'] = $this->load->view('menu/navigation', '', true);
-		$act['content'] = $this->load->view('reference/staff', $res, true);
-		$act['footer'] = $this->load->view('page_footer', '', true);
+		$act = array(
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
+			'content' => $this->load->view('reference/staff', $res, true),
+			'footer'  => $this->load->view('page_footer', array(), true)
+		);
 		$this->load->view('page_container', $act);
 		$this->refmodel->no_cache();
 	}

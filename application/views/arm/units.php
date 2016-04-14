@@ -40,7 +40,6 @@
 
 <ul class="nav nav-tabs" id="mainTab">
 	<li class="active"><a href="#warehouse" data-toggle="tab">Инвентарные единицы</a></li>
-	<li><a href="#stored" data-toggle="tab">Склад</a></li>
 	<li><a href="#add" data-toggle="tab">Внесение партии оборудования</a></li>
 </ul>
 
@@ -51,7 +50,7 @@
 			<input class="long" name="invfilter" form="invData" id="invFilter" value="<?=$invfilter?>">
 		</div>
 		<div class="input-prepend control-group">
-			<span class="add-on pre-label">Модели устройств</span>
+			<span class="add-on pre-label">Тип устройства</span>
 			<input class="long" name="invfilter2" form="invData" id="invFilter2" value="<?=$invfilter2?>">
 		</div>
 		<div class="input-prepend control-group">
@@ -66,8 +65,8 @@
 		<hr>
 		<h4>Инвентарный номер: <span id="inv">000000000000</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Серийный номер: <span id="serial">000000000000</span></h4>
 		<input type="hidden" name="invNum" value="">
-		Дата приобретения: <input type="text" name="datestart" class="short withCal" id="purchase" value="" style="margin-right:30px;">
-		Окончание гарантии: <input type="text" class="short withCal" name="dateend" id="guarantee_end" value=""><br>
+		Дата приобретения: <input type="text" name="datestart" class="short withCal" id="guarantee_start" value="" style="margin-right:30px;">
+		Окончание: <input type="text" class="short withCal" name="dateend" id="guarantee_end" value=""><br>
 		Поставщик: <input type="text" name="supplier" id="supplier" value="" style="margin-left:52px;"><br>
 		Получатель: <select name="receiver" id="receiver" class="long" style="margin-left:49px;height:28px;">
 		<option value="0">Выберите получателя</option>
@@ -83,10 +82,6 @@
 		<?=$additional?>
 	</div>
 	<div class="tab-pane" id="add">
-	</div>
-	<div class="tab-pane" id="stored">
-		<h3>Склад</h3>
-
 	</div>
 </div>
 
@@ -147,14 +142,13 @@
 
 	$(".devSaver").click(function(){
 		dev = $(this).attr("dev");
-
 		$.ajax({
 			url: "/arm/dev_save",
 			data: {
 				devtype : $("#devtype" + dev).val(),
 				devname : $("#devname" + dev).val(),
-				qty     : $("#qty" + dev).val(),
-				serial  : $("#serial" + dev).val(),
+				qty     : $("#qty"     + dev).val(),
+				serial  : $("#serial"  + dev).val(),
 				dev     : dev
 			},
 			type: "POST",
@@ -205,17 +199,15 @@
 			},
 			type: "POST",
 			dataType: 'script',
-			success: function(data){
-				data = eval(data);
-				$("#contents").append(data.devcontent);
+			success: function(){
+				$("#contents").empty().append(data.devcontent);
 				$("#inv").html(data.info.inv);
 				$("#serial").html(data.info.serial);
-				$("#purсhase").val(data.info.purсhase);
-				$("#contents").append(eval(data).devcontent);
-				$("#contents").append(eval(data).devcontent);
+				$("#supplier").val(data.info.supplier);
+				$("#guarantee_start").val(data.info.guarantee_start);
+				$("#guarantee_end").val(data.info.guarantee_end);
 			},
 			error: function(data, stat, err){
-				//$("#ann2").fadeIn().delay(5000).fadeOut();
 				console.log([data, stat, err]);
 			}
 		});
