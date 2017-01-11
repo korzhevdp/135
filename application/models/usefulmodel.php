@@ -5,7 +5,7 @@ class Usefulmodel extends CI_Model {
 		parent::__construct();
 	}
 
-	public function no_cache(){
+	public function no_cache() {
 		header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
 		header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
 		header("Cache-Control: no-store, no-cache, must-revalidate");
@@ -13,7 +13,7 @@ class Usefulmodel extends CI_Model {
 		header("Pragma: no-cache"); 
 	}
 
-	public function filter_users($filter="", $withFired){
+	public function filter_users($filter="", $withFired) {
 		$uid = ($this->session->userdata("uid")) ? $this->session->userdata("uid") : "1";
 		$filter = iconv('UTF-8', 'Windows-1251' , urldecode($filter)).'%';
 		$mode = (preg_match("/[a-zA-Z]/",$filter)) ? "host" : "name";
@@ -56,11 +56,11 @@ class Usefulmodel extends CI_Model {
 		print $list;
 	}
 
-	public function insert_audit($desc="Операции не дано описания"){
+	public function insert_audit($desc="Операции не дано описания") {
 		$this->db->query("INSERT INTO audit (audit.author,audit.query,audit.desc) VALUES (?,?,?)",array($this->session->userdata('admin_id'),$this->db->last_query(),$desc));
 	}
 
-	public function aclgen(){
+	public function aclgen() {
 		//detecting dupes
 		$input = array();
 		$dupes = array();
@@ -100,15 +100,28 @@ class Usefulmodel extends CI_Model {
 		($telnet) ? fclose($telnet) : "";
 	}
 
-	public function getNavMenuData(){
-		$data = array();
-		$result = $this->db->query("SELECT 
+	public function regenerateMailPWD($itemID) {
+		//detecting dupes
+		$telnet = fsockopen("212.14.176.40", 587);
+		(!$telnet) ? die ("Cannot connect!") : fputs($telnet, implode($output, "\n"));
+		( $telnet) ? fclose($telnet)         : "";
+	}
+
+	public function getNavMenuData() {
+		//$this->output->enable_profiler(TRUE);
+		$data   = array();
+		$where  = ( (int) $this->session->userdata("rank") === 1 ) 
+			? "" 
+			: 'AND `events`.recipient = ?';
+			//"AND `events`.uid IN (SELECT `users`.id FROM users WHERE `users`.supervisor = ?)";
+		$result = $this->db->query("SELECT
 		COUNT(events.id) AS `count`
 		FROM
 		events
 		WHERE
-		(events.recipient = ?)
-		AND events.active
+		events.active
+		AND `events`.active_since < NOW()
+		".$where."
 		LIMIT 1", array($this->session->userdata("canSee")));
 		if($result->num_rows()){
 			$row = $result->row(0);

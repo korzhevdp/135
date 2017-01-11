@@ -75,8 +75,8 @@
 </tr>
 <tr>
 	<td class="fullcell">2.</td>
-	<td class="fullcell">Отдел по защите информации</td>
-	<td class="fullcell">начальник отдела<br>Титов Г.А.<br><br><br></td>
+	<td class="fullcell">Управление ВМР и ГО</td>
+	<td class="fullcell">начальник управления<br>Ю.B. Агеев<br><br><br></td>
 	<td class="fullcell">&nbsp;</td>
 	<td class="fullcell">&nbsp;</td>
 </tr>

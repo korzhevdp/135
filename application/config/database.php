@@ -64,7 +64,7 @@ $db['35']['swap_pre'] = '';
 $db['35']['autoinit'] = TRUE;
 $db['35']['stricton'] = TRUE;
 
-$db['12']['hostname'] = '192.168.1.2';
+$db['12']['hostname'] = '192.168.1.15';
 $db['12']['username'] = 'ci';
 $db['12']['password'] = 'cicicici';
 $db['12']['database'] = 'file_exchange';
@@ -96,6 +96,21 @@ $db['16']['swap_pre'] = '';
 $db['16']['autoinit'] = TRUE;
 $db['16']['stricton'] = TRUE;
 
+$db['web']['hostname'] = '212.14.176.38';
+$db['web']['username'] = 'ci';
+$db['web']['password'] = 'cicicici';
+$db['web']['database'] = 'ipcms3';
+$db['web']['dbdriver'] = 'mysql';
+$db['web']['dbprefix'] = '';
+$db['web']['pconnect'] = FALSE;
+$db['web']['db_debug'] = TRUE;
+$db['web']['cache_on'] = FALSE;
+$db['web']['cachedir'] = '';
+$db['web']['char_set'] = 'cp1251';
+$db['web']['dbcollat'] = 'cp1251_general_ci';
+$db['web']['swap_pre'] = '';
+$db['web']['autoinit'] = TRUE;
+$db['web']['stricton'] = FALSE;
 
 /* End of file database.php */
 /* Location: ./application/config/database.php */

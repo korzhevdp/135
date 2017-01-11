@@ -69,14 +69,14 @@
 <tr>
 	<td class="fullcell">1.</td>
 	<td class="fullcell">Департамент градостроительства</td>
-	<td class="fullcell">Директор департамента<br>Кудряшов Я.В.<br><br></td>
+	<td class="fullcell">Директор департамента<br>Юницына А.Н.<br><br></td>
 	<td class="fullcell">&nbsp;</td>
 	<td class="fullcell">&nbsp;</td>
 </tr>
 <tr>
 	<td class="fullcell">2.</td>
-	<td class="fullcell">Отдел по защите информации</td>
-	<td class="fullcell">Начальник отдела<br>Титов Г.А.<br><br></td>
+	<td class="fullcell">Управление ВМР и ГО</td>
+	<td class="fullcell">начальник управления<br>Ю.B. Агеев<br><br><br></td>
 	<td class="fullcell">&nbsp;</td>
 	<td class="fullcell">&nbsp;</td>
 </tr>

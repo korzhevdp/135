@@ -16,8 +16,9 @@ class Reports extends CI_Controller {
 	}
 
 	public function index($user_id=0, $page=1) {
-		$lists = $this->armmodel->param_lists_get();
-		$lists['cios'] = $this->get_cio();
+		$lists           = $this->armmodel->param_lists_get();
+		$lists['cios']   = $this->get_cio();
+		$lists['pcless'] = $this->get_pcless();
 		$act = array(
 			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->load->view('reports/standardreports', $lists, true),
@@ -25,6 +26,36 @@ class Reports extends CI_Controller {
 		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
+	}
+
+	private function get_pcless() {
+		$output = array();
+		$result = $this->db->query("SELECT
+		users.id,
+		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio,
+		users.host,
+		COUNT(`hosts`.id) AS pc_count,
+		`departments`.dn
+		FROM
+		`hosts`
+		RIGHT OUTER JOIN users ON (`hosts`.uid = users.id)
+		LEFT OUTER JOIN `departments` ON (users.dep_id = `departments`.id)
+		WHERE
+		NOT (users.fired)
+		AND NOT users.dep_id = 10
+		GROUP BY
+		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o),
+		`departments`.dn
+		HAVING
+		(pc_count = 0)
+		ORDER BY `departments`.`dn`, fio");
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$string = '<tr><td><a href="http://192.168.1.35/admin/users/'.$row->id.'" target="_blank">'.$row->fio.'</a></td><td>'.$row->host.'</td><td>'.$row->dn.'</td></tr>';
+				array_push($output, $string);
+			}
+		}
+		return implode($output, "\n");
 	}
 
 	function get_dc( $year = 0, $month = 0 ) {
@@ -131,14 +162,14 @@ class Reports extends CI_Controller {
 		}
 		array_push($table, "</tr>");
 
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		users.id,
 		CONCAT(users.name_f, ' ', LEFT(users.name_i, 1), '.', LEFT(users.name_o, 1), '.') AS fio
 		FROM
 		users
 		WHERE
-		(users.dep_id = 77) AND
-		NOT `users`.`fired`
+		(users.dep_id = 77) 
+		AND NOT `users`.`fired`
 		Order by fio");
 		if($result->num_rows()){
 			$rowc = 1;
@@ -196,6 +227,100 @@ class Reports extends CI_Controller {
 		}
 
 		//$this->load->view('page_container', $act);
+	}
+
+	private function getEsiaStates() {
+		$output = array("<h3>ЕСИА / Госуслуги</h3>");
+		$input  = array();
+		$result = $this->db->query("SELECT 
+		resources_items.id,
+		resources_items.uid,
+		resources_items.ok,
+		resources_items.ingroup,
+		DATE_FORMAT(resources_items.initdate, '%d.%m.%Y')    AS initdate,
+		DATE_FORMAT(resources_items.initdate, '%Y%m%d')      AS sortmode,
+		DATE_FORMAT(resources_items.ingroupdate, '%d.%m.%Y') AS ingroupdate,
+		DATE_FORMAT(resources_items.okdate, '%d.%m.%Y')      AS okdate,
+		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio,
+		users.fired,
+		resources_pid.pid_value,
+		`departments`.alias,
+		`departments`.dn
+		FROM
+		users
+		RIGHT OUTER JOIN resources_items ON (users.id = resources_items.uid)
+		LEFT OUTER JOIN resources_pid ON (resources_items.id = resources_pid.item_id)
+		LEFT OUTER JOIN `departments` ON (users.dep_id = `departments`.id)
+		WHERE
+		(resources_items.rid = 286) AND 
+		(NOT (resources_items.del)) AND 
+		(NOT (resources_items.`exp`))
+		ORDER BY
+		fired DESC,
+		sortmode DESC,
+		alias,
+		fio");
+		if ($result->num_rows()) {
+			array_push($output, '<table class="table table-bordered table-condensed"><tr>
+			<th>Пользователь</th>
+			<th>Подразделение</th>
+			<th>Заявленные группы</th>
+			<th><i class="icon-envelope" title="Выслано приглашение на email"></th>
+			<th style="text-align:center"><i class="icon-tags" title="Добавлен в группу"></i></th>
+			<th style="text-align:center"><i class="icon-ban-circle" title="Снять с учёта"></i></th>
+			</tr>');
+			foreach($result->result() as $row) {
+				if (!isset($input[$row->initdate])) {
+					$input[$row->initdate] = array('<tr><td colspan=6><h4 class="pull-right">'.$row->initdate.'</h4></td></tr>');
+				}
+				$style  = (!$row->ok)     ? ' class = "warning"' : '';
+				$style  = ($row->ingroup) ? ' class = "success"' : $style;
+				$style  = ($row->fired)   ? ' class = "error"'   : $style;
+				$string = '<tr'.$style.'>
+					<td><a href="/admin/users/'.$row->uid.'/2" target="_blank">'.$row->fio.'</a></td>
+					<td title="'.$row->dn.'">'.$row->alias.'</td>
+					<td>'.nl2br($row->pid_value).'</td><td>'.(($row->ok) ? '<i class="icon-ok" title="Приглашение отправлено '.$row->okdate.'"></i>' : '<i class="icon-remove"></i>' ).'</td>
+					<td>'.(($row->ingroup) 
+						? '<i class="icon-ok" title="Включено в группу '.$row->ingroupdate.'"></i>' 
+						: '<button type="button" class="btn btn-mini btn-danger inGroupSw" ref="'.$row->id.'" title="Нажать только после включения в группу ЕСИА"><i class="icon-question-sign icon-white"></i></button>' ).
+					'</td>
+					<td>
+						<button type="button" class="btn btn-mini btn-warning ESIAOff" ref="'.$row->id.'" title="Снять с учёта"><i class="icon-ban-circle icon-white"></i></button>
+					</td>
+					</tr>';
+					$string2 = '<tr'.$style.'>
+					<td><a href="/admin/users/'.$row->uid.'/2" target="_blank">'.$row->fio.'</a></td>
+					<td title="'.$row->dn.'">'.$row->alias.'</td>
+					<td>'.nl2br($row->pid_value).'</td>
+					<td>'.(($row->ok) 
+						? '<i class="icon-ok" title="Приглашение отправлено '.$row->okdate.'"></i>'
+						: '<i class="icon-remove" title="Приглашение не было отправлено"></i>' ).
+					'</td>
+					<td>'.(($row->ingroup) 
+						? '<i class="icon-ok" title="Включено в группу '.$row->ingroupdate.'"></i>'
+						: '<i class="icon-question-sign" title="Ожидает включения в группу (при необходимости)"></i>' ).
+					'</td>
+					<td>
+						<i class="icon-minus"></i>
+					</td>
+					</tr>';
+				array_push($input[$row->initdate], ( ($this->session->userdata('rank') == 1) ? $string : $string2 ) );
+			}
+			foreach($input as $val){
+				array_push($output, implode($val, "\n"));
+			}
+			array_push($output, "</table>");
+		}
+		return implode($output, "\n");
+	}
+
+	public function esia() {
+		$act = array(
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
+			'content' => $this->getEsiaStates(),
+			'footer'  => $this->load->view('page_footer', '', true)
+		);
+		$this->load->view('page_container', $act);
 	}
 
 	public function insert_wkt_data() {

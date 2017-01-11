@@ -19,7 +19,7 @@
 		</li>
 
 		<li>
-		<strong>MiniGIS Freehand</strong> - <a href="http://minigis.arhcity.ru/freehand/index/MTAyZjI1OTAxNTg3">визуализация сетевой инфраструктуры ЛВСМ на карте города</a><? if($this->session->userdata('rank') == 1) {?> (а здесь она же, но <a href="http://minigis.arhcity.ru/freehand/index/MTczZjIyMzg0NTI2">редактируемая</a>)<? } ?>, средства для создания редактирования и экспорта интерактивных карт.
+		<strong>MiniGIS Freehand</strong> - <a href="http://minigis.arhcity.ru/map/MTAyZjI1OTAxNTg3">визуализация сетевой инфраструктуры ЛВСМ на карте города</a><? if($this->session->userdata('rank') == 1) {?> (а здесь она же, но <a href="http://minigis.arhcity.ru/map/MTczZjIyMzg0NTI2">редактируемая</a>)<? } ?>, средства для создания редактирования и экспорта интерактивных карт.
 		</li>
 		<li><a href="http://storage.arhcity.ru"><strong>Storage.arhcity.ru</strong> - хранилище для документов по эксплуатации ЛВСМ и каналов связи</a>. Применяется в частности для создания постоянных локальных ссылок для MiniGIS Freehand</li>
 		<li><strong>"Генератор" аукционной документации</strong> - ad.arhcity.ru</li>

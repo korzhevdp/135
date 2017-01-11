@@ -404,6 +404,7 @@
 	<input type="hidden" name="name_o" id="f_name_o" value="">
 	<input type="hidden" name="addr1" id="f_addr1" value="">
 	<input type="hidden" name="addr2" id="f_addr2" value="">
+	<input type="hidden" name="esiaMailAddr" id="f_esiaMailAddr" value="">
 	<input type="hidden" name="staff_id" id="f_staff" value="">
 	<input type="hidden" name="dept" id="f_dept" value="">
 	<input type="hidden" name="phone" id="f_phone" value="">
@@ -428,7 +429,11 @@
 		</h3>
 	</div>
 	<div class="modal-body">
-		<div id="resCollection" class="span12">
+		<div id="esiaMail">
+			Адрес электронной почты для приглашения <input type="text" id="esiaMailAddr" name="esiaMailAddr" placeholder="Пока не работает :)">
+		</div>
+		
+		<div class="span12">
 			<img id="gifLoader" src="/images/ajax-loader.gif" width="54" height="55" border="0" alt="loader">
 		</div>
 		<div id="resCollection" class="span12 hide"></div>
@@ -547,7 +552,12 @@ function checkPP() {
 
 // #navPage - виртуальный номер страницы ( 1 - Данные пользователя, 2 - Выбор информационных ресурсов )
 
-var state = 0;
+var state      = 0,
+	allowedRes = {
+		'81' : [ 100, 101, 102 ]
+	}
+
+
 
 function displayCurrentPage() {
 	var page = parseInt($("#navPage").val());
@@ -650,6 +660,7 @@ $("#order").click(function () {
 		$("#f_staff").val($("#staff").val());
 		$("#f_addr1").val($("#office").val());
 		$("#f_addr2").val($("#office2").val());
+		$("#f_esiaMailAddr").val($("#esiaMailAddr").val());
 		$("#f_dept").val($("#dept").val());
 		$("#f_phone").val($("#phone").val());
 		$("#f_confs").val(confs.join(","));
@@ -675,6 +686,9 @@ $("#back").click(function () {
 });
 
 $("li.reslist").click(function () {
+	if ($(this).hasClass('disabled')) {
+		return false;
+	}
 	($(this).parent().attr("id") == 'selectedList') ? removeFromList(this) : addToList(this);
 	if ($("#selectedList li").size() == 0) {
 		$("#order").addClass("disabled");
@@ -684,17 +698,16 @@ $("li.reslist").click(function () {
 function addToList(a) {
 	if (parseInt($(a).attr('subs')) > 0) {
 		$('#modalRes').modal('show');
-		intid = $(a).attr('id').split('_')[1];
+		intid       = $(a).attr('id').split('_')[1];
 		subs[intid] = [];
 		$.ajax({
-			url: "/bids/get_subproperties/" + intid,
-			type: "POST",
-			dataType: "html",
-			success: function (data) {
-				$("#resCollection").html(data);
-				$("#resCollection").removeClass('hide');
+			url      : "/bids/get_subproperties/" + intid,
+			type     : "POST",
+			dataType : "html",
+			success  : function (data) {
 				$("#gifLoader").addClass('hide');
-				$(".subspad").click(function () {
+				$("#resCollection").html(data).removeClass('hide');
+				$(".subspad").unbind().click(function () {
 					($(this).hasClass("btn-success")) ? $(this).removeClass("btn-success") : $(this).addClass("btn-success");
 					subs[intid] = [];
 					$(".subspad").each(function () {

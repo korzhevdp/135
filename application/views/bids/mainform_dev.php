@@ -9,6 +9,10 @@
 		text-align:left !important;
 		width:170px !important;
 	}
+	input[type=text].short {
+		width:250px;
+		margin-top:4px;
+	}
 	input[type=text],
 	textarea {
 		width:540px;
@@ -125,11 +129,24 @@
 		clear:both;
 		width: 706px;
 	}
+	#portalSectionList{
+		list-style-type: none;
+		width:45%;
+	}
+	#portalListBody {
+		height:250px;
+		overflow:auto;
+	}
+	#portalListBody li {
+		padding-left: 8px !important;
+		text-align: left !important;
+	}
+
 </style>
 
 <script type="text/javascript" src="/jscript/jqueryui.js"></script>
 
-<h3 class="muted">Подача заявок на информационные ресурсы
+<h3 class="muted">Заявки на информационные ресурсы
 	<button type = "button" 
 		class    = "btn btn-warning pull-right"
 		id       = "getHelp"
@@ -173,7 +190,7 @@
 </div>
 
 <div id="userHint" class="alert alert-info acField hide">
-	Выберите себя или нужного пользователя локальной сети мэрии г.&nbsp;Архангельска.<br>Список можно сократить, введя начальные буквы фамилии.
+	Выберите себя или нужного пользователя локальной сети муниципалитета.<br>Список можно сократить, введя начальные буквы фамилии.
 </div>
 <!-- поиск пользователя -->
 
@@ -218,7 +235,8 @@
 					form="mainform"
 					type="text"
 					value="<?=$name_i;?>"
-					valid="rword" pref="2"
+					valid="rword" 
+					pref="2"
 					title="При вводе имени допустимы только прописные и строчные русские буквы.">
 					<i class="icon-ok hide" style="margin-left:10px;"></i>
 			</div>
@@ -283,8 +301,10 @@
 
 			<div class="input-prepend control-group">
 				<span class="add-on pre-label">Телефон</span>
-				<input type="text" class="traceable"
-					valid="num" pref="6"
+				<input type="text" 
+					class="traceable"
+					valid="num"
+					pref="6"
 					id="phone"
 					name="phone"
 					value="<?=$phone;?>"
@@ -292,6 +312,7 @@
 					title="Введите рабочий телефон, если есть.">
 				<i class="icon-ok hide" style="margin-left:10px;"></i>
 			</div>
+			<input type="hidden" name="esiaMailAddr" id="f_esiaMailAddr">
 
 		</form>
 	</div>
@@ -331,189 +352,26 @@
 				data-trigger="manual"
 				style="margin-left: 0px;">
 
-		<div class="accordion-group hide" id="domain_data">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse1" href="#collapse1">
-					<span class="badge badge-success hide" id="badge-collapse1">0</span></a>Заявка на подключение к сети мэрии
-			</div>
-			<div id="collapse1" ref="1" class="accordion-body collapse in">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group11" style="margin:0px;">
-						<?= implode($rlist[11], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse2" href="#collapse2">
-					<span class="badge badge-success hide" id="badge-collapse2">0</span>Интернет и электронная почта
-				</a>
-			</div>
-			<div id="collapse2" ref="2" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist inet-email" id="group10" style="margin:0px;">
-						<?= implode($rlist[10], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion12" referer="collapse12" href="#collapse12">
-					<span class="badge badge-success hide" id="badge-collapse12">0</span>Беспроводная сеть Wi-Fi
-				</a>
-			</div>
-			<div id="collapse12" ref="12" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group12" style="margin:0px;">
-						<?= implode($rlist[12], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse4" href="#collapse4">
-					<span class="badge badge-success hide" id="badge-collapse4">0</span>1C: программные продукты
-				</a>
-			</div>
-			<div id="collapse4" ref="4" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group1" style="margin:0px;">
-						<?= implode($rlist[1], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group hide">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse5" href="#collapse5">
-					<span class="badge badge-success hide" style="margin-right:5px;" id="badge-collapse5">0</span>Сервера баз данных MS SQL
-				</a>
-			</div>
-			<div id="collapse5" ref="5" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group2" style="margin:0px;">
-						<?= implode($rlist[2], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse6" href="#collapse6">
-					<span class="badge badge-success hide" id="badge-collapse6">0</span>Регистрация обращений граждан
-				</a>
-			</div>
-			<div id="collapse6" ref="6" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group3" style="margin:0px;">
-						<?= implode($rlist[3], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group hide">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse7" href="#collapse7">
-					<span class="badge badge-success hide" id="badge-collapse7">0</span>Справочно-Правовые Системы
-				</a>
-			</div>
-			<div id="collapse7" ref="7" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group4" style="margin:0px;">
-						<?= (isset($rlist[4])) ? implode($rlist[4], "\n") : ""; ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse8" href="#collapse8">
-					<span class="badge badge-success hide" id="badge-collapse8">0</span>Управление по вопросам семьи опеки и попечительства
-				</a>
-			</div>
-			<div id="collapse8" ref="8" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group5" style="margin:0px;">
-						<?= implode($rlist[5], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse9" href="#collapse9">
-					<span class="badge badge-success hide" id="badge-collapse9">0</span>Автоматизированные информационные системы (АИС / ГИС)
-				</a>
-			</div>
-			<div id="collapse9" ref="9" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group6" style="margin:0px;">
-						<?= implode($rlist[6], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse10" href="#collapse10">
-					<span class="badge badge-success hide" id="badge-collapse10">0</span>Департамент муниципального имущества
-				</a>
-			</div>
-			<div id="collapse10" ref="10" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group7" style="margin:0px;">
-						<?= implode($rlist[7], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse11" href="#collapse11">
-					<span class="badge badge-success hide" id="badge-collapse11">0</span>Департамент образования
-				</a>
-			</div>
-			<div id="collapse11" ref="11" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group8" style="margin:0px;">
-						<?= implode($rlist[8], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="accordion-group">
-			<div class="accordion-heading">
-				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse3" href="#collapse3">
-					<span class="badge badge-success hide" id="badge-collapse3">0</span>Прочие</a>
-			</div>
-			<div id="collapse3" ref="3" class="accordion-body collapse">
-				<div class="accordion-inner">
-					<ul class="rlist" id="group0" style="margin:0px;">
-						<?= implode($rlist[0], "\n"); ?>
-					</ul>
-				</div>
-			</div>
-		</div>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 11);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 10);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 12);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 13);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 1);?>
+		<?//=$this->bidsmodel->getResourceAccordion($rlist, 2);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 3);?>
+		<?//=$this->bidsmodel->getResourceAccordion($rlist, 4);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 9);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 5);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 6);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 7);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 8);?>
+		<?=$this->bidsmodel->getResourceAccordion($rlist, 0);?>
 	</div>
 	<ul id="selectedList" class="well well-small" >
 		<center>
 			<h4 class="muted" style="top:50%;bottom:50%">Выбранные информационные ресурсы<br><br>
-				<small>Раскройте списки слева и щёлкайте по кнопкам ресурсов. Это добавит их в выбранные. Щелчок по
-					ресурсу в правом списке вернёт ресурс в список невыбранных.
+				<small>Раскройте списки слева и щёлкайте по кнопкам ресурсов. Это добавит их в выбранные.<br>Щелчок по
+					ресурсу в этом списке исключит ресурс из заявки.
 				</small>
 			</h4>
 		</center>
@@ -549,17 +407,17 @@
 	</tr>
 	<tr>
 		<td style="vertical-align:top;border: 1px solid #D6D6D6">
-			<span class="btn btn-large btn-block" id="newUser">Да, будет новый пользователь сети</span>
+			<span class="btn btn-large btn-info btn-block" id="newUser">Да,<br>будет новый пользователь сети</span>
 			Будут добавлены заявки на доступ:<ol>
-				<li>к локальной сети мэрии г. Архангельска</li>
+				<li>к локальной сети муниципалитета</li>
 				<li>к справочно-правовым системам</li>
 				<li>создан пользователь на файлообменном ресурсе</li>
 			</ol><br>
 		</td>
 		<td style="vertical-align:top;border: 1px solid #D6D6D6">
-			<span class="btn btn-large btn-block" id="oldUser">Нет, надо добавить прав доступа</span>
+			<span class="btn btn-large btn-info btn-block" id="oldUser">Нет,<br>надо добавить прав доступа</span>
 			<ul>
-				<li>Оформление существующим пользователям заявок на доступ к ресурсам локальной сети мэрии г. Архангельска</li>
+				<li>Оформление существующим пользователям заявок на доступ к ресурсам локальной сети муниципалитета</li>
 				<li>Отслеживание статусов заявок на информационные ресурсы</li>
 				<li>Получение копий заявок</li>
 			</ul>
@@ -573,15 +431,20 @@
 	 aria-hidden="true">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-		<h3 id="myModalLabel1">Выберите уровни допуска
+		<h3 id="myModalLabel1">Выберите уровни доступа
 			<small>щёлкая по ним</small>
 		</h3>
 	</div>
 	<div class="modal-body">
-		<div id="resCollection" class="span12">
+		<div id="esiaMail">
+			<h5>Адрес электронной почты для направления приглашения:</h5>
+			<input type="text" id="esiaMailAddr" name="esiaMailAddr" class="short" valid="email" placeholder="Укажите адрес электронной почты">
+			<span id="esiaMailAnnounce" class="hide" style="color:red">Укажите адрес электронной почты!</span><hr>
+		</div>
+		<div>
 			<img id="gifLoader" src="/images/ajax-loader.gif" width="54" height="55" border="0" alt="loader">
 		</div>
-		<div id="resCollection" class="span12 hide"></div>
+		<div id="resCollection" class="hide"></div>
 	</div>
 	<div class="modal-footer">
 		<button class="btn" data-dismiss="modal" aria-hidden="true" title="Отказаться от выбора">Отмена</button>
@@ -661,20 +524,60 @@
 	</div>
 </div>
 
+<div id="modalPortal" class="modalRes modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3 id="myModalLabel">Выберите раздел интернет-портала:</h3>
+	</div>
+	<div class="modal-body" id="portalListBody">
+		Найти раздел <input type="text" id="portalSectionFilter" class="short" placeholder="Номер или название раздела"><br>
+		<ul id="portalSectionList"></ul>
+		Идут плановые работы по улучшению работы подачи заявок.<br>Сейчас просто нажмите кнопку <strong>"Готово"</strong>
+	</div>
+	<div class="modal-footer">
+		<button class="btn" data-dismiss="modal" aria-hidden="true">Отмена</button>
+		<button class="btn btn-primary" id="portalModalOk">Готово</button>
+	</div>
+</div>
+
 <script type="text/javascript" src="/jscript/users.js"></script>
 <script type="text/javascript">
 <!--
 var state	= 0,
+	udt		= false
 	res		= [],
 	res		= [],
 	subs	= [],
 	confs	= [],
 	locs	= <?=$locs?>,
-	bmode	= 'new';
+	bmode	= 'new',
+	allowedRes = {
+		'81' : [ 100, 101, 102 ]
+	};
 
 //########################################################
 //# rev 3 JS code
 //########################################################
+
+function disableUnallowedRes() {
+	var dept = ( udt === undefined || !udt || udt.dept === undefined) ? $("#dept").val() : udt.dept;
+	if (allowedRes[dept] === undefined){
+		$('.reslist').removeClass("toDisabled disabled").prop('disabled', false);
+		$('.reslist').each(function (){
+			$(this).addClass( ($(this).attr("conf") == "0") ? "btn-info" : "btn-warning" );
+		});
+		return false;
+	}
+	$('.reslist').addClass("toDisabled");
+	$("#selectedList .reslist").click();
+	for ( a in allowedRes[dept] ) {
+		if (allowedRes[dept].hasOwnProperty(a)) {
+			$('.reslist[id=r_' + allowedRes[dept][a] + ']').removeClass("toDisabled")
+		}
+	}
+	$(".toDisabled").removeClass("btn-info btn-warning").addClass("disabled").prop('disabled', true).removeClass("toDisabled");
+}
+
 $("#searchUser, #stage2").click(function(){
 	getUserData();
 	$(".acField").fadeOut(100);
@@ -704,16 +607,18 @@ function getUserData(){
 				$("#fname").val(udt.name_o);
 				$("#dept" ).val(udt.dept);
 				$("#staff").val(udt.staff);
+				$("#esiaMailAddr, #f_esiaMailAddr").val(udt.email);
 				$("#office").val(bldg);
-				if (typeof locs[parseInt(bldg)] != 'undefined'){
+				if (locs[parseInt(bldg)] !== undefined) {
 					$("#office2").empty().append(locs[parseInt(bldg)].join("\n")).val(udt.office);
-				}else{
+				} else {
 					$("#office2").empty();
 				}
 				$("#phone").val(udt.phone);
 				$("#uid").val(uid);
 				$("#login").val(udt.login);
 				$(".traceable").parent().removeClass("warning error success");
+				disableUnallowedRes();
 			},
 			error: function (data, stat, err) {
 				$("#consoleContent").html([data, stat, err].join("<br>"));
@@ -957,42 +862,58 @@ $("#back").click(function () {
 });
 */
 $("li.reslist").click(function () {
+	if($(this).hasClass("disabled")){
+		return false;
+	}
 	if($(this).attr("id") == "r_102"){
 		return false;
 	}
-	($(this).parent().attr("id") == 'selectedList') ? removeFromList(this) : addToList(this);
-	if ($("#selectedList li").size() == 0) {
+	if ($(this).parent().attr("id") === 'selectedList' ) {
+		console.log('remove');
+		removeFromList(this);
+	} else {
+		console.log('add');
+		addToList(this);
+	}
+	if (!$("#selectedList li").size()) {
 		$("#order").addClass("disabled");
 	}
 });
 
 function addToList(a) {
+	var resID = parseInt($(a).attr('id').split('_')[1], 10);
 	if (parseInt($(a).attr('subs')) > 0) {
 		$('#modalRes').modal('show');
-		intid = $(a).attr('id').split('_')[1];
-		subs[intid] = [];
+
+		subs[resID] = [];
+		$("#esiaMail").addClass("hide");
+		if (resID === 286) {
+			$("#esiaMail").removeClass("hide");
+		}
 		$.ajax({
-			url: "/bids/get_subproperties/" + intid,
-			type: "POST",
-			dataType: "html",
-			success: function (data) {
-				$("#resCollection").html(data);
-				$("#resCollection").removeClass('hide');
+			url      : "/bids/get_subproperties/" + resID,
+			type     : "POST",
+			dataType : "html",
+			success  : function (data) {
+				$("#resCollection").html(data).removeClass('hide');
 				$("#gifLoader").addClass('hide');
 				$(".subspad").click(function () {
 					($(this).hasClass("btn-success")) ? $(this).removeClass("btn-success") : $(this).addClass("btn-success");
-					subs[intid] = [];
+					subs[resID] = [];
 					$(".subspad").each(function () {
 						if ($(this).hasClass("btn-success")) {
-							subs[intid].push($(this).attr("ref"));
+							subs[resID].push($(this).attr("ref"));
 						}
 					});
 				});
+				
 				$("#layerModalOk").click(function () {
-					if (subs[intid].length == 0) {
-						$('#modalRes').modal('hide');
+					if (!$("#esiaMail").hasClass("hide") && !$("#esiaMailAddr").val().length) {
+						$("#esiaMailAnnounce").removeClass("hide");
 						return false;
-					} else {
+					}
+					if (subs[resID].length) {
+						$("#f_esiaMailAddr").val($("#esiaMailAddr").val());
 						$("#order").removeClass("disabled");
 						$(a).appendTo('#selectedList');
 						$(a).attr('title', 'Двойной щелчок переместит ресурс обратно');
@@ -1000,49 +921,48 @@ function addToList(a) {
 					$('#modalRes').modal('hide');
 				});
 			},
-			error: function (data, stat, err) {
+			error     : function (data, stat, err) {
 				$("#consoleContent").html([data, stat, err].join("<br>"));
 			}
 		});
 		return false;
 	}
-	if ($(a).parent().hasClass("inet-email")) {
-		if ($(a).attr('id').split('_')[1] == 101) {
-			$('#modalInet').modal('show');
-			$("#inetModalOk").click(function () {
-				if ($("#inet_reason").val().length < 10) {
-					alert("Обоснование необходимости подключения к сети Интернет слишком короткое.");
-					return false;
-				}
-				$("#f_inet_reason").val($("#inet_reason").val());
-				$('#modalInet').modal('hide');
-				$(a).appendTo('#selectedList');
-				$(a).attr('title', 'Двойной щелчок переместит ресурс обратно');
-				$("#order").removeClass("disabled");
-			});
-		}
-		if ($(a).attr('id').split('_')[1] == 100) {
-			$('#modalEmail').modal('show');
-			$("#emailModalOk").click(function () {
-				if ($("#email_addr").val().length < 1) {
-					alert("Укажите адрес электронной почты.");
-					return false;
-				}
-				if ($("#email_reason").val().length < 10) {
-					alert("Обоснование необходимости подключения электронной почты слишком короткое.");
-					return false;
-				}
-				$("#f_email_addr").val($("#email_addr").val());
-				$("#f_email_reason").val($("#email_reason").val());
-				$('#modalEmail').modal('hide');
-				$(a).appendTo('#selectedList');
-				$(a).attr('title', 'Двойной щелчок переместит ресурс обратно');
-				$("#order").removeClass("disabled");
-			});
-		}
+	if (resID === 101) {
+		$('#modalInet').modal('show');
+		$("#inetModalOk").click(function () {
+			if ($("#inet_reason").val().length < 10) {
+				alert("Обоснование необходимости подключения к сети Интернет слишком короткое.");
+				return false;
+			}
+			$("#f_inet_reason").val($("#inet_reason").val());
+			$('#modalInet').modal('hide');
+			$(a).appendTo('#selectedList');
+			$(a).attr('title', 'щелчок переместит ресурс обратно');
+			$("#order").removeClass("disabled");
+		});
 		return false;
 	}
-	if ($(a).attr('id').split('_')[1] == 274) {
+	if (resID === 100) {
+		$('#modalEmail').modal('show');
+		$("#emailModalOk").click(function () {
+			if ($("#email_addr").val().length < 1) {
+				alert("Укажите адрес электронной почты.");
+				return false;
+			}
+			if ($("#email_reason").val().length < 10) {
+				alert("Обоснование необходимости подключения электронной почты слишком короткое.");
+				return false;
+			}
+			$("#f_email_addr").val($("#email_addr").val());
+			$("#f_email_reason").val($("#email_reason").val());
+			$('#modalEmail').modal('hide');
+			$(a).appendTo('#selectedList');
+			$(a).attr('title', 'Двойной щелчок переместит ресурс обратно');
+			$("#order").removeClass("disabled");
+		});
+		return false;
+	}
+	if (resID === 274) {
 		$('#modalWF').modal('show');
 		$("#wfModalOk").click(function () {
 			if ($("#wf_reason").val().length < 10) {
@@ -1057,16 +977,49 @@ function addToList(a) {
 		});
 		return false;
 	}
+	if (resID === 13)  {
+		$('#modalPortal').modal('show');
+		$("#portalModalOk").click(function () {
 
+			$('#modalPortal').modal('hide');
+			$("#order").removeClass("disabled");
+			$(a).appendTo('#selectedList');
+			$(a).attr('title', 'щелчок переместит ресурс обратно');
+		});
+		return false;
+	}
 	$(a).appendTo('#selectedList');
 	$("#order").removeClass("disabled");
-	$(a).attr('title', 'Двойной щелчок переместит ресурс обратно');
+	$(a).attr('title', 'щелчок переместит ресурс обратно');
 }
 
 function removeFromList(a) {
+	//console.log('removing to #group' + $(a).attr('grp'));
 	$(a).appendTo('#group' + $(a).attr('grp'));
-	$(a).attr('title', 'Двойной щелчок добавит ресурс в список заявок');
+	$(a).attr('title', 'щелчок добавит ресурс в список заявок');
 }
+
+$("#portalSectionFilter").keyup(function(){
+	if ( $(this).val().length < 4 ){
+		return false;
+	}
+	search = $(this).val();
+	$.ajax({
+		url: "/bids/getwebportalsection",
+		type: "POST",
+		data: {
+			search: search
+		},
+		dataType: "html",
+		success: function (data) {
+			$("#portalSectionList").empty().append(data);
+		},
+		error: function (data, stat, err) {
+			console.log( [data, stat, err].join("<br>") );
+		}
+	});
+});
+
 /*
 $(".fio_login").keyup(function () {
 	if ($("#fname").val().length > 0 && $("#name").val().length > 0 && $("#sname").val().length > 0) {
@@ -1079,11 +1032,14 @@ $('.traceable').bind('change keyup', function () {
 		reg = $(this).attr('valid'),
 		length = $(this).val().length,
 		val = validate(reg, $(this).val());
+	console.log(val)
 	if (!length || !val) {
 		$(this).parent().removeClass('success').removeClass('warning').addClass('error');
+		//$(this).css("color", "red");
 		//$(this).siblings().last().addClass("icon-cancel").removeClass("icon-ok").removeClass("hide");
 		//alert($(this).siblings().last().attr("id"));
 	} else {
+		//$(this).css("color", "black");
 		if ($(this).val().length < pref) {
 			$(this).parent().removeClass('error').removeClass('success').addClass('warning');
 			//$(this).siblings().last().addClass("hide");
@@ -1098,18 +1054,19 @@ function validate(dt, val) {
 	var r,
 	//if (dt == 'email'){r = '^.+@[^\.].*\.[a-z]{2,}$';}
 	library = {
-		email : '[^a-z\\.\\-0-9_]',
-		text : '[^a-z \\-"]',
-		entext : '[^0-9a-z \-"]',
-		rtext : '[^а-яёЁ\\-\\.\\, ]',
-		rword : '[^а-яёЁ ]',
+		email   : '^([0-9a-zA-Z\.\-_]+)@(.*)\.([a-zA-Z]{2,})$',
+		text    : '[^a-z \\-"]',
+		entext  : '[^0-9a-z \-"]',
+		rtext   : '[^а-яёЁ\\-\\.\\, ]',
+		rword   : '[^а-яёЁ ]',
 		nonzero : '^[0]$',
-		date : '[^0-9\\.]',
-		weight : '[^0-9 xхсмткг\\.]',
-		num : '[^0-9\\- ]',
-		mtext : '[^0-9 a-zа-яёЁ\\.\\,\\-"]',
-		reqnum : '[^0-9 \/\\бн\-]'
+		date    : '[^0-9\\.]',
+		weight  : '[^0-9 xхсмткг\\.]',
+		num     : '[^0-9\\- ]',
+		mtext   : '[^0-9 a-zа-яёЁ\\.\\,\\-"]',
+		reqnum  : '[^0-9 \/\\бн\-]'
 	}
+
 	//console_alert(r);
 	var rgEx = new RegExp(library[dt], 'i');
 	var OK = rgEx.exec(val);
@@ -1201,6 +1158,7 @@ $("#sname, #name, #fname").keyup(function () {
 });
 
 $("#dept").change(function () {
+	disableUnallowedRes();
 	$("#depAcknowledger").html($("#dept option:selected").html());
 });
 
@@ -1223,6 +1181,7 @@ $("#regetOrder").click(function () {
 	$("#r_phone").val($("#phone").val());
 	$("#r_uid").val($("#passedUID").val());
 	$("#regetForm").submit().remove();
+	//console.log(ids.join(","));
 });
 
 // Реализация интерактивной помощи

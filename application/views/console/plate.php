@@ -2,7 +2,7 @@
 <tr class="header">
 		<td class="span1">#<?=$id;?></td>
 		<td class="span5">
-			<i class="icon-user" title="лвсм"></i>&nbsp;<a href="/admin/users/<?=$id;?>"><?=$fio;?></a>
+			<i class="icon-user" title="лвсм"></i>&nbsp;<a href="/admin/users/<?=$id;?>" target="_blank"><?=$fio;?></a>
 		</td>
 		<td class="span3">
 			<a href="/uvmr/passport/<?=$id;?>" target="_blank">детализация</a>

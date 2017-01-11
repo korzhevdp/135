@@ -78,12 +78,9 @@
 			<h5>Уточнение данных наклейки<span class="pull-right" style="cursor:pointer;" data-dismiss="modal">&times;</span></h5>
 		</div>
 		<div class="modal-body" id="">
-			<form method="post" id="labelform" action="/integrity/savelabel">
-				Новый номер: <input type="text" id="newNum" name="newNum">
-				<input type="hidden" id="pcId" name="pcId">
-				<input type="hidden" id="host" name="host">
-			</form>
-
+			Новый номер: <input type="text" id="newNum" name="newNum">
+			<input type="hidden" id="pcId" name="pcId">
+			<input type="hidden" id="host" name="host">
 		</div>
 		<div class="modal-footer">
 			<button type="button" class="btn" data-dismiss="modal">Закрыть</button>
@@ -99,36 +96,37 @@
 	$(".modal").modal("hide");
 
 	$(".labelMover").click(function(){
-		var ref = $(this).attr('ref');
-			ln = $(this).html();
-			host = $(this).attr('nm');
-		$("#newNum").val(ln);
+		var ref  = $(this).attr('ref');
+		$("#newNum").val( $(this).html() );
 		$("#pcId").val(ref);
-		$("#host").val(host);
-		$("#labelMove").modal('show');
-	});
 
-	$("#labelSaver").click(function(){
-		code = "1" + $("#newNum").val().split("-").join("");
-		$.ajax({
-			url: "/integrity/checklabel",
-			type: "POST",
-			dataType: "text",
-			data: {
-				label: code
-			},
-			success: function(data){
-				if(data == "1"){
-					$("#labelform").submit();
-				}else{
-					alert("Этот номер наклейки уже назначен другому компьютеру. Смена невозможна");
+		$("#labelSaver").unbind().click(function(){
+			$.ajax({
+				url       : "/integrity/savelabel",
+				type      : "POST",
+				dataType  : "text",
+				data      : {
+					label : "1" + $("#newNum").val().split("-").join(""),
+					pcID  : ref
+				},
+				success   : function (data) {
+					if ( data === "Fail" ) {
+						alert("Этот номер наклейки уже назначен другому компьютеру. Смена невозможна");
+						return false;
+					}
+					if ( data === "Not found" ) {
+						alert("Компьютер с таким ID не найден. Данные не обновлены");
+						return false
+					}
+					$(".labelMover[ref='"+ref+"']").html($("#newNum").val());
+					$("#labelMove").modal('hide');
+				},
+				error     : function(data,stat,err){
+					//alert([data,stat,err].join("<br>"));
 				}
-			},
-			error: function(data,stat,err){
-				//alert([data,stat,err].join("<br>"));
-			}
+			});
 		});
-
+		$("#labelMove").modal('show');
 	});
 
 	$(".button-hb").click(function(){
@@ -225,5 +223,9 @@
 	$("#hostHelp").click(function(){
 		$("#hostHelpDiv").fadeToggle()
 	});
+	
+
+
+
 //-->
 </script>

@@ -480,7 +480,7 @@ class Licensemodel extends CI_Model {
 		return implode($output,"\n");
 	}
 
-	public function get_all_licenses($pk){
+	public function get_all_licenses(){
 		$output = array();
 		$result = $this->db->query("SELECT
 		inv_po_types.name,
@@ -491,7 +491,7 @@ class Licensemodel extends CI_Model {
 		inv_po_licenses_items.master,
 		inv_po_licenses_items.id,
 		inv_po_licenses_items.verify_pk,
-		inv_po_licensiars.name as lname
+		inv_po_licensiars.name as licensiar
 		FROM
 		inv_po_types
 		INNER JOIN inv_po_licenses_items ON (inv_po_types.id = inv_po_licenses_items.type_id)
@@ -503,30 +503,24 @@ class Licensemodel extends CI_Model {
 		AND inv_po_licenses_items.type NOT IN ('KMS')
 		ORDER BY
 		inv_po_types.name, inv_po_licenses_items.master DESC");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				$differ = $row->max;
-				$result2 = $this->db->query("SELECT COUNT(*) as differ
+		if ($result->num_rows()) {
+			foreach ($result->result_array() as $row) {
+				$result2 = $this->db->query("SELECT COUNT(*) AS differ
 				FROM ak_licenses
 				WHERE
 				ak_licenses.item_id IN (
-				SELECT 
-				`inv_po_licenses_items`.`id`
-				FROM 
-				`inv_po_licenses_items` 
-				WHERE `inv_po_licenses_items`.`set_id` = ?)", array($row->sid));
-				if($result2->num_rows()){
-					foreach($result2->result() as $row2){
-						$differ -= $row2->differ;
+					SELECT 
+					`inv_po_licenses_items`.`id`
+					FROM 
+					`inv_po_licenses_items` 
+					WHERE `inv_po_licenses_items`.`set_id` = ?
+				)", array($row['sid']));
+				if ($result2->num_rows()) {
+					foreach ($result2->result() as $row2) {
+						$row['max'] -= $row2->differ;
 					}
 				}
-				$ordertype = ($row->master) ? '<span class="btn-primary btn-small pull-right">ПРЯМ</span>' : '<span class="btn-warning btn-small pull-right">ДГРД</span>';
-				$string = '<tr id="row'.$row->id.'">
-					<td style="text-align:center;vertical-align:middle;"><input type="radio" id="item'.$row->id.'" name="itm" class="itemsel" ref="'.$row->id.'"></td>
-					<td><label for="item'.$row->id.'" style="cursor:pointer;"><span class="searchname" ref="'.$row->id.'">'.$row->name.'</span><br>'.$row->lname.', лиц. № '.$row->number.' <b class="hide">Item: '.$row->id.'</b><br>'.$row->value.'&nbsp;&nbsp;&nbsp;'.$ordertype.'</label></td>
-					<td style="text-align:center;vertical-align:middle;"><label for="item'.$row->id.'" style="cursor:pointer;">'.($differ).'</label></td>
-				</tr>';
-				array_push($output,$string);
+				array_push($output, $this->load->view("license/listitems/getalllicenseslistitem", $row, true));
 			}
 		}
 		return implode($output,"\n");
@@ -860,129 +854,174 @@ class Licensemodel extends CI_Model {
 		redirect("licenses/statistics/".$redirect);
 	}
 
-	public function license_form_get($id){
-		//$this->output->enable_profiler(TRUE);
-		$object = array(		// формируем базовый объект формы лицензии
-			'lname' => '',
-			'issue_date' => '',
-			'purchase_date' => '',
-			'program' => '',
-			'number' => '',
-			'purchase_info' => '',
-			'rname' => '',
-			'lid' => '',
-			'resid' => 0,
-			'liid' => 0
-		);
-		$licr = array();
-		$resl = array();
+	private function showResellers($reseller = 0) {
+		$output = array();
+		$result = $this->db->query("SELECT
+		inv_po_resellers.id,
+		inv_po_resellers.name
+		FROM
+		inv_po_resellers
+		ORDER BY inv_po_resellers.name");
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$selected = ($row->id == $reseller) ? ' selected="selected"' : "";
+				array_push($output, '<option value="'.$row->id.'"'.$selected.'>'.$row->name.'</option>');
+			}
+		}
+		return implode($output, "\n");
+	}
 
-		if($id){ // если указан идентификатор лицензии, показываем лицензию
-			$result = $this->db->query("SELECT 
-			inv_po_licenses.id,
-			inv_po_licenses.number,
-			inv_po_licenses.program,
-			DATE_FORMAT(inv_po_licenses.issue_date, '%d.%m.%Y') AS issue_date,
-			inv_po_licenses.purchase_info,
-			DATE_FORMAT(inv_po_licenses.purchase_date, '%d.%m.%Y') AS purchase_date,
-			inv_po_licenses.active,
-			inv_po_licensiars.name AS lname,
-			inv_po_resellers.id AS resid,
-			inv_po_licensiars.id AS liid,
-			inv_po_resellers.name AS rname,
-			inv_po_resellers.address,
-			IF(DATEDIFF(NOW(),inv_po_licenses.verify_date) < 180, 1,0) AS verified,
-			DATE_FORMAT(inv_po_licenses.verify_date, '%d.%m.%Y') AS verify_date
-			FROM
-			inv_po_licenses
-			INNER JOIN inv_po_resellers ON (inv_po_licenses.reseller_id = inv_po_resellers.id)
-			INNER JOIN inv_po_licensiars ON (inv_po_licenses.licensiar_id = inv_po_licensiars.id)
-			WHERE inv_po_licenses.id = ?", array($id));
-			if($result->num_rows()){
-				$object = $result->row_array();
+	private function showLicensiars($licensiar = 0) {
+		$output = array();
+		$result = $this->db->query("SELECT
+		inv_po_licensiars.id,
+		inv_po_licensiars.name
+		FROM
+		inv_po_licensiars
+		ORDER BY inv_po_licensiars.name");
+		if($result->num_rows()){
+			foreach($result->result() as $row) {
+				$selected = ($row->id == $licensiar) ? ' selected="selected"' : "";
+				array_push($output, '<option value='.$row->id.$selected.' style="margin:0px;">'.$row->name.'</option>');
 			}
 		}
+		return implode($output, "\n");
+	}
+
+	private function getLicenseNullData() {
+		// формируем базовый объект формы лицензии
+		return array(
+			'lname'         => '',
+			'issue_date'    => '',
+			'purchase_date' => '',
+			'program'       => '',
+			'number'        => '',
+			'purchase_info' => '',
+			'rname'         => '',
+			'lid'           => '',
+			'resid'         => 0,
+			'liid'          => 0
+		);
+	}
+
+	private function getLicenseData($id) {
+		$result = $this->db->query("SELECT
+		inv_po_licenses.id,
+		inv_po_licenses.number,
+		inv_po_licenses.program,
+		DATE_FORMAT(inv_po_licenses.issue_date, '%d.%m.%Y') AS issue_date,
+		inv_po_licenses.purchase_info,
+		DATE_FORMAT(inv_po_licenses.purchase_date, '%d.%m.%Y') AS purchase_date,
+		inv_po_licenses.active,
+		inv_po_licensiars.name AS lname,
+		inv_po_resellers.id AS resid,
+		inv_po_licensiars.id AS liid,
+		inv_po_resellers.name AS rname,
+		inv_po_resellers.address,
+		IF(DATEDIFF(NOW(),inv_po_licenses.verify_date) < 180, 1,0) AS verified,
+		DATE_FORMAT(inv_po_licenses.verify_date, '%d.%m.%Y') AS verify_date
+		FROM
+		inv_po_licenses
+		INNER JOIN inv_po_resellers ON (inv_po_licenses.reseller_id = inv_po_resellers.id)
+		INNER JOIN inv_po_licensiars ON (inv_po_licenses.licensiar_id = inv_po_licensiars.id)
+		WHERE inv_po_licenses.id = ?", array($id));
+		if ($result->num_rows()) {
+			$object = $result->row_array();
+			return $object;
+		}
+		return $this->getLicenseNullData();
+	}
+
+	private function getUseCountArray($result) {
+		$output = array();
+		foreach($result->result() as $row){
+			if (!isset($output[$row->set_id])) {
+				$output[$row->set_id] = 0;
+			}
+			$output[$row->set_id] += $row->cnt;
+		}
+		return $output;
+	}
+
+	private function collectLicenseSetOfItems($result, $id, $usecount) {
+		$output = array();
+		foreach ($result->result_array() as $row) {
+			if (!isset($output[$row['set_id']])) {
+				$output[$row['set_id']] = array();
+			}
+			$output[$row['set_id']]['deleted'] = ($row['deleted']) ? 1 : 0;
+			$row['lid'] = $id;
+			$row['ismaster']  = ($row['master']) ? 'class="success"' : "";
+			$row['remainder'] = ($row['max'] - $usecount[$row['set_id']]);
+			$string = $this->load->view('license/edititemparams', $row, true);
+			array_push($output[$row['set_id']], $string);
+		}
+		return $output;
+	}
+
+	private function getSetList($input) {
+		foreach ($input as $val) {
+			$data = array();
+			$data['muted'] = ($val['deleted']) ? " hide" : '';
+			unset($val['deleted']);
+			$data['items'] = implode($val,"\n");
+
+			$string = $this->load->view('license/editsetcontainer', $data, true);
+			array_push($output, $string);
+		}
+		return $output;
+	}
+
+	private function getSetsOfLisense($id = 0) {
+		if (!$id) {
+			return "";
+		}
+		$output  = array();
+		$result=$this->db->query("SELECT
+		inv_po_licenses_sets.id,
+		inv_po_licenses_sets.label_starts,
+		inv_po_licenses_sets.deleted,
+		inv_po_licenses_sets.`max`,
+		inv_po_licenses_items.qty,
+		IF(ISNULL(inv_po_licenses_items.id), 0, inv_po_licenses_items.id) AS itid,
+		inv_po_licenses_items.value,
+		inv_po_licenses_items.master,
+		inv_po_licenses_items.set_id,
+		inv_po_licenses_items.`type`,
+		inv_po_licenses_items.`act`,
+		inv_po_types.name,
+		COUNT(ak_licenses.item_id) AS cnt
+		FROM
+		inv_po_licenses_items
+		RIGHT OUTER JOIN inv_po_licenses_sets ON (inv_po_licenses_items.set_id = inv_po_licenses_sets.id)
+		LEFT OUTER JOIN inv_po_types ON (inv_po_licenses_items.type_id = inv_po_types.id)
+		LEFT OUTER JOIN ak_licenses ON (inv_po_licenses_items.id = ak_licenses.item_id)
+		WHERE
+		(inv_po_licenses_sets.license_id = ?)
+		AND inv_po_licenses_items.`act`
+		GROUP BY itid
+		ORDER BY cnt DESC, inv_po_licenses_items.set_id, inv_po_licenses_items.master DESC",array($id));
+		if($result->num_rows()){
+			//array_push($output,"<h4>Структура лицензии</h4>");
+			$usecount = $this->getUseCountArray($result);
+			$input    = $this->collectLicenseSetOfItems($result, $id, $usecount);
+			$output   = $this->getSetList($input);
+		}
+		return implode($output, "\n");
+	}
+
+	public function license_form_get($id = 0){
+		$object = $this->getLicenseData($id);
 		#выбираем справочники реселлеров и лицензиаров
-		$result = $this->db->query("SELECT inv_po_resellers.id, inv_po_resellers.name FROM inv_po_resellers ORDER by inv_po_resellers.name");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				$selected = ($row->id == $object['resid']) ? ' selected="selected"' : "";
-				array_push($resl, '<option value='.$row->id.$selected.'>'.$row->name.'</option>');
-			}
-		}
-		$result = $this->db->query("SELECT inv_po_licensiars.id, inv_po_licensiars.name FROM inv_po_licensiars ORDER BY inv_po_licensiars.name");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				$selected = ($row->id == $object['liid']) ? ' selected="selected"' : "";
-				array_push($licr, '<option value='.$row->id.$selected.' style="margin:0px;">'.$row->name.'</option>');
-			}
-		}
 		## дополняем объект необходимыми полями
-		$object['licr']  = implode($licr, "\n");
-		$object['resl']  = implode($resl, "\n");
+		$object['licr']  = $this->showLicensiars($object['liid']);
+		$object['resl']  = $this->showResellers($object['resid']);
 		$object['stat1'] = "";
 		$object['stat2'] = "";
 		$object['lid']   = $id;
 		// действия на тот случай если нужно показать конкретную лицензию
-
-		if($id){
-			$output  = array();
-			$input   = array();
-			$result=$this->db->query("SELECT 
-			inv_po_licenses_sets.id,
-			inv_po_licenses_sets.label_starts,
-			inv_po_licenses_sets.deleted,
-			inv_po_licenses_sets.`max`,
-			inv_po_licenses_items.qty,
-			IF(ISNULL(inv_po_licenses_items.id), 0, inv_po_licenses_items.id) AS itid,
-			inv_po_licenses_items.value,
-			inv_po_licenses_items.master,
-			inv_po_licenses_items.set_id,
-			inv_po_licenses_items.`type`,
-			inv_po_licenses_items.`act`,
-			inv_po_types.name,
-			COUNT(ak_licenses.item_id) AS cnt
-			FROM
-			inv_po_licenses_items
-			RIGHT OUTER JOIN inv_po_licenses_sets ON (inv_po_licenses_items.set_id = inv_po_licenses_sets.id)
-			LEFT OUTER JOIN inv_po_types ON (inv_po_licenses_items.type_id = inv_po_types.id)
-			LEFT OUTER JOIN ak_licenses ON (inv_po_licenses_items.id = ak_licenses.item_id)
-			WHERE
-			(inv_po_licenses_sets.license_id = ?)
-			AND inv_po_licenses_items.`act`
-			GROUP BY itid
-			ORDER BY cnt DESC, inv_po_licenses_items.set_id, inv_po_licenses_items.master DESC",array($id));
-			if($result->num_rows()){
-				//array_push($output,"<h4>Структура лицензии</h4>");
-				$usecount = array();
-				foreach($result->result() as $row){
-					if(!isset($usecount[$row->set_id])){$usecount[$row->set_id] = 0;}
-					$usecount[$row->set_id] += $row->cnt;
-				}
-				foreach($result->result_array() as $row){
-					(!isset($input[$row['set_id']])) ? $input[$row['set_id']] = array() : "";
-					$input[$row['set_id']]['deleted'] = ($row['deleted']) ? 1 : 0;
-					$row['lid'] = $id;
-					$row['ismaster']  = ($row['master']) ? 'class="success"' : "";
-					$row['remainder'] = ($row['max'] - $usecount[$row['set_id']]);
-					$string = $this->load->view('license/edititemparams', $row, true);
-					array_push($input[$row['set_id']], $string);
-				}
-				foreach($input as $val){
-					$data = array();
-					$data['muted'] = ($val['deleted']) ? " hide" : '';
-					unset($val['deleted']);
-					$data['items'] = implode($val,"\n");
-					$string = $this->load->view('license/editsetcontainer', $data, true);
-					array_push($output,$string);
-				}
-			}
-			$object['sets'] = implode($output, "\n");
-			return $this->load->view("license/newlicenseparams", $object, true);
-		}else{
-			$object['sets'] = "";
-			return $this->load->view("license/newlicenseparams", $object, true);
-		}
+		$object['sets'] = $this->getSetsOfLisense($id);
+		return $this->load->view("license/newlicenseparams", $object, true);
 	}
 
 	public function add_new_license(){
@@ -1074,8 +1113,8 @@ class Licensemodel extends CI_Model {
 	}
 
 	public function get_typelist(){
-		$output = array('<table class="table table-bordered table-condensed table-hover"><tr><th>#</th><th>Название</th></tr>');
-		$result = $this->db->query("SELECT 
+		$output = array();
+		$result = $this->db->query("SELECT
 		`inv_po_types`.id,
 		`inv_po_types`.name
 		FROM
@@ -1083,12 +1122,11 @@ class Licensemodel extends CI_Model {
 		ORDER BY `inv_po_types`.`name`");
 		if($result->num_rows()){
 			foreach($result->result() as $row){
-				$string = '<tr><td><input type="checkbox" name="typelist[]" value="'.$row->id.'" id="tl'.$row->id.'"></td><td><label for="tl'.$row->id.'">'.$row->name.'</label></td></tr>';
+				$string = '<tr ref="'.$row->name.'"><td><input type="checkbox" name="typelist[]" value="'.$row->id.'" id="tl'.$row->id.'"></td><td><label for="tl'.$row->id.'">'.$row->name.'</label></td></tr>';
 				array_push($output, $string);
 			}
 		}
-		array_push($output, "</table>");
-		return implode($output,"\n");
+		return implode($output, "\n");
 	}
 
 	public function addpotoset(){
@@ -1160,6 +1198,8 @@ class Licensemodel extends CI_Model {
 		INNER JOIN inv_po_types ON (inv_po_licenses_items.type_id = inv_po_types.id)
 		WHERE
 		NOT inv_po_licenses_sets.deleted
+		AND inv_po_licenses_items.act
+		AND inv_po_licenses_items.`type` <> 'KMS'
 		AND inv_po_licenses_items.type_id IN (
 			SELECT
 			`inv_po_types`.`id`
@@ -1191,6 +1231,7 @@ class Licensemodel extends CI_Model {
 		INNER JOIN inv_po_licenses ON (inv_po_licenses_sets.license_id = inv_po_licenses.id)
 		WHERE
 		NOT inv_po_licenses_sets.deleted 
+		AND inv_po_licenses_items.act
 		AND inv_po_licenses_items.master 
 		AND inv_po_types.id IN (
 			SELECT 
@@ -1200,7 +1241,6 @@ class Licensemodel extends CI_Model {
 		)
 		GROUP BY
 		inv_po_licenses_items.type_id,
-		inv_po_types.subclass,
 		inv_po_types.name
 		ORDER BY
 		inv_po_licenses_items.type_id");
@@ -1234,18 +1274,19 @@ class Licensemodel extends CI_Model {
 		}
 		
 		$table = array();
+		//print_r($stat);
+		//return true;
 		foreach($stat as $key => $val){
 			//print $use_count[$key]['sum']."<br>";
+
 			$val['diff']  = (isset($val['diff']))   ? $val['diff']  : 0 ;
 			$val['diff']  = (strlen($val['diff']))  ? $val['diff']  : 0 ;
-			$val['class'] = (isset($val['class']))  ? $val['class'] : 0 ;
-			$val['class'] = (strlen($val['class'])) ? $val['class'] : "s" ;
 
-			$usage_qty = (!isset($use_count[$key]['sum']) || !strlen($use_count[$key]['sum'])) ? "-" : $use_count[$key]['sum'];
-			$usage_item = (!isset($use_count[$key]['item']) || !strlen($use_count[$key]['item'])) ? 0 : $use_count[$key]['item'];
+			$usage_qty  = (!isset($use_count[$key]['sum'])  || !strlen($use_count[$key]['sum']))  ? "-" : $use_count[$key]['sum'];
+			$usage_item = (!isset($use_count[$key]['item']) || !strlen($use_count[$key]['item'])) ? 0   : $use_count[$key]['item'];
 			$string ='<tr style="cursor:pointer" class="relShow" ref="'.$key.'">
 			<td>'.$val['name'].'</td>
-			<td>'.$val['diff'].'<span class="muted hide" title="С учётом даунгрейда"> / '.$val['totalsum'].'</span></td>
+			<td>'.$val['diff'].'<span class="muted" title="С учётом даунгрейда"> / '.$val['totalsum'].'</span></td>
 			<td>'.$usage_qty.'</td>
 			</tr>
 			<tr class="relrow hide" id="relrow'.$key.'">

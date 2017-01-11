@@ -402,6 +402,7 @@ table.MsoTableGrid
     style='font-size:10.0pt'>(И.О. Фамилия)</span></sup></p>
     </td>
    </tr>
+   <? if ($deptForTemplate !== "81") { ?>
    <tr style='mso-yfti-irow:15;height:17.25pt'>
     <td width=327 colspan=3 valign=bottom style='width:245.35pt;border:none;
     padding:0cm 5.4pt 0cm 5.4pt;height:17.25pt'>
@@ -423,7 +424,7 @@ table.MsoTableGrid
     <td width=165 colspan=2 valign=bottom style='width:124.0pt;border:none;
     border-bottom:solid windowtext 1.0pt;mso-border-bottom-alt:solid windowtext .5pt;
     padding:0cm 5.4pt 0cm 5.4pt;height:17.25pt'>
-    <p class=MsoNormal align=center style='text-align:center'><b>Г.А. Титов</b></p>
+    <p class=MsoNormal align=center style='text-align:center'><b>Ю.B. Агеев</b></p>
     </td>
    </tr>
    <tr style='mso-yfti-irow:16;height:25.3pt'>
@@ -452,6 +453,9 @@ table.MsoTableGrid
     style='font-size:10.0pt'>(И.О. Фамилия)</span></sup></p>
     </td>
    </tr>
+   <? } else { ?>
+   <br><br>
+   <? } ?>
    <tr style='mso-yfti-irow:17'>
     <td width=640 colspan=9 valign=top style='width:480.15pt;border:none;
     padding:0cm 5.4pt 0cm 5.4pt'>

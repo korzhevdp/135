@@ -104,7 +104,41 @@
 				$("#bt" + id).removeClass('btn-warning').empty().html("Удалена");
 			},
 			error: function(data,stat,err){
-				//$("#consoleContent").html([data,stat,err].join("<br>"));
+				console.log( data, stat, err );
+			}
+		});
+	});
+
+	$(".ESIAOff").click(function(){
+		var id = $(this).attr("ref");
+		$.ajax({
+			url: "/admin/resexpire/" + id,
+			success: function(){
+				window.location.reload();
+			},
+			error: function(data,stat,err){
+				console.log( data, stat, err );
+			}
+		});
+	});
+
+	$(".inGroupSw").click( function () {
+		var id = $(this).attr("ref");
+		$.ajax({
+			url      : "/admin/ingroup",
+			data     : {
+				itemID : id
+			},
+			type     : "POST",
+			dataType : "text",
+			success  : function (data) {
+				if (data === "1") {
+					$(".inGroupSw[ref=" + id + "]").parent().parent().removeClass("error").removeClass("warning").addClass("success"); // местами не менять :)
+					$(".inGroupSw[ref=" + id + "]").parent().html('<i class="icon-ok"></i>');
+				}
+			},
+			error: function ( data, stat, err ) {
+				console.log( data, stat, err );
 			}
 		});
 	});

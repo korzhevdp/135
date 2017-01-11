@@ -727,9 +727,11 @@ class Refmodel extends CI_Model {
 	}
 
 	public function admin_data_save(){
+		$rank = ($this->input->post('rank')) ? 1 : 0;
 		if($this->input->post("newAdmin")){
 			//$this->output->enable_profiler(TRUE);
 			//return false;
+
 			$this->db->query("INSERT INTO
 			admins (
 				admins.user,
@@ -742,7 +744,7 @@ class Refmodel extends CI_Model {
 			) VALUES ( ?, ?, ?, ?, ?, ?, ? )", array(
 				$this->input->post('login'),
 				"secret".$this->input->post('newpassword'),
-				$this->input->post('rank'),
+				$rank,
 				1,
 				$this->input->post('description'),
 				$this->input->post('supervisor'),
@@ -763,7 +765,7 @@ class Refmodel extends CI_Model {
 				WHERE
 				admins.id          = ?", array(
 					$this->input->post('login'),
-					$this->input->post('rank'),
+					$rank,
 					1,
 					$this->input->post('description'),
 					$this->input->post('supervisor'),

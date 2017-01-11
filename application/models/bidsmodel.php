@@ -2,9 +2,10 @@
 
 class Bidsmodel extends CI_Model {
 
-	public $dbwrite = 1;			// запись в базу вкл/выкл
+	public $dbwrite      = 1;		// запись в базу вкл/выкл
 	public $wrap_to_word = 1;		// 
-	public $genmode = "word";
+	public $genmode      = "word";
+	public $selfHeader   = array(10, 52, 81, 82);
 
 	function __construct(){
 		parent::__construct();	// Call the Model constructor
@@ -15,7 +16,94 @@ class Bidsmodel extends CI_Model {
 		}
 	}
 
-	public function user_data_get2($userid){
+	public function getResourceAccordion($rlist, $group_id){
+		$addition = "";
+		$state    = "";
+		$hide     = "";
+		if ($group_id == 11) {
+			$hide     = ' hide';
+			$addition = ' id="domain_data"';
+			$state    = ' in';
+		}
+		$resgroups    = array(
+			0  => 'Прочие',
+			1  => '1C: программные продукты',
+			2  => 'Сервера баз данных MS SQL',
+			3  => 'Регистрация обращений граждан',
+			4  => 'Справочно-Правовые Системы',
+			5  => 'Управление по вопросам семьи опеки и попечительства',
+			6  => 'Автоматизированные информационные системы (АИС / ГИС)',
+			7  => 'Департамент муниципального имущества',
+			8  => 'Департамент образования',
+			9  => 'Городское хозяйство',
+			11 => 'Заявка на подключение к сети муниципалитета',
+			10 => 'Интернет и электронная почта',
+			12 => 'Беспроводная сеть Wi-Fi',
+			13 => 'ЕСИА / Государственные услуги'
+		);
+		if ( !isset($rlist[$group_id])) {
+			$rlist[$group_id] = array();
+		}
+		return '
+		<div class="accordion-group'.$hide.'"'.$addition.'>
+			<div class="accordion-heading">
+				<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" referer="collapse'.$group_id.'" href="#collapse'.$group_id.'">
+					<span class="badge badge-success hide" id="badge-collapse'.$group_id.'">0</span>'.$resgroups[$group_id].'
+				</a>
+			</div>
+			<div id="collapse'.$group_id.'" ref="'.$group_id.'" class="accordion-body collapse'.$state.'">
+				<div class="accordion-inner">
+					<ul class="rlist" id="group'.$group_id.'" style="margin:0px;">
+						'.implode($rlist[$group_id], "\n").'
+					</ul>
+				</div>
+			</div>
+		</div>';
+	}
+
+	private function get_user_mail_from_db($userid) {
+		$email = "";
+		$result = $this->db->query("SELECT 
+		CONCAT(resources_pid.pid_value, '@arhcity.ru') as email
+		FROM
+		resources_pid
+		RIGHT OUTER JOIN resources_items ON (resources_pid.item_id = resources_items.id)
+		WHERE
+		(resources_pid.pid = 1)
+		AND (resources_items.uid = ?)
+		AND (`resources_items`.`ok`)
+		AND NOT (`resources_items`.`del`)
+		AND NOT (`resources_items`.`exp`)
+		ORDER BY resources_items.id DESC
+		LIMIT 1", array($userid));
+		if ($result->num_rows()) {
+			$row = $result->row();
+			$email = $row->email;
+		}
+		return $email;
+	}
+
+	private function overrideTemplateData($staffID) {
+		if ( $staffID == 11 || $staffID == 27 ) {
+			$otv_dl = 'Заместитель Главы муниципального образования "Город Архангельск"';
+		}
+		if ( $staffID == 32 ) {
+			$otv_dl = 'Советник Главы муниципального образования "Город Архангельск"';
+		}
+		if ( $staffID == 40 ) {
+			$otv_dl = 'Помощник Главы муниципального образования "Город Архангельск"';
+		}
+		return array(
+			'fio'    => $this->input->post("name_f")." ".strtoupper(substr($this->input->post("name_i"), 0, 1).".".substr($this->input->post("name_o").".", 0 ,1)),
+			'otv_dl' => $otv_dl,
+			'org'    => "", //"Мэрия города Архангельска";
+			'cred'   => "пл.В.И.Ленина, д.5, г.Архангельск, 163000<br>тел. 65-64-84, факс 65-20-71<br>Е-mail: adminkir@arhcity.ru; http:// www.arhcity.ru",
+			'zakaz'  => 'Общий отдел Администрации муниципального образования "Город Архангельск". Заказ 001.  01.01.2016'
+		);
+	}
+
+	public function user_data_get2($userid) {
+		$email = $this->get_user_mail_from_db($userid);
 		$result = $this->db->query("SELECT 
 		users.name_f,
 		users.name_i,
@@ -42,7 +130,8 @@ class Bidsmodel extends CI_Model {
 				staff  : '".$row->staff_id."',
 				bldg   : '".$row->parent."',
 				office : '".$row->office_id."',
-				phone  : '".$row->phone."'
+				phone  : '".$row->phone."',
+				email  : '".$email."'
 			}";
 		}
 	}
@@ -88,7 +177,7 @@ class Bidsmodel extends CI_Model {
 					// признак исполнения заявки куратором
 					? ($row->apply) 
 						? 'Выполнена&nbsp;&nbsp;&nbsp;&nbsp;<i class="icon-info-sign" title="Ресурс подключен и настроен" style="cursor:pointer"></i>' 
-						: 'Обратитесь к куратору&nbsp;&nbsp;&nbsp;&nbsp;<i class="icon-info-sign" title="'.$row->sman.', тел.: '.$row->phone.'" style="cursor:pointer"></i>' 
+						: 'Выполнена<br>Обратитесь к куратору&nbsp;&nbsp;&nbsp;&nbsp;<i class="icon-info-sign" title="'.$row->sman.', тел.: '.$row->phone.'" style="cursor:pointer"></i>' 
 					: 'На согласовании&nbsp;&nbsp;&nbsp;&nbsp;<i class="icon-info-sign" title="Собираются подписи" style="cursor:pointer"></i>';
 				// признак отмены заявки
 				$status = ($row->exp) ? "Отменена" : $status;
@@ -420,19 +509,32 @@ class Bidsmodel extends CI_Model {
 		$output = array();
 		$result=$this->db->query("SELECT 
 		`resources_layers`.id,
+		`resources_layers`.ga,
 		`resources_layers`.spn
 		FROM
 		`resources_layers`
 		WHERE
-		`resources_layers`.`rid` = ?", array($res));
+		`resources_layers`.`rid` = ?
+		AND `resources_layers`.`active`
+		ORDER BY `resources_layers`.ga DESC, `resources_layers`.spn", array($res));
 		if($result->num_rows()){
 			foreach($result->result() as $row){
 				$markers = explode("(", $row->spn);
+				$class = "";
+				$title = ' title="Предоставить доступ к разделу '.$markers[0].'"';
+				$note  = "";
+
+				if (!$row->ga) {
+					$class = " btn-warning";
+					$title = ' title="Для предоставления доступа могут потребоваться дополнительные согласования"';
+					$note  = '&nbsp;&nbsp;&nbsp;<i class="icon-exclamation-sign icon-white"></i>';
+				}
+
 				(!isset($markers[1])) 
 					? $markers[1] = '&nbsp;' 
 					: "";
-				$button = '<span class="btn btn-block subspad" ref="'.$row->id.'" style="margin-bottom:5px;">'.$markers[0].'</span>';
-				array_push($output,$button);
+				$button = '<span class="btn btn-block subspad'.$class.'" ref="'.$row->id.'" style="margin-bottom:5px;"'.$title.'>'.$markers[0].$note.'</span>';
+				array_push($output, $button);
 			}
 		}
 		print implode($output,"\n");
@@ -501,6 +603,8 @@ class Bidsmodel extends CI_Model {
 				unset($res[$key]);
 			}
 		}
+
+
 		//print 111;
 		/*
 		* конфиденциальные ресурсы и обычные - извлекаются в 2 режимах
@@ -527,6 +631,7 @@ class Bidsmodel extends CI_Model {
 				$this->load->helper('download');
 				force_download($filename, $outfile);
 			}else{
+				$this->output->enable_profiler(TRUE);
 				$pagebreak = "<hr>";
 				$outfile = implode(array_merge($papers, $commons, $confidents), $pagebreak);
 				print $outfile;
@@ -563,6 +668,7 @@ class Bidsmodel extends CI_Model {
 		$deptlist = array();
 		// если не было выбрано подразделение
 		// ассертивно предполагается мэрия в целом (ID = 25)
+		$data['deptForTemplate'] = 0;
 		$real_d = ($data['dept'])
 			? $data['dept']
 			: 25;
@@ -575,7 +681,7 @@ class Bidsmodel extends CI_Model {
 			}
 		}
 
-		if(!in_array($real_d, array(10, 52))){
+		if(!in_array($real_d, $this->selfHeader)) {
 			// пробегаем вверх по иерархии структуры
 			while ($deptlist[$real_d]){
 				if(!$deptlist[$deptlist[$real_d]]){ 
@@ -588,13 +694,14 @@ class Bidsmodel extends CI_Model {
 				$real_d = $deptlist[$real_d];
 			}
 		}
+		$data['deptForTemplate'] = $real_d;
 		
 
 		// дописываем в поле признак заголовка корневой организации
 		// 10 - Горсовет
 		// 52 - Избирком - им заголовок мэрии не нужен.
 		//
-		$data['top_header'] = (in_array($real_d, array(10, 52)))
+		$data['top_header'] = (in_array($real_d, $this->selfHeader))
 			? ""
 			: 'АДМИНИСТРАЦИЯ МУНИЦИПАЛЬНОГО ОБРАЗОВАНИЯ "ГОРОД АРХАНГЕЛЬСК"';
 
@@ -603,7 +710,7 @@ class Bidsmodel extends CI_Model {
 
 
 		$result = $this->db->query("SELECT
-			CONCAT(', ', LCASE(`staff`)) AS `staff`
+			CONCAT(', ', `staff`) AS `staff`
 			FROM `staff`
 			WHERE `id` = ?", array((($mod == 2) ? $data['staff_id'] : $data['staff'])));
 		if($result->num_rows()){
@@ -635,9 +742,9 @@ class Bidsmodel extends CI_Model {
 		INNER JOIN departments ON (users.`dep_id` = departments.id)
 		INNER JOIN `staff` ON (departments.chief = `staff`.id)
 		WHERE
-		users.staff_id = departments.chief AND
-		users.fired = 'N' AND
-		departments.id = ?", array($real_d));
+		users.staff_id = departments.chief
+		AND NOT users.fired
+		AND departments.id = ?", array($real_d));
 		if($result->num_rows()){
 			$dept = $result->row_array();
 			$dept['otv_dl'] = (!$dept['io']) ? $dept['otv_dl'] : "И.о. ".$dept['otv_dl'];
@@ -647,30 +754,10 @@ class Bidsmodel extends CI_Model {
 		$dept = array();
 		##### Внимание, начинается врезка с помощниками и советниками #####
 
-		if(in_array($data['staff_id'], array(27, 40, 32))){
-			if($data['staff_id'] == 27){
-				$dept['fio']    = "";
-				$dept['otv_dl'] = 'Заместитель Главы муниципального образования "Город Архангельск"';
-				$dept['org']    = ""; //"Мэрия города Архангельска";
-				$dept['cred']   = "Не указаны";
-				$dept['zakaz']  = "Общий отдел мэрии г.Архангельска. Заказ 007.  15.03.2010";
-			}
-			if($data['staff_id'] == 40){
-				// этот подаёт заявки сам на себя
-				$dept['fio'] = $this->input->post("name_f")." ".strtoupper(substr($this->input->post("name_i"), 0, 1)).".".strtoupper(substr($this->input->post("name_o").".", 0 ,1));
-				$dept['otv_dl'] = 'Помощник Главы муниципального образования "Город Архангельск"';
-				$dept['org']    = ""; //"Мэрия города Архангельска";
-				$dept['cred']   = "Не указаны";
-				$dept['zakaz']  = "Общий отдел мэрии г.Архангельска. Заказ 007.  15.03.2010";
-			}
-			if($data['staff_id'] == 32){
-				$dept['fio']    = $this->input->post("name_f")." ".strtoupper(substr($this->input->post("name_i"), 0, 1)).".".strtoupper(substr($this->input->post("name_o").".", 0 ,1));
-				$dept['otv_dl'] = 'Советник Главы муниципального образования "Город Архангельск"';
-				$dept['org']    = ""; //"Мэрия города Архангельска";
-				$dept['cred']   = "Не указаны";
-				$dept['zakaz']  = "Общий отдел мэрии г.Архангельска. Заказ 007.  15.03.2010";
-			}
+		if (in_array($data['staff_id'], array(11, 27, 32, 40))) {
+			$dept = $this->overrideTemplateData($data['staff_id']);
 		}
+
 		$data = array_merge($data, $dept);
 
 		// выборка данных по куратору, исходя из ПОДРАЗДЕЛЕНИЯ
@@ -811,7 +898,7 @@ class Bidsmodel extends CI_Model {
 		$addon['decision']		= array();
 		$orderID = $this->new_order_insert();									// вставляем в базу новую заявку, получаем индекс новой заявки
 		if (in_array(100, $res)) {
-			$addon['mailaction'] = "зарегистрировать почтовый ящик с адресом ".strtolower($this->input->post('email_addr'))."@arhcity.ru<BR>на сервере электронной почты мэрии ".$this->input->post('email_reason');
+			$addon['mailaction'] = "зарегистрировать почтовый ящик с адресом ".strtolower($this->input->post('email_addr'))."@arhcity.ru<BR>на сервере электронной почты ".$this->input->post('email_reason');
 			array_push($addon['decision'], 'зарегистрировать адрес электронной почты');
 			array_push($resdata, array('uid' => $templatedata['uid'], 'order_id' => $orderID, 'rid' => 100));
 		}
@@ -1126,12 +1213,15 @@ class Bidsmodel extends CI_Model {
 					//print $row->id."<br>";
 					//print_r($layers);
 					//exit;
-
+					$additional_info = "";
+					if ($row->id == 286) {
+						$additional_info = "<br>Приглашение на подключение учётной записи в ЕСИА к организации прошу выслать на почтовый ящик ".$this->input->post("esiaMailAddr");
+					}
 					$string = '<tr>
 					<td  style="font-size:11pt;text-align:center;">&nbsp;</td>
 					<td  style="font-size:11pt;text-align:left;"><b>'.$row->name.'</b>'.((isset($layers[$row->id]) && sizeof($layers[$row->id])) 
 						? "<br>- ".implode($layers[$row->id], "<br>- ") 
-						: "").'</td>
+						: "").$additional_info.'</td>
 					<td  style="font-size:11pt;text-align:center;width:17mm;">'.(($row->bitmask == "11111") ? "x" : "").'</td>
 					<td  style="font-size:11pt;text-align:center;width:17mm;">'.(($row->bitmask == "10111") ? "x" : "").'</td>
 					<td  style="font-size:11pt;text-align:center;width:17mm;">'.(($row->bitmask == "10011") ? "x" : "").'</td>
@@ -1193,6 +1283,34 @@ class Bidsmodel extends CI_Model {
 			) VALUES ".implode($subsdata, ",\n"));
 		}
 		return $output;
+	}
+
+	public function getWebPortalSection() {
+		$output = array();
+		//$this->output->enable_profiler(TRUE);
+		$search = iconv('utf-8', 'windows-1251', $this->input->post('search'));
+		$DB3 = $this->load->database('web', TRUE);
+		$result = $DB3->query("SELECT
+		section2.secname AS parent2,
+		section1.secname AS parent1,
+		section.secname,
+		section.sid
+		FROM
+		section
+		RIGHT OUTER JOIN section section1 ON (section.secparent = section1.sid)
+		RIGHT OUTER JOIN section section2 ON (section2.sid = section1.secparent)
+		WHERE
+		((section.sid = ?) OR (section.secname LIKE ?))
+		AND (LENGTH(section1.secname))", array($search, $search."%") );
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$string = '<li class="btn btn-small btn-block" title="'.$row->parent2." ".$row->parent1.'">['.$row->sid."/0] ".$row->secname.'</li>';
+				array_push($output, $string);
+			}
+			print implode($output, "\n");
+			return true;
+		}
+		print "<li>Ничего не найдено</li>";
 	}
 
 	########################################
@@ -1266,13 +1384,15 @@ class Bidsmodel extends CI_Model {
 		if( $this->dbwrite ){
 			$output = array();
 			foreach($data as $key => $val){
-				$string = "('".$val['uid']."', '".$val['order_id']."', '".$val['rid']."')";
+				$string = "('".$val['uid']."', '".$val['order_id']."', '".$val['rid']."', NOW())";
 				array_push($output, $string);
 			}
 			$this->db->query("INSERT INTO `resources_items` (
 			`resources_items`.uid,
 			`resources_items`.order_id,
-			`resources_items`.rid) VALUES ".implode($output,",\n"));
+			`resources_items`.rid,
+			`resources_items`.initdate
+			) VALUES ".implode($output,",\n"));
 		}else{
 			return false;
 		}
@@ -1301,6 +1421,21 @@ class Bidsmodel extends CI_Model {
 			return $data;
 		}
 	}
+	
+	private function get_userid_by_order($order) {
+		$userid = 0;
+		$result = $this->db->query("SELECT 
+		resources_items.uid
+		FROM
+		resources_items
+		WHERE
+		(resources_items.`id` = ?)", array($order));
+		if ($result->num_rows()) {
+			$row    = $result->row();
+			$userid = $row->uid;
+		}
+		return $userid;
+	}
 
 	public function reget_orders($orders){
 		//$this->output->enable_profiler(TRUE);
@@ -1309,7 +1444,7 @@ class Bidsmodel extends CI_Model {
 			print "Недостаточно данных";
 			return false; // выход при случае ошибки
 		}
-
+		$userid = $this->get_userid_by_order($orders[0]);
 		# инициализация массивов
 		$resids = array();
 		$res    = array();
@@ -1330,7 +1465,7 @@ class Bidsmodel extends CI_Model {
 		END AS pid_value,
 		resources_items.id,
 		`resources_orders`.docnum,
-		DATE_FORMAT(`resources_orders`.docdate,'%d.%m.%Y') as docdate
+		DATE_FORMAT(`resources_orders`.docdate,'%d.%m.%Y') AS docdate
 		FROM
 		resources_items
 		INNER JOIN resources ON (resources_items.rid = resources.id)
@@ -1349,7 +1484,8 @@ class Bidsmodel extends CI_Model {
 				}
 			}
 		}
-
+		//print_r($res);
+		//return false;
 		//print $this->db->last_query();
 
 		foreach($orders as $val){
@@ -1426,7 +1562,7 @@ class Bidsmodel extends CI_Model {
 					: "______@arhcity.ru";
 				if ($res[$val]['rid'] == 100) {
 					
-					$addon['mailaction'] = "зарегистрировать почтовый ящик с адресом ".$mail_address."<BR>на сервере электронной почты мэрии для ".$reason;
+					$addon['mailaction'] = "зарегистрировать почтовый ящик с адресом ".$mail_address."<BR>на сервере электронной почты для ".$reason;
 					array_push($addon['decision'], 'зарегистрировать адрес электронной почты');
 					$gen = 1;
 				}
@@ -1507,7 +1643,7 @@ class Bidsmodel extends CI_Model {
 		$layers2 = array();
 		$layers3 = array();
 		$layers4 = array();
-
+		$email = $this->get_user_mail_from_db($userid);
 		if ($result->num_rows()){
 			foreach($result->result() as $row){
 				(!isset($process[$row->cat])) ? $process[$row->cat]								= array() : "";
@@ -1586,12 +1722,16 @@ class Bidsmodel extends CI_Model {
 					<td style="border:1px solid black;">&nbsp;</td>
 					<td style="border:1px solid black;">&nbsp;</td>
 					</tr></table>';
-				}else{
+				} else {
+					$additional_info = "";
+					if ($row->id == 286) {
+						$additional_info = "<br>Приглашение на подключение учётной записи в ЕСИА к организации прошу выслать на почтовый ящик ". $email;
+					}
 					$string = '<tr>
 					<td  style="font-size:11pt;text-align:center;">&nbsp;</td>
 					<td  style="font-size:11pt;text-align:left;"><b>'.$row->name.'</b>'.((isset($res[$row->itemid]['pid2']) && strlen($res[$row->itemid]['pid2'])) 
 						? "<br>- ".implode(explode("\n",$res[$row->itemid]['pid2']),"<br>- ") 
-						: "").'</td>
+						: "").$additional_info.'</td>
 					<td  style="font-size:11pt;text-align:center;width:17mm;">'.(($row->bitmask == "11111") ? "x" : "").'</td>
 					<td  style="font-size:11pt;text-align:center;width:17mm;">'.(($row->bitmask == "10111") ? "x" : "").'</td>
 					<td  style="font-size:11pt;text-align:center;width:17mm;">'.(($row->bitmask == "10011") ? "x" : "").'</td>

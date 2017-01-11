@@ -16,8 +16,14 @@ class Network extends CI_Controller {
 		//$this->output->enable_profiler(TRUE);
 	}
 
-	public function index($page=1) {
-		$this->show_page(array('page' => $page));
+
+
+	public function index() {
+		$this->show_page(array('page' => 1));
+	}
+
+	public function set($page = 1) {
+		$this->show_page(array('page' => (int) $page));
 	}
 
 	private function show_page($input) {
@@ -221,18 +227,20 @@ class Network extends CI_Controller {
 		MAC Worker
 		*/
 		
-		$object  = snmprealwalk( $host, "public", $mac );
-		foreach ($object as $key=>$val) {
-			$val = $this->parse_MAC($val);
-			$newkey = implode(array_slice(explode(".", $key), -5), "");
-			if ( isset($refs[$newkey]) ) {
-				$this->db->query("UPDATE
-				`switch_mac_rawdata`
-				SET `switch_mac_rawdata`.mac    = ?
-				WHERE `switch_mac_rawdata`.`ip` = ?
-				AND `switch_mac_rawdata`.`hash` = ?", array($val, $host, $newkey));
-			} else {
-				array_push($inserts, "( '".$host."', ".$newkey.", '".$val."' )");
+		$object  = @snmprealwalk( $host, "public", $mac );
+		if (is_array($object)) {
+			foreach ($object as $key=>$val) {
+				$val = $this->parse_MAC($val);
+				$newkey = implode(array_slice(explode(".", $key), -5), "");
+				if ( isset($refs[$newkey]) ) {
+					$this->db->query("UPDATE
+					`switch_mac_rawdata`
+					SET `switch_mac_rawdata`.mac    = ?
+					WHERE `switch_mac_rawdata`.`ip` = ?
+					AND `switch_mac_rawdata`.`hash` = ?", array($val, $host, $newkey));
+				} else {
+					array_push($inserts, "( '".$host."', ".$newkey.", '".$val."' )");
+				}
 			}
 		}
 		if (sizeof($inserts)) {
@@ -258,20 +266,23 @@ class Network extends CI_Controller {
 				$refs[$row->hash] = 1;
 			}
 		}
-		$object2  = snmprealwalk( $host, "public", $port );
-		foreach($object2 as $key=>$val){
-			$newkey = implode(array_slice(explode(".", $key), -5), "");
-			$val = $this->parse_INT($val);
-			if ( isset($refs[$newkey]) ) {
-				$this->db->query("UPDATE
-				`switch_mac_rawdata`
-				SET `switch_mac_rawdata`.port   = ? 
-				WHERE `switch_mac_rawdata`.`ip` = ?
-				AND `switch_mac_rawdata`.`hash` = ?", array($val, $host, $newkey));
-			} else {
-				array_push($inserts, "( '".$host."', ".$newkey.", '".$val."' )");
+		$object2  = @snmprealwalk( $host, "public", $port );
+		if (is_array($object2)) {
+			foreach($object2 as $key=>$val){
+				$newkey = implode(array_slice(explode(".", $key), -5), "");
+				$val = $this->parse_INT($val);
+				if ( isset($refs[$newkey]) ) {
+					$this->db->query("UPDATE
+					`switch_mac_rawdata`
+					SET `switch_mac_rawdata`.port   = ? 
+					WHERE `switch_mac_rawdata`.`ip` = ?
+					AND `switch_mac_rawdata`.`hash` = ?", array($val, $host, $newkey));
+				} else {
+					array_push($inserts, "( '".$host."', ".$newkey.", '".$val."' )");
+				}
 			}
 		}
+
 		if (sizeof($inserts)) {
 			$this->db->query("INSERT INTO
 			`switch_mac_rawdata`(
@@ -281,24 +292,22 @@ class Network extends CI_Controller {
 			) VALUES ".implode($inserts, ",\n"));
 		}
 	}
-	
+
 	public function collect_macs($mask="") {
-		$supplied_mask = (!strlen($mask) && strlen($this->input->post("switchesRange")) && $this->input->post("switchesRange")) 
-			? $this->input->post("switchesRange")
-			: $mask;
+		$supplied_mask = $this->input->post("macRange");
 		$mask =  preg_replace("/[^\.0-9]/", "", $supplied_mask);
 		if (!strlen($supplied_mask)) {
-			print "You have sullpied a wrong range";
+			print "You have supplied a wrong range";
 			return false;
 		}
 		ob_start();
 		//$mask = ($this->input->post("scan_mask") && strlen($this->input->post("scan_mask"))) ? $this->input->post("scan_mask") : $mask;
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		switch_net.`ip`
 		FROM
 		switch_net
 		WHERE
-		switch_net.`ip` LIKE '".$mask."%'
+		switch_net.`ip` LIKE '192.168.".$mask."%'
 		ORDER BY switch_net.`ip`");
 		if ($result->num_rows()) {
 			$count = $total = $result->num_rows();
@@ -347,62 +356,61 @@ class Network extends CI_Controller {
 	private function discover_switches($host, $addtobase = false) {
 		snmp_set_valueretrieval ( SNMP_VALUE_LIBRARY );
 		$switch_mac = $this->parse_MAC(@snmpget($host, "public", ".1.3.6.1.2.1.17.1.1.0", 300000, 5));
-		if($switch_mac !== false ){
-			$portnum = $this->parse_INT(@snmpget($host, "public", ".1.3.6.1.2.1.17.1.2.0", 100000, 5));
-			//$serial  = snmpget($host, "public", ".1.3.6.1.4.1.11.2.36.1.1.2.9.0", 100000, 5);
-			$info    = $this->parse_String(@snmpget($host, "public", ".1.3.6.1.2.1.1.1.0", 100000, 5));
-			$room    = $this->parse_String(@snmpget($host, "public", ".1.3.6.1.2.1.1.6.0", 100000, 5));
-			$sn      = strtoupper($this->parse_String(@snmpget($host, "public", ".1.3.6.1.4.1.11.2.36.1.1.2.9.0", 100000, 5)));
-			$altsn   = strtoupper($this->parse_String(@snmpget($host, "public", ".1.3.6.1.2.1.1.4.0", 100000, 5))); // вообще, тут у маленьких находится контактная информация.
-			$model   = $this->parse_String(@snmpget($host, "public", ".1.3.6.1.2.1.1.5.0", 100000, 5));
-			//$ver   = @snmpget($host, "public", ".1.3.6.1.4.1.11.2.36.1.1.2.6.0", 100000, 5);
-			if (!$sn) {
-				$sn = $altsn;
-			}
-			print "<tr>
-				<td><a href=\"http://".$host."\" target=\"_blank\">".$host."</a></td>
-				<td>".$switch_mac."</td>
-				<td>".$portnum."</td>
-				<td>".$room."</td>
-				<td>".$model."</td>
-				<td>".$info."</td>
-				<td>".$sn."</td>
-			</tr>";
-			flush();
-			ob_flush();
-			$result = $this->db->query("SELECT 
-				switch_net.`id`
-				FROM
-				switch_net
-				WHERE
-				`switch_net`.`sn` = ?", array($sn));
-			if (!$result->num_rows() && $addtobase) {
-				$this->db->query("INSERT INTO
-				`switch_net`(
-					`switch_net`.ip,
-					`switch_net`.mac,
-					`switch_net`.sn,
-					`switch_net`.port_qty,
-					`switch_net`.model,
-					`switch_net`.location_w,
-					`switch_net`.memo
-				) VALUES( ?, ?, ?, ?, ?, ?, ? )", array(
-					$host,
-					$switch_mac,
-					$sn,
-					$portnum,
-					$model,
-					$room,
-					$info
-				));
-			}
+		if( !$switch_mac ) {
+			$this->db->query("DELETE FROM switch_net WHERE `switch_net`.`ip` = ?", array($host));
+			return false;
+		}
+		$portnum = $this->parse_INT(@snmpget($host, "public", ".1.3.6.1.2.1.17.1.2.0", 100000, 5));
+		//$serial  = snmpget($host, "public", ".1.3.6.1.4.1.11.2.36.1.1.2.9.0", 100000, 5);
+		$info    = $this->parse_String(@snmpget($host, "public", ".1.3.6.1.2.1.1.1.0", 100000, 5));
+		$room    = $this->parse_String(@snmpget($host, "public", ".1.3.6.1.2.1.1.6.0", 100000, 5));
+		$sn      = strtoupper($this->parse_String(@snmpget($host, "public", ".1.3.6.1.4.1.11.2.36.1.1.2.9.0", 100000, 5)));
+		//$sn      = strtoupper($this->parse_String(@snmpget($host, "public", ".1.3.6.1.2.1.17.1.1.0", 100000, 5)));
+		$altsn   = strtoupper($this->parse_String(@snmpget($host, "public", ".1.3.6.1.2.1.1.4.0", 100000, 5))); // вообще, тут у маленьких находится контактная информация.
+		$model   = $this->parse_String(@snmpget($host, "public", ".1.3.6.1.2.1.1.5.0", 100000, 5));
+		//$ver   = @snmpget($host, "public", ".1.3.6.1.4.1.11.2.36.1.1.2.6.0", 100000, 5);
+		if (!$sn) {
+			$sn = $altsn;
+		}
+		print "<tr>
+			<td><a href=\"http://".$host."\" target=\"_blank\">".$host."</a></td>
+			<td>".$switch_mac."</td>
+			<td>".$portnum."</td>
+			<td>".$room."</td>
+			<td>".$model."</td>
+			<td>".$info."</td>
+			<td>".$sn."</td>
+		</tr>";
+		flush();
+		ob_flush();
+		
+		if ( $addtobase ) {
+			$this->db->query("DELETE FROM switch_net WHERE `switch_net`.`ip` = ?", array($host));
+			$this->db->query("INSERT INTO
+			`switch_net`(
+				`switch_net`.ip,
+				`switch_net`.mac,
+				`switch_net`.sn,
+				`switch_net`.port_qty,
+				`switch_net`.model,
+				`switch_net`.location_w,
+				`switch_net`.memo
+			) VALUES( ?, ?, ?, ?, ?, ?, ? )", array(
+				$host,
+				$switch_mac,
+				$sn,
+				$portnum,
+				$model,
+				$room,
+				$info
+			));
 		}
 	}
 
 	public function collect_switches($nets = "") {
 		ob_start();
-		$nets = (!strlen($nets) && $this->input->post("netlist") && strlen($this->input->post("netlist"))) ? $this->input->post("netlist") : $nets ;
-		print "<table class=\"table table-condensed table-bordered table-striped\"><tr>
+		$nets = $this->input->post("netlist");
+		print "<table border=1 class=\"table table-condensed table-bordered table-striped\"><tr>
 			<td>IP</td>
 			<td>MAC</td>
 			<td>PORTS</td>
@@ -417,6 +425,17 @@ class Network extends CI_Controller {
 		}
 		foreach($subnets as $net){
 			$this->discover_switches("192.168.".$net.".10", true);
+			if ($net == 1) {
+				$this->discover_switches("192.168.".$net.".50", true);
+				flush();
+				ob_flush();
+				$this->discover_switches("192.168.".$net.".51", true);
+				flush();
+				ob_flush();
+				$this->discover_switches("192.168.".$net.".60", true);
+				flush();
+				ob_flush();
+			}
 			for ($a = 221; $a < 255; $a++) {
 				$this->discover_switches("192.168.".$net.".".$a, true);
 				flush();
@@ -475,8 +494,8 @@ class Network extends CI_Controller {
 	}
 
 	private function get_subnets_array($nets) {
-		if(strlen($nets)){
-			$subnets = explode("-", $nets);
+		if (strlen($nets)) {
+			$subnets = explode(",", str_replace(" ", "", trim($nets)));
 		} else {
 			print "</table><br>A list of subnetworks was not supplied..";
 			$subnets = false;
@@ -484,8 +503,8 @@ class Network extends CI_Controller {
 		return $subnets;
 	}
 
-	public function show_switches($nets = "") {
-		$nets = ($this->input->post('sSwitchesRange') && strlen($this->input->post('sSwitchesRange'))) ? $this->input->post('sSwitchesRange') : $nets ;
+	public function show_switches() {
+		$nets = $this->input->post('sSwitchesRange');
 		ob_start();
 		print "<table border=1><tr>
 			<td>IP</td>
@@ -497,11 +516,22 @@ class Network extends CI_Controller {
 			<td>SN</td>
 		</tr>";
 		$subnets = $this->get_subnets_array($nets);
-		if (!$subnets) {
-			exit;
+		if (!$subnets || !is_array($subnets)) {
+			return false;
 		}
 		foreach($subnets as $net){
 			$this->discover_switches("192.168.".$net.".10", false);
+			if ($net == 1) {
+				$this->discover_switches("192.168.".$net.".50", false);
+				flush();
+				ob_flush();
+				$this->discover_switches("192.168.".$net.".51", false);
+				flush();
+				ob_flush();
+				$this->discover_switches("192.168.".$net.".60", false);
+				flush();
+				ob_flush();
+			}
 			for ($a = 221; $a < 255; $a++) {
 				$this->discover_switches("192.168.".$net.".".$a, false);
 				flush();
@@ -566,6 +596,7 @@ class Network extends CI_Controller {
 				$mac = $this->input->post("mac");
 			} else {
 				$this->show_page(array(2));
+				return true;
 			}
 		}
 		$output = array('<table class="table table-condensed table-bordered table-striped">
@@ -575,22 +606,23 @@ class Network extends CI_Controller {
 			<td>Switch IP</td>
 			<td>Switch Port</td>
 		</tr>');
-		$result = $this->db->query("SELECT DISTINCT
+		$result = $this->db->query("SELECT DISTINCT 
 		switch_mac_rawdata.ip,
 		switch_mac_rawdata.mac,
 		switch_mac_rawdata.port,
-		`switch_mac_rawdata`.`ts`
+		switch_mac_rawdata.ts,
+		`hosts`.hostname
 		FROM
 		switch_mac_rawdata
+		LEFT OUTER JOIN `hosts` ON (switch_mac_rawdata.mac = `hosts`.mac)
 		WHERE
-		switch_mac_rawdata.mac LIKE '%".$mac."'
-		AND (switch_mac_rawdata.port <> 1)
-		AND (switch_mac_rawdata.port < 49)
-		ORDER BY 
-		switch_mac_rawdata.ip");
+		(switch_mac_rawdata.mac LIKE '%".$mac."') AND 
+		(switch_mac_rawdata.port <> 1) AND 
+		(switch_mac_rawdata.port < 49)
+		ORDER BY INET_ATON(switch_mac_rawdata.ip)");
 		if($result->num_rows()){
 			foreach($result->result() as $row){
-				$string = '<tr><td> --- </td><td>'.$row->mac.'</td><td><a target="_blank" href="http://'.$row->ip.'">'.$row->ip.'</a></td><td>'.$row->port.'</td></tr>';
+				$string = '<tr><td>'.$row->hostname.'</td><td>'.$row->mac.'</td><td><a target="_blank" href="http://'.$row->ip.'">'.$row->ip.'</a></td><td>'.$row->port.'</td></tr>';
 				array_push($output, $string);
 			}
 		}
@@ -602,7 +634,8 @@ class Network extends CI_Controller {
 		$this->show_page($viewdata);
 	}
 
-	public function clear_data($range, $sw = false) {
+	public function clear_data($sw = false) {
+		$range = $this->input->post("macRange");
 		if ($sw) {
 			$this->db->query("DELETE
 			FROM
@@ -616,14 +649,195 @@ class Network extends CI_Controller {
 		WHERE
 		`switch_mac_rawdata`.`ip` LIKE '".$this->db->escape_like_str($range)."%'");
 		
-		print $range."  clear...<br><br>";
+		print $range."%  clear...<br><br>";
 	}
 
-	public function rescan_range($range) {
-		$this->clear_data($range);
-		$this->collect_macs($range);
+	public function rescan_range() {
+		
+		$this->clear_data();
+		$this->collect_macs();
 	}
 
+	public function vvs() {
+		$input    = array();
+		$switches = array();
+		$portCorrection = array(
+			8  => 8,
+			9  => 8,
+			24 => 24,
+			25 => 24,
+			26 => 24,
+			27 => 24,
+			41 => 48,
+			72 => 48
+		);
+
+		$result = $this->db->query("SELECT 
+		`switch_net`.ip,
+		`switch_net`.mac,
+		`switch_net`.sn,
+		`switch_net`.port_qty,
+		`switch_net`.model,
+		`switch_net`.location_w
+		FROM
+		`switch_net`");
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$switches[$row->ip] = array( 
+					'mac'     => $row->mac,
+					'portnum' => $row->port_qty,
+					'sn'      => $row->sn,
+					'model'   => $row->model
+				);
+			}
+		}
+
+		$result = $this->db->query("SELECT DISTINCT 
+		switch_mac_rawdata.ip,
+		switch_mac_rawdata.mac,
+		switch_mac_rawdata.port,
+		switch_mac_rawdata.ts
+		FROM
+		switch_mac_rawdata
+		WHERE
+		(switch_mac_rawdata.mac IN( SELECT `switch_net`.`mac` FROM `switch_net` ))
+		AND (switch_mac_rawdata.port <> 1)
+		AND (switch_mac_rawdata.port < 49)
+		ORDER BY
+		INET_ATON(switch_mac_rawdata.ip) ASC");
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				if (!isset($input[$row->mac])) {
+					$input[$row->mac] = array();
+				}
+				array_push($input[$row->mac], array( 'port' => $row->port, 'ip' => $row->ip ));
+			}
+		}
+		$rel = array();
+		$output = array();
+		foreach($input as $mac=>$props) {
+			$switch = array();
+			$selfIP = "192.168.0.0";
+			foreach($props as $key=>$stk) {
+				if ($stk['port'] === "0" || $stk['port'] >= $portCorrection[$switches[$stk['ip']]['portnum']]) {
+					$selfIP = $stk['ip'];
+				}
+			}
+			foreach($props as $key=>$stk) {
+				if ($stk['port'] !== "0" && $stk['port'] !== $switches[$stk['ip']]['portnum']) {
+					$addon = "";
+					if ($stk['port'] >= $switches[$stk['ip']]['portnum']) {
+						$addon = " --- upLink";
+					}
+					$string = "виден на ".$stk['port']. " порту ".$portCorrection[$switches[$stk['ip']]['portnum']]."-портового коммутатора ".$stk['ip'].$addon;
+					array_push($switch, $string);
+				}
+				if ($stk['port'] === "0" || $stk['port'] === $switches[$stk['ip']]['portnum']) {
+					$string = "<strong>Коммутатор с IP <a href=\"http://".$stk['ip']."\" target=\"_blank\">".$stk['ip']." (".$portCorrection[$switches[$stk['ip']]['portnum']]." портов)</a> и MAC ".$mac."</strong>";
+					array_unshift($switch, $string);
+				}
+			}
+			$output[$selfIP] = implode($switch, "<br>");
+		}
+		
+		sort($output, SORT_NATURAL);
+		foreach ($output as $ip=>$listing){
+			print $listing."<hr>";
+		}
+	}
+
+	public function vvs2() {
+		$input    = array();
+		$switches = array();
+		$portCorrection = array(
+			8  => 8,
+			9  => 8,
+			24 => 24,
+			25 => 24,
+			26 => 24,
+			27 => 24,
+			28 => 24,
+			41 => 48,
+			72 => 48
+		);
+
+		$result = $this->db->query("SELECT 
+		`switch_net`.ip,
+		`switch_net`.mac,
+		`switch_net`.sn,
+		`switch_net`.port_qty,
+		`switch_net`.model,
+		`switch_net`.location_w
+		FROM
+		`switch_net`");
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$switches[$row->ip] = array( 
+					'mac'     => $row->mac,
+					'portnum' => $row->port_qty,
+					'sn'      => $row->sn,
+					'model'   => $row->model
+				);
+			}
+		}
+
+		$result = $this->db->query("SELECT DISTINCT 
+		switch_mac_rawdata.ip,
+		switch_mac_rawdata.mac,
+		switch_mac_rawdata.port,
+		switch_mac_rawdata.ts
+		FROM
+		switch_mac_rawdata
+		WHERE
+		(switch_mac_rawdata.mac IN( SELECT `switch_net`.`mac` FROM `switch_net` ))
+		AND (switch_mac_rawdata.port <> 1)
+		AND (switch_mac_rawdata.port < 49)
+		ORDER BY
+		INET_ATON(switch_mac_rawdata.ip) ASC");
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				if (!isset($input[$row->mac])) {
+					$input[$row->mac] = array();
+				}
+				array_push($input[$row->mac], array( 'port' => $row->port, 'ip' => $row->ip ));
+			}
+		}
+		$rel = array();
+		$output = array();
+		foreach($input as $mac=>$props) {
+			$switch      = array();
+			$initSwitch  = "192.168.1.248";
+			$finalSwitch = "";
+			$selfIP      = "192.168.0.0";
+			foreach( $props as $key=>$stk ) {
+				if ( $stk['port'] === "0" || $stk['port'] >= $portCorrection[$switches[$stk['ip']]['portnum']] ) {
+					$selfIP = $stk['ip'];
+				}
+			}
+			foreach ( $props as $key=>$stk ) {
+				if ( $stk['port'] !== "0" && $stk['port'] !== $switches[$stk['ip']]['portnum'] ) {
+					if ($stk['port'] <= $switches[$stk['ip']]['portnum']) {
+						$string = "<sup>(1)</sup>[ ".$stk['ip']." (".$portCorrection[$switches[$stk['ip']]['portnum']].") ] <sub>".$stk['port']."</sub>";
+						array_push($switch, $string);
+					}
+				}
+				if ($stk['ip'] === "192.168.1.248" && !strlen($initSwitch)) {
+					$initSwitch = "<strong> <sub>".$stk['port']."</sub>[ ".$stk['ip']." (".$portCorrection[$switches[$stk['ip']]['portnum']].") ] </strong>";
+					array_push($switch, $string);
+				}
+				if ($stk['port'] === "0" || $stk['port'] >= $switches[$stk['ip']]['portnum']) {
+					$finalSwitch = "<strong> <a href=\"http://".$stk['ip']."\" target=\"_blank\"><sup>".$stk['port']."</sup>[".$stk['ip']."] (".$portCorrection[$switches[$stk['ip']]['portnum']].")</a> </strong>";
+					
+				}
+			}
+			$output[$selfIP] = $initSwitch." -> ".implode($switch, " -> "). " -> ".$finalSwitch;
+		}
+		
+		sort($output, SORT_NATURAL);
+		foreach ($output as $ip=>$listing){
+			print $listing."<hr>";
+		}
+	}
 }
 
 /* End of file network.php */

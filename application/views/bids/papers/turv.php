@@ -558,7 +558,7 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
   <td style='border:none;border-bottom:solid black 1.0pt;mso-border-bottom-alt:
   solid black .75pt;padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal align=center style='margin:0cm;margin-bottom:.0001pt;
-  text-align:center'><b>Г.А. Титов<o:p></o:p></b></p>
+  text-align:center'><b>Ю.В. Агеев<o:p></o:p></b></p>
   </td>
  </tr>
  <tr style='mso-yfti-irow:2;mso-yfti-lastrow:yes'>

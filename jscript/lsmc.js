@@ -4,13 +4,19 @@ $('.modal').modal({
 
 
 $(".makeEvent").click(function(){
-	$("#eventItemID").val($(this).attr("prop"));
-	$("#eventAnnotation").val("");
+	$(".eventItemID").val($(this).attr("prop"));
+	$(".eventAnnotation").val("");
 	$("#modalEvent").modal("show");
 });
 
+$(".makeBackEvent").click(function(){
+	$(".eventItemID").val($(this).attr("prop"));
+	$(".eventAnnotation").val("");
+	$("#modalBackEvent").modal("show");
+});
+
 $(".mailEvent").click(function(){
-	$("#eventAnnotation").val($("#eventAnnotation").val() + (($("#eventAnnotation").val().length) ? "\n" : "") + "Пароль почтового ящика: ")
+	$(".eventAnnotation").val($(".eventAnnotation").val() + (($(".eventAnnotation").val().length) ? "\n" : "") + "Пароль почтового ящика: ")
 })
 
 $('.button-take').click(function(){
@@ -41,36 +47,41 @@ $("#layerModalOk2").click(function(){ // назначение лицензии
 	//return false;
 });
 
-$('.button-order').click(function(){
+$('.button-order').click(function() {
 	var id = $(this).attr('ref');
 	$.ajax({
-		url: "/licenses/get_all_licenses/" + id,
-		dataType: "html",
-		cache: false,
-		success: function(data){
+		url      : "/licenses/get_all_licenses",
+		dataType : "html",
+		success  : function(data) {
 			$("#resCollection3").html(data);
 			$('#akl3').val(id);
 			$(".itemsel").click(function(){
 				$("#itemid3").val($(this).attr('ref'));
 				$("#layerModalOk3").removeAttr('disabled');
 			});
-			//$("#ds32").val();
+			$("#modalRes3").modal('show');
 			$("#ds32").keyup(function(){
-				$(".searchname").each(function(){
-					if($(this).text().toLowerCase().indexOf($("#ds32").val().toLowerCase()) > (-1)){
-						$("#row" + $(this).attr("ref")).removeClass('hide');
-					}else{
-						$("#row" + $(this).attr("ref")).addClass('hide');
-					}
+				var search = $("#ds32").val();
+				$(".ALLItem").addClass('hide')
+				$(".searchval").each(function() {
+					findIn($(this).text(), search, $(this).attr("ref"));
+				});
+				$(".searchname").each(function() {
+					findIn($(this).text(), search, $(this).attr("ref"));
 				});
 			});
 		},
-		error: function(data,stat,err){
+		error    : function(data,stat,err) {
 			$("#consoleContent").html([data,stat,err].join("<br>"));
 		}
 	});
-	$("#modalRes3").modal('show');
 });
+
+function findIn( haystack, needle, ref ) {
+	if ( haystack.toLowerCase().indexOf(needle.toLowerCase()) !== (-1) ) {
+		$("#row" + ref).removeClass('hide');
+	}
+}
 
 $('.button-convert').click(function(){
 	var id = $(this).attr('ref');
@@ -108,8 +119,8 @@ $("#doConv").unbind().click(function(){
 			success: function(data){
 				//window.location.reload();
 			},
-			error: function(data,stat,err){
-				$("#consoleContent").html([data,stat,err].join("<br>"));
+			error: function(data, stat, err){
+			console.log([data, stat, err]);
 			}
 		});
 	}
@@ -121,30 +132,63 @@ $('#button-addlicr').click(function(){
 	$("#LicLabel").modal('show');
 });
 
-$('#button-addPOtoset').click(function(){
-	var setid = $(this).attr('set'),
-		qty = $("#po_num_" + setid).val();
+$("#addSoftwareType").click(function(){
+	if(!$("#newTypeName").val().length){
+		return false;
+	}
 	$.ajax({
-		url: "/licenses/get_typelist/",
-		dataType: "html",
-		cache: false,
-		success: function(data){
-			$("#addsoft").html(data);
-			$("#toSetSubmit").click(function(){
+		url      : "/licenses/addtype",
+		type     : 'POST',
+		data     : {
+			typename : $("#newTypeName").val()
+		},
+		dataType : "text",
+		success  : function(data) {
+			getSoftwareList();
+		},
+		error    : function(data, stat, err){
+			console.log([data, stat, err]);
+		}
+	});
+	
+});
+
+function getSoftwareList(){
+	$.ajax({
+		url      : "/licenses/get_typelist",
+		dataType : "html",
+		success  : function(data) {
+			$("#addsoft").append(data);
+			$("#toSetSubmit").unbind().click(function() {
 				types = [];
-				$(".typelist:checked").each(function(){
+				$(".typelist:checked").each(function() {
 					types.push($(this).attr('ref'));
 				});
 			});
+			$("#filterSoftByName").keyup(function() {
+				var string = $(this).val();
+				$("#addsoft tr").each(function() {
+					if ( $(this).attr("ref").toLowerCase().indexOf(string.toLowerCase()) === -1 ) {
+						$(this).addClass("hide");
+						return true;
+					}
+					$(this).removeClass("hide");
+				})
+			});
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error    : function(data, stat, err){
+			console.log([data, stat, err]);
 		}
 	});
+}
+
+
+$('#button-addPOtoset').click(function(){
+	var setid = $(this).attr('set'),
+		qty = $("#po_num_" + setid).val();
+	getSoftwareList();
 	$("#SetLabel").modal('show');
 });
-
-
 
 $("#LicrModalSubmit").click(function(){
 	$("#form3").submit();

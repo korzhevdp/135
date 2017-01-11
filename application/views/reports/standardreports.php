@@ -11,6 +11,7 @@
 	<ul class="nav nav-tabs">
 		<li class="active"><a href="#tab1" data-toggle="tab">Текущие конфигурации ПК</a></li>
 		<li><a href="#tab2" data-toggle="tab">Руководители</a></li>
+		<li><a href="#tab3" data-toggle="tab">Бескомпьютерные</a></li>
 	</ul>
 	<div class="tab-content">
 
@@ -39,6 +40,14 @@
 				<th>email</th><th>ФИО</th><th>Должность</th><th>Подразделение</th>
 			</tr>
 			<?=$cios;?>
+			</table>
+		</div>
+		<div class="tab-pane" id="tab3">
+			<table class="table table-bordered table-condensed table-striped">
+			<tr>
+				<th>ФИО</th><th>Ожидаемое имя ПК</th><th>Подразделение</th>
+			</tr>
+			<?=$pcless;?>
 			</table>
 		</div>
 	</div>

@@ -74,21 +74,50 @@ class Integrity extends CI_Controller {
 	}
 
 	public function checklabel(){
-		$result = $this->db->query("SELECT `ak_licenses`.id FROM `ak_licenses` WHERE `ak_licenses`.`label` = ? AND NOT `ak_licenses`.`manual`", array($this->input->post("label")));
-		($result->num_rows()) ? print 0 : print 1;
+
 	}
 
 	public function savelabel(){
-		$this->db->query("UPDATE 
-		`ak_licenses` 
-		SET 
-		`ak_licenses`.`label` = ? 
-		WHERE `ak_licenses`.`id` = ?", array(
-			"1".str_replace("-", "", $this->input->post("newNum")),
-			$this->input->post("pcId")
+		$result = $this->db->query("SELECT
+		`ak_licenses`.id
+		FROM 
+		`ak_licenses`
+		WHERE
+		`ak_licenses`.`label` = ?", array(
+			$this->input->post("label")
 		));
-		$this->load->helper('url');
-		redirect('integrity/show/6#'.$this->input->post("pcId"));
+		if ($result->num_rows()) {
+			print "Fail";
+			return false;
+		}
+		/*
+		$result = $this->db->query("SELECT 
+		`inv_po_licenses_sets`.label_starts + `inv_po_licenses_sets`.`max` AS maxlabel
+		FROM
+		`inv_po_licenses_sets`
+		WHERE
+		`inv_po_licenses_sets`.label_starts LIKE '".substr($this->input->post("label"), 0 -4)."%'");
+		if ($result->num_rows()) {
+			$row = 0;
+		}
+		*/
+		//print "You may write";
+		//return false;
+		$result = $this->db->query("UPDATE
+		`ak_licenses`
+		SET
+		`ak_licenses`.`label` = ?
+		WHERE
+		`ak_licenses`.`id` = ?", array(
+			$this->input->post("label"),
+			$this->input->post("pcID")
+		));
+		if ($this->db->affected_rows()) {
+			print "OK";
+			return true;
+		}
+		print "Not found";
+		return false;
 		//$this->output->enable_profiler(TRUE);
 	}
 

@@ -363,10 +363,10 @@ class Consmodel extends CI_Model {
 		users.phone
 		FROM
 		users
-		INNER JOIN departments ON (users.dep_id = departments.id)
-		INNER JOIN staff ON (users.staff_id = staff.id)
-		INNER JOIN locations ON (users.office_id = locations.id)
-		INNER JOIN locations locations1 ON (locations1.id = locations.parent)
+		LEFT OUTER JOIN departments ON (users.dep_id = departments.id)
+		LEFT OUTER JOIN staff ON (users.staff_id = staff.id)
+		LEFT OUTER JOIN locations ON (users.office_id = locations.id)
+		LEFT OUTER JOIN locations locations1 ON (locations1.id = locations.parent)
 		LEFT OUTER JOIN users users1 ON (users.service = users1.id)
 		WHERE
 		(users.id IN (".implode($collection,",")."))

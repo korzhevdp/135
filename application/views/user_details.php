@@ -47,10 +47,6 @@
 			<input style="width:420px;margin-bottom:5px;" name="userid" ID="userid" maxlength="60" placeholder="Фамилия или логин / имя компьютера пользователя " type="text" value="<?=($filter) ? $filter : '';?>">
 			<label style="display:inline;"><input type="checkbox" id="withFired" style="margin-top:-3px" checked="checked"> Показать уволенных</label>
 		</div>
-			
-
-		
-		
 	</div>
 	<div class="control-group">
 		<label class="control-label span2">&nbsp;</label>
@@ -163,6 +159,7 @@
 			<button type="button" class="btn btn-<?=(($fired) ? "inverse" : "info");?> <?=($saveable) ? "fireSw" : 'disabled' ;?>" id="fireSw" ref="<?=$id?>" style="width:100px;"><?=(($fired) ? "Уволен(а)" : "Уволить");?></button>
 			<a href="/admin/takeuser/<?=$id;?>/<?=$this->session->userdata('base_id');?>" class="btn btn-warning" <?=(((int) $this->session->userdata("rank") == 1) ? ' disabled="disabled"' : '');?> title="Сделать себя куратором этого пользователя">Забрать пользователя</a>
 			<button type="submit" class="btn btn-primary" name="saveID" value="<?=$id?>" id="generalSave" <?=($saveable) ? "" : 'disabled="disabled"' ;?>>Сохранить</button>
+			<!-- <a href="/admin/audit/<?=$id;?>" class="btn btn-info" target="_blank">История изменений</a> -->
 			</form>
 		</div>
 
@@ -195,30 +192,53 @@
 					<button type="submit" form="Qadd" class="btn btn-small btn-info" style="margin-top:-8px;margin-left:10px;">Добавить административную заявку</button>
 				</div>
 			</form>
-
-			<div id="modalEvent" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel4" aria-hidden="true">
-				<form method="post" action="/events/makeevent" accept-charset="UTF-8">
+			
+			<form method="post" action="/events/makeevent" accept-charset="UTF-8">
+				<div id="modalEvent" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel4" aria-hidden="true">
 					<div class="modal-header">
-						<h4>Создание поручение куратору <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button></h4>
+						<h4>Создание поручения куратору <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button></h4>
 					</div>
 					<div class="modal-body">
-						<small>Пользователь: <?=($id) ? implode(array($name_f,$name_i,$name_o)," ") : "Не выбран пользователь" ;?>&nbsp;</small>
-							<input type="hidden" name="itemID" id="eventItemID" value="">
+						Пользователь: <?=($id) ? implode(array($name_f, $name_i, $name_o), " ") : "Не выбран пользователь" ;?>
+							<input type="hidden" id="eventItemID" name="itemID" class="eventItemID" value=""><br>
+							Показать с: <input type="text" id="startTime" name="startTime" class="wDate" value="<?=date("d.m.Y");?>"><br>
 							<select name="eventAction[]" multiple="multiple" style="width:500px;" size=4>
 								<option value="Переименовать компьютер">Переименовать компьютер</option>
 								<option value="Подтвердить состав лицензий">Подтвердить состав лицензий</option>
+								<option value="Проверить наличие ЭЦП">Проверить наличие ЭЦП</option>
 								<option value="Проверить настройки клиента электронной почты" class="mailEvent">Проверить настройки клиента электронной почты</option>
 								<option value="Проверить настройки прокси-сервера">Проверить настройки прокси-сервера</option>
 							</select>
 							<br>Комментарий<br>
-							<textarea name="eventAnnotation" id="eventAnnotation" rows="6" cols="7" style="width:500px;height:70px;"></textarea>
+							<textarea name="eventAnnotation" class="eventAnnotation" rows="6" cols="7" style="width:500px;height:70px;"></textarea>
+					</div>
+					<div class="modal-footer" style="text-align:right">
+						<button type="submit" class="btn btn-primary">Отправить</button>
+					</div>
+				</div>
+			</form>
+
+			<div id="modalBackEvent" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel4" aria-hidden="true">
+				<form method="post" action="/events/makebackevent" accept-charset="UTF-8">
+					<div class="modal-header">
+						<h4>Храбрый ответ сисадмину <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button></h4>
+					</div>
+					<div class="modal-body">
+						Пользователь: <?=($id) ? implode(array($name_f,$name_i,$name_o)," ") : "Не выбран пользователь" ;?>
+							<input type="hidden" name="itemID" id="eventBackItemID" class="eventItemID" value="">
+							Показать с: <input type="text" id="startTime2" name="startTime" class="wDate" value="<?=date("d.m.Y");?>"><br>
+							<select name="eventAction[]" multiple="multiple" style="width:500px;" size=4>
+								<option value="Удалить компьютер из домена">Удалить компьютер из домена</option>
+								<option value="Выдать новый пароль e-mail">Выдать новый пароль e-mail</option>
+							</select>
+							<br>Комментарий<br>
+							<textarea name="eventAnnotation" class="eventAnnotation" rows="6" cols="7" style="width:500px;height:70px;"></textarea>
 					</div>
 					<div class="modal-footer" style="text-align:right">
 						<button type="submit" class="btn btn-primary">Отправить</button>
 					</div>
 				</form>
 			</div>
-
 			<form method="post" class="form-horizontal" action="">
 				<?=$resources;?>
 			</form>
@@ -246,12 +266,6 @@
 				<input type="text" name="host" id="host" class="long" form="userform1" value="<?=$host;?>">
 			</div>
 
-			
-			<div class="input-prepend control-group">
-				<label class="control-label">Записи аудита</label>
-				<span><a href="/audit/<?=$id;?>" target="_blank">Щёлкните здесь для просмотра</a></span>
-			</div>
-
 			<div class="input-prepend control-group">
 				<span class="add-on pre-label">Статусы</span>
 			</div>
@@ -265,6 +279,7 @@
 			<button type="button" class="btn btn-<?=(($fired) ? "inverse" : "info");?> <?=($saveable) ? "fireSw" : 'disabled' ;?>" id="fireSw" ref="<?=$id?>" style="width:100px;"><?=(($fired) ? "Уволен(а)" : "Уволить");?></button>
 			<a href="/admin/takeuser/<?=$id;?>/<?=$this->session->userdata('base_id');?>" class="btn btn-warning" <?=(((int) $this->session->userdata("rank") == 1) ? ' disabled="disabled"' : '');?> title="Сделать себя куратором этого пользователя">Забрать пользователя</a>
 			<button type="submit" class="btn btn-primary " name="saveID" value="<?=$id?>" form="userform1" id="generalSave" <?=($saveable) ? "" : 'disabled="disabled"' ;?>>Сохранить</button>
+			<!-- <a href="/admin/audit/<?=$id;?>" class="btn btn-info" target="_blank">История изменений</a> -->
 		</div>
 
 		<div class="tab-pane <?=($page == 4) ? "active" : "";?>" id="tab4">
@@ -335,14 +350,15 @@
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 					<h3 id="myModalLabel3">Назначить произвольную лицензию <small>из пула</small></h3>
-					Отобрать только: <input type="text" id="ds32" size="44">
+					Отобрать только: <input type="text" id="ds32" size="44" placeholder="office 2012 или KQBKK">
 				</div>
 				<div class="modal-body">
 					<table class="table table-bordered table-hover table-condensed">
 					<tr>
 						<th></th>
-						<th class="span9">Лицензия</th>
-						<th class="span2">Остаток</th>
+						<th>Лицензия</th>
+						<th>Тип</th>
+						<th>Остаток</th>
 					</tr>
 					<tbody id="resCollection3"></tbody>
 					</table>
@@ -364,7 +380,7 @@
 				<input type="hidden" name="userid" value="<?=$userid;?>">
 			</form>
 			<!-- контролы управления лицензиями -->
-			<script type="text/javascript" src="/jscript/lsmc.js"></script>
+			
 			<?}?>
 		</div>
 	</div>
@@ -372,5 +388,6 @@
 	Полный список пользователей ЛВСМ находится выше
 <?}?>
 
-
+<!-- <button type="button" class="btn btn-primary button-ask">Отправить</button> -->
+<script type="text/javascript" src="/jscript/lsmc.js"></script>
 <script type="text/javascript" src="/jscript/users.js"></script>

@@ -344,17 +344,27 @@ $("#hideallarm").click(function(){
 	$(this).addClass("hide");
 });
 
-$(".fireSw").click(function(){
+$(".fireSw").click(function() {
+
 	button = $(this);
-	id = button.attr('ref');
+	id     = $(this).attr('ref');
 	$.ajax({
-		url: "/admin/switchfired/" + id,
-		success: function(data){
-			(button.hasClass("btn-info")) ? button.removeClass("btn-info").addClass("btn-inverse").empty().html("Уволен(а)") : button.removeClass("btn-inverse").addClass("btn-info").empty().html("Уволить");
-			//$(this).empty().html(data);
+		url     : "/admin/switchfired",
+		data    : { id : id },
+		type    : "POST",
+		dataType: 'script',
+		success : function() {
+			if (data.error === 0) {
+				( button.hasClass("btn-info") )
+					? button.removeClass("btn-info").addClass("btn-inverse").empty().html("Уволен(а)")
+					: button.removeClass("btn-inverse").addClass("btn-info").empty().html("Уволить");
+				console.log(data.message);
+				return true;
+			}
+			alert(data.message);
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error: function( data, stat, err ) {
+			$("#consoleContent").html([ data, stat, err ].join("<br>"));
 		}
 	});
 });

@@ -538,6 +538,7 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><span style='font-size:.5pt;mso-bidi-font-size:12.0pt'><o:p>&nbsp;</o:p></span></p>
   </td>
  </tr>
+    <? if ($deptForTemplate !== "81") { ?>
  <tr style='mso-yfti-irow:1'>
   <td style='padding:0cm 0cm 0cm 0cm' rowspan=2>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt;text-align:center;'>Администратор безопасности<br>информации</p>
@@ -556,7 +557,7 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
   <td style='border:none;border-bottom:solid black 1.0pt;mso-border-bottom-alt:
   solid black .75pt;padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal align=center style='margin:0cm;margin-bottom:.0001pt;
-  text-align:center'><b>Г.А. Титов<o:p></o:p></b></p>
+  text-align:center'><b>Ю.B. Агеев<o:p></o:p></b></p>
   </td>
  </tr>
  <tr style='mso-yfti-irow:2;mso-yfti-lastrow:yes'>
@@ -576,6 +577,9 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
   style='font-size:10.0pt'></span></p>
   </td>
  </tr>
+    <? } else { ?>
+   <br><br>
+   <? } ?>
 </table>
 
 <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><o:p>&nbsp;</o:p></p>

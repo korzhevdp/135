@@ -140,7 +140,7 @@ class Adminmodel extends CI_Model {
 			if ($result->num_rows()){
 				$output=array();
 				foreach($result->result() as $row){
-					array_push($output,$row->email);
+					array_push($output, strtolower($row->email));
 				}
 				$user['email'] = implode($output,"; ");
 			}
@@ -268,7 +268,7 @@ class Adminmodel extends CI_Model {
 				if(!isset($res[$row['id']])){
 					$res[$row['id']] = array();
 				}
-				$res[$row['id']]['pid'.$row['pid']] = $row['pid_value'];
+				$res[$row['id']]['pid'.$row['pid']] = strtolower($row['pid_value']);
 				unset( $row['pid'], $row['pid_value'] );
 				$res[$row['id']] = array_merge($res[$row['id']], $row);
 			}
@@ -280,16 +280,48 @@ class Adminmodel extends CI_Model {
 			$row['mnChunk']  = (in_array($row['rid'], array(100)))		? $this->load->view("mntemplate", $row, true) : '';
 			$row['osa_date'] = ( $row["ok"] ) ? "исполнено ОСА: ".$row['okdate'] : "";
 			#####################
-			$row['button1'] = '<span class="btn btn-'.(($row["ok"]) ? ((!$row["apply"]) ? "inverse" : "success" ) : "primary").' btn-small activate" prop="'.$row['id'].'"
-			title="'.(($row["ok"]) ? ((!$row["apply"]) ? "Обновить данные заявки" : "Архив" ) : "Пометить исполненной отделом СА").'">
-			<i class="'.(($row["ok"]) ? "icon-edit" : "icon-ok-sign").' icon-white"></i>&nbsp;'.(($row["ok"]) ? ((!$row["apply"]) ? "Ждём куратора" : "Исполнено" ) : "Активировать").'</span>';
+			$row['button1'] = '<span class="btn btn-'.(($row["ok"])
+				? (($row["apply"])
+					? "success"
+					: "inverse" )
+				: "primary").' btn-small activate" prop="'.$row['id'].'" title="'.(($row["ok"])
+					? (($row["apply"])
+						? "Архив"
+						: "Обновить данные заявки" )
+					: "Пометить исполненной отделом СА").'">
+			<i class="'.(($row["ok"])
+				? "icon-edit" 
+				: "icon-ok-sign").' icon-white"></i>&nbsp;'.(($row["ok"])
+					? (($row["apply"]) 
+						? "Исполнено"
+						: "Ждём куратора" ) 
+					: "Активировать").'</span>';
 
-			$row['button1'] = ($this->session->userdata('rank') || $this->session->userdata("admin_id") == 26) ? $row['button1'] : '<span class="btn btn-'.((!$row["apply"]) ? "warning" : "success").' btn-small'.(($this->session->userdata('canSee') == $row['supervisor']) ? ' hookup': "").'" prop="'.$row['id'].'">
-			<i class="'.(($row["ok"]) ? "icon-edit" : "icon-ok-sign").' icon-white"></i>&nbsp;'.((!$row["apply"]) ? "Доложить об исполнении" : "Исполнено").'&nbsp;</span>';
+			$row['button1'] = ($this->session->userdata('rank') || $this->session->userdata("admin_id") == 26) 
+				? $row['button1'] 
+				: '<span class="btn btn-'.(($row["apply"])
+					? "success"
+					: "warning").' btn-small'
+					.(($this->session->userdata('canSee') == $row['supervisor'])
+					? ' hookup'
+					: "").'" prop="'.$row['id'].'"><i class="'.(($row["ok"])
+					? "icon-edit"
+					: "icon-ok-sign")
+				.' icon-white"></i>&nbsp;'.(($row["apply"])
+					? "Исполнено"
+					: "Доложить об исполнении")
+			.'&nbsp;</span>
+			<span class="btn btn-info btn-small makeBackEvent" prop="'.$row['id'].'"  title="Создать сообщение администратору"><i class="icon-calendar icon-white"></i>&nbsp;</span>';
 
-			$row['button2'] = ($this->session->userdata('rank')) ? '<span class="btn btn-warning btn-small expire" prop="'.$row['id'].'" title="Отменить"><i class="icon-remove-sign icon-white"></i>&nbsp;</span>
-			<span class="btn btn-danger btn-small delete" prop="'.$row['id'].'"  title="Удалить"><i class="icon-trash icon-white"></i>&nbsp;</span>
-			<span class="btn btn-info btn-small makeEvent" prop="'.$row['id'].'"  title="Создать поручение"><i class="icon-calendar icon-white"></i>&nbsp;</span>' : '';
+			$row['button2'] = ($this->session->userdata('rank')) 
+				? '<span class="btn btn-warning btn-small expire" prop="'.$row['id'].'" title="Отменить"><i class="icon-remove-sign icon-white"></i>&nbsp;</span>
+				<span class="btn btn-danger btn-small delete" prop="'.$row['id'].'"  title="Удалить"><i class="icon-trash icon-white"></i>&nbsp;</span>
+				<span class="btn btn-info btn-small makeEvent" prop="'.$row['id'].'"  title="Создать поручение"><i class="icon-calendar icon-white"></i>&nbsp;</span>'
+				: '';
+			$row['button2'] = ($this->session->userdata("admin_id") == 26 && $row['rid'] == 103) 
+				? '<span class="btn btn-warning btn-small expire" prop="'.$row['id'].'" title="Отменить"><i class="icon-remove-sign icon-white"></i>&nbsp;</span>'
+				: $row['button2'];
+
 
 			$template = $this->load->view("restemplate", $row, true);
 			($row['exp']) ? array_push($expired, $template) : array_push($active, $template);
@@ -304,20 +336,20 @@ class Adminmodel extends CI_Model {
 	}
 
 	public function user_arm_get($user_id) {
-		if(!$user_id){
-			$return = array();
-			$return['pcconfs'] = "Не выбран пользователь";
-			$return['pclist'] = "";
-			$return['pcused'] = "";
-			$return['pcpo'] = "";
-			$return['licenses'] = "";
-			return $return;
+		if (!$user_id) {
+			return array(
+				'pcconfs'  => "Не выбран пользователь",
+				'pclist'   => "",
+				'pcused'   => "",
+				'pcpo'     => "",
+				'licenses' => ""
+			);
 		}
-		$output = array();
+		$output  = array();
 		$headers = array();
-		$pclist = array();
-		$usedpc = array();
-		$result = $this->db->query("SELECT DISTINCT
+		$pclist  = array();
+		$usedpc  = array();
+		$result  = $this->db->query("SELECT DISTINCT
 		hash_items.id,
 		hash_items.inv_number,
 		CONCAT_WS(' ', hash_items.baseboard_manufacturer,hash_items.baseboard_product,hash_items.baseboard_serialnumber,hash_items.baseboard_version) as mb,
@@ -342,11 +374,7 @@ class Adminmodel extends CI_Model {
 		if($result->num_rows()){
 			foreach($result->result() as $row){
 				$string = '<li title="'.$row->hostname.'" act="'.$row->id.'" class="armselector">'.$row->hostname.'</li>';
-				if ($row->active) { 
-					array_push($pclist,$string);
-				}else{ 
-					array_push($usedpc,$string);
-				}
+				($row->active) ? array_push($pclist, $string) : array_push($usedpc, $string);
 				$pcmode = ($row->active) 
 					? '<button type="submit" class="btn btn-warning btn-mini" form="invform'.$row->id.'" name="block" value="block">Заблокировать</button>'
 					: '<button type="submit" class="btn btn-warning btn-mini" form="invform'.$row->id.'" name="block" value="unblock">Разблокировать</button>';
@@ -419,13 +447,12 @@ class Adminmodel extends CI_Model {
 			}
 		}
 
-		$return = array();
-		$return['pcconfs'] = implode($output,"\n");
-		$return['pclist']  = implode($pclist,"\n");
-		$return['pcused']  = implode($usedpc,"\n");
-
-		$return['licenses'] = $this->licensemodel->userlicenses_get($user_id);
-		return $return;
+		return array(
+			'pcconfs'  => implode($output,"\n"),
+			'pclist'   => implode($pclist,"\n"),
+			'pcused'   => implode($usedpc,"\n"),
+			'licenses' => $this->licensemodel->userlicenses_get($user_id),
+		);
 	}
 
 	public function no_cache() {
@@ -441,7 +468,7 @@ class Adminmodel extends CI_Model {
 		$filter = iconv('UTF-8', 'Windows-1251' , urldecode($filter)).'%';
 		$mode = (preg_match("/[a-zA-Z]/",$filter)) ? "host" : "name";
 		$output = array();
-		if($mode == "name"){
+		if ($mode == "name") {
 			$result =$this->db->query("SELECT 
 			CONCAT('<option value=',
 			`users`.`id`,
@@ -452,7 +479,7 @@ class Adminmodel extends CI_Model {
 			WHERE
 			LOWER(CONCAT_WS(' ', `users`.name_f, `users`.name_i, `users`.name_o)) LIKE ?
 			ORDER BY TRIM(`users`.name_f) ASC, TRIM(`users`.name_i) ASC, TRIM(`users`.name_o) ASC", array($uid, $filter));
-		}else{
+		} else {
 			$result = $this->db->query("SELECT 
 			CONCAT('<option value=',
 			`users`.id,
@@ -465,18 +492,26 @@ class Adminmodel extends CI_Model {
 			users.host LIKE ?
 			ORDER BY TRIM(`users`.name_f) ASC, TRIM(`users`.name_i) ASC, TRIM(`users`.name_o) ASC",array($uid, $filter));
 		}
-		if($result->num_rows()){
-			foreach($result->result() as $row){
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
 				array_push($output,$row->options);
 			}
 		}
-		$list = implode($output,"\n");
+		$list = implode($output, "\n");
 		print $list;
 	}
 
 	public function summary_show() {
 		$this->db->query("SET lc_time_names = 'ru_RU';");
-		$summary		= array();
+		$summary		= array(
+			'user_num'       => "",
+			'user_table'     => "",
+			'servicemendata' => "",
+			'tabs'           => "",
+			'graph'          => "",
+			'panes'          => ""
+
+		);
 		$usertable		= array();
 		$usertable_l	= array();
 		$a_id			= $this->session->userdata("admin_id");
@@ -499,7 +534,7 @@ class Adminmodel extends CI_Model {
 		NOT `users`.fired ".(( (int) $rank == 1) ? "" : "AND `users`.supervisor = ".$my_sup ));
 
 		$summary['user_num'] = $result->num_rows();
-		if($summary['user_num']){
+		if ($summary['user_num']) {
 			foreach ($result->result() as $row){
 				$string = '<tr><td><a href="/admin/users/'.$row->id.'">'.$row->userfio.'</a></td>
 				<td>'.$row->curator.'</td>
@@ -508,8 +543,6 @@ class Adminmodel extends CI_Model {
 			}
 			$summary['user_table'] = implode($usertable,"\n");
 		}
-
-		$summary['servicemendata'] = "";
 
 		$servicemen = array();
 		$result = $this->db->query("SELECT 
@@ -773,6 +806,7 @@ class Adminmodel extends CI_Model {
 	}
 
 	public function user_save() {
+		$this->updateFEEntry($this->input->post('saveID'));
 		$result = $this->db->query("UPDATE
 		`users`
 		SET
@@ -785,7 +819,7 @@ class Adminmodel extends CI_Model {
 		`users`.memo = ?,
 		`users`.phone = ?,
 		`users`.service = ?,
-		`users`.supervisor = (SELECT admins.base_id FROM departments LEFT OUTER JOIN admins ON (departments.service = admins.id) WHERE `departments`.`id` = ? LIMIT 1),
+		`users`.supervisor = (SELECT admins.supervisor FROM admins WHERE `admins`.`base_id` = ? LIMIT 1),
 		`users`.host = TRIM(?),
 		`users`.login = TRIM(?),
 		`users`.air = ?,
@@ -795,7 +829,7 @@ class Adminmodel extends CI_Model {
 		`users`.superv = ?,
 		`users`.io = ?
 		WHERE
-		`users`.`id` = ?",array(
+		`users`.`id` = ?", array(
 			$this->input->post('sname'),
 			$this->input->post('name'),
 			$this->input->post('fname'),
@@ -805,7 +839,7 @@ class Adminmodel extends CI_Model {
 			$this->input->post('memo'),
 			$this->input->post('phone'),
 			$this->input->post('service'),
-			$this->input->post('dept'),
+			$this->input->post('service'),
 			$this->input->post('host'),
 			$this->input->post('login'),
 			$this->input->post('air'),
@@ -816,16 +850,35 @@ class Adminmodel extends CI_Model {
 			$this->input->post('io'),
 			$this->input->post('saveID')
 		));
-		$this->load->helper('url');
 		$this->usefulmodel->insert_audit("Сохранена учётная карточка пользователя ".$this->input->post('login'));
-
+		$this->load->helper('url');
 		redirect("admin/users/".$this->input->post('saveID'));
 	}
 
+	private function updateFEEntry($userID) {
+		$result = $this->db->query("SELECT
+		CONCAT_WS(' ', `users`.name_f, `users`.name_i, `users`.name_o ) as fio
+		FROM
+		`users`
+		WHERE `users`.`id` = ?", array($userID));
+		if ($result->num_rows()) {
+			if ($result->num_rows() > 1) {
+				return false;
+			}
+			$row = $result->row(0);
+			$fio = $row->fio;
+			$newfio = ucwords(implode( array( $this->input->post('sname'), $this->input->post('name'), $this->input->post('fname')), " "));
+			if ($fio != $newfio) {
+				$DB2 = $this->load->database('12', TRUE);
+				$DB2->query("UPDATE `fios` SET `fios`.`fio` = TRIM(?) WHERE TRIM(`fios`.`fio`) = TRIM(?)", array( $newfio, $fio ));
+			}
+		}
+	}
+
 	public function stuck_orders() {
-		$is_sup = $this->session->userdata('is_sup');
+		$is_sup  = $this->session->userdata('is_sup');
 		$base_id = $this->session->userdata('base_id');
-		$rank = $this->session->userdata('rank');
+		$rank    = $this->session->userdata('rank');
 
 		$output = array();
 		array_push($output,'<h2>Застрявшие заявки</h2>');
@@ -903,7 +956,19 @@ class Adminmodel extends CI_Model {
 	}
 	
 	public function takeuser($user, $newcurator) {
-		$result = $this->db->query("UPDATE `users` SET `users`.service = ? WHERE `users`.id = ?", array($newcurator, $user));
+		$result = $this->db->query("UPDATE 
+		`users` 
+		SET
+		`users`.service = ?,
+		`users`.supervisor = (
+			SELECT 
+			admins.supervisor
+			FROM
+			admins
+			WHERE
+			`admins`.`base_id` = ?
+		)
+		WHERE `users`.id = ?", array($newcurator, $newcurator, $user));
 		$this->load->helper("url");
 		redirect("admin/users/".$user);
 	}
@@ -915,6 +980,21 @@ class Adminmodel extends CI_Model {
 		SET
 		`hash_items`.active = ?
 		WHERE `hash_items`.`id` = ?", array($mode, $invnum));
+	}
+
+	public function getAuditData($id) {
+		return false;
+		$output = array();
+		$result = $this->db->query("");
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				
+			}
+		}
+		$act = array(
+			'content' => "Bcnjhz gjkmpjdfntkz"
+		);
+		return $act;
 	}
 }
 

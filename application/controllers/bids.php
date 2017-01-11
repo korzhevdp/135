@@ -23,8 +23,8 @@ class Bids extends CI_Controller {
 			? $this->input->post("userSelector")
 			: 0;
 		$res = ($userid)												// получаются начальные данные страницы
-			? $this->bidsmodel->user_data_get($userid)				// либо данные с учётом пользователя
-			: $this->bidsmodel->blank_data_get();					// либо бланк нового пользователя
+			? $this->bidsmodel->user_data_get($userid)					// либо данные с учётом пользователя
+			: $this->bidsmodel->blank_data_get();						// либо бланк нового пользователя
 		$res['filter'] = urldecode($this->session->userdata("filter"));	// раскодируется строка фильтрации пользователей
 		$res['locs']   = $this->bidsmodel->locs_get();
 
@@ -46,7 +46,7 @@ class Bids extends CI_Controller {
 
 	public function getpapers(){										// простое получение заявок
 		//$this->output->enable_profiler(TRUE);
-		$this->bidsmodel->papers_get();								// вызов простого получения заявок из модели
+		$this->bidsmodel->papers_get();									// вызов простого получения заявок из модели
 	}
 
 	public function phpinfo(){
@@ -63,6 +63,10 @@ class Bids extends CI_Controller {
 		$this->bidsmodel->subproperties_get($res);					// извлечение частных свойств ресурсов по rid
 	}
 
+	public function getwebportalsection() {
+		$this->bidsmodel->getWebPortalSection();					// извлечение частных свойств ресурсов по rid
+	}
+
 	public function reget_orders($res = array()){
 		$this->bidsmodel->reget_orders($res);						// повторное получение заявок по itemid
 	}
@@ -73,11 +77,6 @@ class Bids extends CI_Controller {
 
 	public function getuserresources(){
 		print $this->bidsmodel->user_res_get($this->input->post("uid"));
-	}
-
-	public function insert_to_cfs() {
-		print "Тестирование связи с CFSX отключено";
-		//$this->bidsmodel->insert_to_cfsX("test", "test", "test");
 	}
 
 	public function resetUID() {

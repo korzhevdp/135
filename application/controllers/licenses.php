@@ -17,7 +17,8 @@ class Licenses extends CI_Controller {
 		}
 	}
 
-	public function index($userid = 1){
+	public function index($userid = 0) {
+		$this->user($userid);
 	}
 
 	public function user($userid = 0, $dep_id = 0){
@@ -119,83 +120,83 @@ class Licenses extends CI_Controller {
 		//$this->output->enable_profiler(TRUE);
 		$input   = array();
 		$input2  = array();
-		$output  = array('<tr><th>Hostname</th><th>Лицензия</th><th>Номер Лицензии</th></tr>');
+		$output  = array();
 		$setlist = array();
-		$result  = $this->db->query("SELECT DISTINCT 
+		$result  = $this->db->query("SELECT DISTINCT
 		ak_licenses.id AS akid,
 		ak_licenses.hostname,
 		ak_licenses.product_name,
-		inv_po_types.name,
 		inv_po_licenses_sets.id AS setid,
 		inv_po_licenses.id,
 		inv_po_licenses.number,
 		inv_po_licenses_items.master,
-		IF(inv_po_licenses_items.master, 'прямая', 'даунгрейд') AS lmode,
+		inv_po_types.name,
 		inv_po_types.serverwise
 		FROM
 		ak_licenses
-		LEFT OUTER JOIN `hosts` ON (ak_licenses.hostname = `hosts`.hostname)
 		LEFT OUTER JOIN inv_po_licenses_items ON (ak_licenses.product_key = inv_po_licenses_items.value)
 		LEFT OUTER JOIN inv_po_types ON (inv_po_licenses_items.type_id = inv_po_types.id)
 		LEFT OUTER JOIN inv_po_licenses_sets ON (inv_po_licenses_items.set_id = inv_po_licenses_sets.id)
 		LEFT OUTER JOIN inv_po_licenses ON (inv_po_licenses_sets.license_id = inv_po_licenses.id)
 		WHERE
-		(`hosts`.server) 
-		AND (ak_licenses.active)
+		(ak_licenses.active) 
+		AND `ak_licenses`.`hostname` IN (SELECT `hosts`.`hostname` FROM `hosts` WHERE `hosts`.`server`)
 		GROUP BY
-		ak_licenses.id
+		ak_licenses.id,
+		inv_po_types.name,
+		inv_po_licenses_sets.id,
+		inv_po_licenses_items.master,
+		inv_po_types.serverwise
 		ORDER BY
-		`hosts`.hostname,
+		ak_licenses.product_name,
 		inv_po_licenses.number");
-		if($result->num_rows()){
-			foreach($result->result_array() as $row){
+		if ( $result->num_rows() ) {
+			foreach ( $result->result_array() as $row ) {
 				$input[$row['akid']] = $row;
-				if(strlen($row['setid'])){
-					array_push($setlist, $row['setid']);
+				if ( strlen($row['setid']) ) {
+					if ( !isset($setlist[$row['setid']]) ) {
+						$setlist[$row['setid']] = 0;
+					}
+					$setlist[$row['setid']] += 1;
 				}
 			}
-			//print_r($input);
-			$result = $this->db->query('SELECT 
+			$result = $this->db->query('SELECT
 			`inv_po_types`.name,
 			`inv_po_licenses_items`.`set_id`
 			FROM
 			`inv_po_licenses_items`
 			INNER JOIN `inv_po_licenses_sets` ON (`inv_po_licenses_items`.set_id = `inv_po_licenses_sets`.id)
 			LEFT OUTER JOIN `inv_po_types` ON (`inv_po_licenses_items`.type_id = `inv_po_types`.id)
-			WHERE `inv_po_licenses_items`.`master` = 1
-			AND `inv_po_licenses_items`.`set_id` IN ('.implode($setlist, ",").')');
-			if($result->num_rows()){
-				foreach($result->result() as $row){
+			WHERE `inv_po_licenses_items`.`master`
+			AND `inv_po_licenses_items`.`set_id` IN ('.implode(array_keys($setlist), ",").')');
+			if ($result->num_rows()) {
+				foreach($result->result() as $row) {
 					$input2[$row->set_id] = $row->name;
 				}
 			}
-			foreach($input as $val){
-				if(strlen($val['setid']) && isset($input2[$val['setid']])){
-					$val['from']   = $input2[$val['setid']];
-				}else{
-					$val['lmode']  = "";
-					$val['master'] = 1;
+			foreach ($input as $licenseData) {
+				if (strlen($licenseData['setid']) && isset($input2[$licenseData['setid']])) {
+					$licenseData['from']   = $input2[$licenseData['setid']];
+				} else {
+					$licenseData['lmode']  = "";
+					$licenseData['master'] = 1;
 				}
 				
-				//print implode($val, "  ")."<br>";
-				$annot = ($val['master']) 
-					? $val['product_name'] 
-					: $val['product_name'].' <small class="muted">'.$val['lmode']." c ".$val['from']."</small>";
-				$string = '<tr>
-				<td><a href="#'.$val['hostname'].'">'.$val['hostname'].'</a></td>
-				<td>'.$annot.'</td>
-				<td>'.$val['number'].'&nbsp;</td>
-				</tr>';
-				array_push($output, $string);
+				$licenseData['annot'] = ($licenseData['master'])
+					? $licenseData['product_name']
+					: $licenseData['product_name'].' <small class="muted">даунгрейд c '.$licenseData['from']."</small>";
+				array_push($output, $this->load->view("license/listitems/serverlistitem", $licenseData, true));
 			}
-			//print_r($val);
 		}
-		$serverLicenses = $this->licensemodel->serverlicenses_get();
-		$modals = $this->load->view('license/modals', array('dep_id' => 77, 'userid' => 592), true);
+		$data = array(
+			'serverLicenses' => $this->licensemodel->serverlicenses_get(),
+			'modals'		 => $this->load->view('license/modals', array('dep_id' => 77, 'userid' => 592), true),
+			'licenseList'	 => implode($output, "\n")
+		);
 		$act = array(
 			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
-			'content' => '<h4>Серверные лицензии</h4><table class="table table-bordered table-condensed">'.implode($output, "\n").'</table><hr>'.$serverLicenses.$modals,
-			'footer'  => $this->load->view('page_footer', '', true).'<script type="text/javascript" src="/jscript/lsmc.js"></script>'
+			'content' => $this->load->view('license/servlicenses', $data, true),
+			'footer'  => $this->load->view('page_footer', array(), true).'<script type="text/javascript" src="/jscript/lsmc.js"></script>'
 		);
 		$this->usefulmodel->no_cache();
 		$this->load->view('page_container', $act);
@@ -235,7 +236,7 @@ class Licenses extends CI_Controller {
 				if(!isset($input[$row->lid][$row->id])){
 					$input[$row->lid][$row->id] = array();
 				}
-				array_push($input[$row->lid][$row->id], array('name' => $row->name, 'count' => $row->max, 'pk' => $row->value, 'm' => $row->master));
+				array_push($input[$row->lid][$row->id], array('name' => $row->name, 'count' => $row->max, 'pk' => $row->value, 'master' => $row->master));
 			}
 			$sid = 1;
 			foreach($input as $lid => $sets){
@@ -252,7 +253,7 @@ class Licenses extends CI_Controller {
 					//print_r($items);
 					foreach($items as $item){
 						$style = ($sid % 2) ? 'style = "background-color:#f3f3f3"' : 'style = "background-color:#e0e0FF"';
-						$style2 = ($item['m']) ? "" : 'class="muted"';
+						$style2 = ($item['master']) ? "" : ' class="muted"';
 						$spanning = ($rws) ? "" : "<td rowspan=".$rowspan." ".$style.">&nbsp;</td>";
 						$string = "<tr>
 						".$spanning."
@@ -283,10 +284,9 @@ class Licenses extends CI_Controller {
 		$this->load->view('page_container', $act);
 	}
 
-		###############################
+	###############################
 	/*
 		//выборка активного серверного софта с попыткой связи с действующими лицензиями.
-
 		SELECT DISTINCT 
 		ak_licenses.hostname,
 		ak_licenses.product_name,
@@ -310,7 +310,6 @@ class Licenses extends CI_Controller {
 		inv_po_licenses.number,
 		ak_licenses.product_name,
 		`hosts`.hostname
-
 	*/
 	#############################
 
@@ -319,7 +318,9 @@ class Licenses extends CI_Controller {
 	public function make_reject($lid=0){
 		//$this->output->enable_profiler(TRUE);
 		$this->load->helper('url');
-		$this->db->query("UPDATE ak_licenses SET ak_licenses.active = 0,
+		$this->db->query("UPDATE 
+		ak_licenses 
+		SET ak_licenses.active = 0,
 		ak_licenses.activation_memo = ?
 		WHERE `ak_licenses`.id = ?", array("Деактивировано: ".date('d.m.Y H:i:s').', пользователь: '.$this->session->userdata('user_name'), $lid));
 		$this->usefulmodel->insert_audit("Оператор #".$this->session->userdata('user_name') .' деактивировал запись о лицензии '. $lid);
@@ -329,7 +330,10 @@ class Licenses extends CI_Controller {
 	public function make_recall($lid=0){
 		//$this->output->enable_profiler(TRUE);
 		$this->load->helper('url');
-		$this->db->query("UPDATE ak_licenses SET ak_licenses.active = 1,
+		$this->db->query("UPDATE 
+		ak_licenses 
+		SET
+		ak_licenses.active = 1,
 		ak_licenses.activation_memo = ?
 		WHERE `ak_licenses`.id = ?", array("Активировано: ".date('d.m.Y H:i:s').', пользователь: '.$this->session->userdata('user_name'), $lid));
 		$this->usefulmodel->insert_audit("Оператор #".$this->session->userdata('user_name') .' активировал запись о лицензии '. $lid);
@@ -341,18 +345,18 @@ class Licenses extends CI_Controller {
 		$this->usefulmodel->insert_audit("Оператор #".$this->session->userdata('user_name') .' запросил список лицензий на соответствие ключу (изъятие из пула)');
 	}
 
-	public function get_all_licenses($pk){
+	public function get_all_licenses(){
 		$this->usefulmodel->insert_audit("Оператор #".$this->session->userdata('user_name') .' запросил список всех лицензий для назначения пользователю');
-		print $this->licensemodel->get_all_licenses($pk);
+		print $this->licensemodel->get_all_licenses();
 	}
 
 	public function takeitem($lid=0){
 		$this->load->helper('url');
 		$this->db->query("UPDATE
 		ak_licenses
-		SET 
+		SET
 		ak_licenses.item_id = ?
-		WHERE 
+		WHERE
 		`ak_licenses`.id = ?", array(
 			$this->input->post('itemid'),
 			$this->input->post('akl')
@@ -380,6 +384,20 @@ class Licenses extends CI_Controller {
 
 	public function removeitem($lid=0, $redirect){
 		$this->licensemodel->removeitem($lid, $redirect);
+	}
+
+	public function addtype(){
+		$result = $this->db->query("SELECT 
+		`inv_po_types`.id
+		FROM
+		`inv_po_types`
+		WHERE
+		TRIM(`inv_po_types`.name) = TRIM(?)", array($this->input->post("typename")));
+		if (!$result->num_rows()) {
+			$result = $this->db->query("INSERT INTO `inv_po_types`( `inv_po_types`.name ) VALUES ( TRIM(?) )", array($this->input->post("typename")));
+			return true;
+		}
+		print "Тип программного обеспечения уже существует";
 	}
 
 	# Сохранить описание лицензии
@@ -417,21 +435,36 @@ class Licenses extends CI_Controller {
 	}
 	
 	# Запросить список типов ПО для добавления в набор
-	public function get_typelist($lid=0){
-		$list = $this->licensemodel->get_typelist($lid);
-		print $list;
+	public function get_typelist(){
+		print $this->licensemodel->get_typelist();
+	}
+
+	private function getTypeDowngradedFrom($setID) {
+		$result = $this->db->query("SELECT
+		`inv_po_types`.name
+		FROM
+		inv_po_licenses
+		INNER JOIN inv_po_licenses_sets ON (inv_po_licenses.id = inv_po_licenses_sets.license_id)
+		INNER JOIN inv_po_licenses_items ON (inv_po_licenses_sets.id = inv_po_licenses_items.set_id)
+		INNER JOIN `inv_po_types` ON (inv_po_licenses_items.type_id = `inv_po_types`.id)
+		WHERE
+		`inv_po_licenses_items`.`master` 
+		AND `inv_po_licenses_items`.`type` IN ('MAK', 'VLK')
+		AND `inv_po_licenses_items`.`act`
+		AND `inv_po_licenses_sets`.id = ?
+		LIMIT 1", array($setID));
+		if ($result->num_rows()) {
+			$row = $result->row(0);
+			return $row->name;
+		}
+		return "";
 	}
 
 	public function related_lic_get(){
-		$tbl          = array('<table class="table table-bordered table-condensed table-striped table-hover">
-		<tr>
-			<td>Лицензиар</td>
-			<td>Номер лицензии</td>
-			<td>Поставщик</td>
-			<td>Программа поставки</td>
-			<td>Количество лицензий</td>
-			<td>Остаток</td>
-		</tr>');
+		$table = array(
+			'direct' => array(),
+			'down'   => array(),
+		);
 		$df           = "";
 		$direct_count = 0;
 		$total_count  = 0;
@@ -458,7 +491,6 @@ class Licenses extends CI_Controller {
 
 		$result = $this->db->query("SELECT DISTINCT
 		inv_po_licenses.number,
-		inv_po_licenses.program,
 		inv_po_licenses.id AS lid,
 		inv_po_licenses_sets.id AS sid,
 		inv_po_licenses_sets.max AS `maxcount`,
@@ -479,58 +511,44 @@ class Licenses extends CI_Controller {
 		AND `inv_po_licenses_items`.`act`
 		AND NOT inv_po_licenses_sets.deleted
 		ORDER BY
-		inv_po_licenses_items.master DESC,
-		inv_po_licenses.id DESC", array($this->input->post('id')));
+		inv_po_licenses.number DESC", array($this->input->post('id')));
 		if($result->num_rows()){
 
 			foreach($result->result() as $row){
+				$color = "success";
+				$title = "Прямая лицензия";
 				if ($row->master) {
-					$color = "success";
-					$title = "Прямая лицензия";
 					$direct_count += $row->maxcount;
-				} else {
-					$color = "warning";
-					$title = "Даунгрейд";
-					$result2 = $this->db->query("SELECT
-					`inv_po_types`.name,
-					`inv_po_types`.subclass
-					FROM
-					inv_po_licenses
-					INNER JOIN inv_po_licenses_sets ON (inv_po_licenses.id = inv_po_licenses_sets.license_id)
-					INNER JOIN inv_po_licenses_items ON (inv_po_licenses_sets.id = inv_po_licenses_items.set_id)
-					INNER JOIN `inv_po_types` ON (inv_po_licenses_items.type_id = `inv_po_types`.id)
-					WHERE
-					`inv_po_licenses_items`.`master` 
-					AND `inv_po_licenses_items`.`type` IN ('MAK', 'VLK')
-					AND `inv_po_licenses_items`.`act`
-					AND `inv_po_licenses_sets`.id = ?", array($row->sid));
-					if ($result2->num_rows()) {
-						foreach($result2->result() as $row2){
-							$df = $row2->name.' ('.$row2->subclass.')';
-						}
-					}
 				}
-				if ($row->master != $master) {
-					$master = $row->master;
-					array_push($tbl, '<tr><th colspan=4></th><th colspan=2>Всего прямых:&nbsp;&nbsp;'.$direct_count.'</th></tr>');
+				if (!$row->master) {
+					$df = $this->getTypeDowngradedFrom($row->sid);
 				}
+				$total_count += $row->maxcount;
 				$color = ($row->maxcount - ((isset($set_usage[$row->sid])) ? $set_usage[$row->sid] : 0 ) > 0) ? $color : 'error';
 				$title = ($row->maxcount - ((isset($set_usage[$row->sid])) ? $set_usage[$row->sid] : 0 ) > 0) ? $title : 'Лицензия исчерпана';
 				$string = '<tr class="'.$color.'" title="'.$title.'">
 					<td>'.$row->licensiar.'</td>
 					<td><a href="/licenses/statistics/'.$row->lid.'" target="_blank">'.$row->number.'</a></td>
-					<td>'.$row->reseller.'</td><td>'.$row->program.'</td>
+					<td>'.$row->reseller.'</td>
 					<td title="'.$df.'">'.$row->maxcount.'</td>
 					<td class="useCheck" title="set #'.$row->sid.'" ref="'.$row->checkval.'">'.($row->maxcount - ((isset($set_usage[$row->sid])) ? $set_usage[$row->sid] : 0 )).'</td>
 				</tr>';
-				array_push($tbl, $string);
-
+				if ($row->master) {
+					array_push($table['direct'], $string);
+				}
+				if (!$row->master) {
+					array_push($table['down'],   $string);
+				}
 			}
-			$total_count += $row->maxcount;
-			array_push($tbl, '<tr><th colspan=4></th><th>Всего даунгрейд</th><th>'.($direct_count - $total_count).'</th></tr>');			
-		}
 
-		print implode($tbl,"\n")."</table>";
+		}
+		$data = array(
+			"TDown"       => $total_count - $direct_count,
+			"TDir"        => $direct_count,
+			"tableDirect" => implode( $table['direct'], "\n" ),
+			"tableDown"   => implode( $table['down'], "\n" )
+		);
+		$this->load->view("license/usagestatchunk", $data);
 	}
 
 	public function related_pk_get(){

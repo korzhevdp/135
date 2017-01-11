@@ -137,15 +137,33 @@
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 		<h3 id="myModalLabel3">Добавить ПО в набор</h3>
-		<div>Количество устанавливаемых копий: <input type="text" id="po_num" name="po_num" value="0"><input type="hidden" name="lid" value="<?=$id;?>"></div>
-		<div>Начальный номер наклейки: <input type="text" id="startnum" name="startnum" value="0"></div>
+		<div>
+			Фильтр <input type="text" id="filterSoftByName" style="margin-left:190px;" value="" placeholder="Windows Server 2008"><br>
+			Количество устанавливаемых копий
+			<input type="text" id="po_num" name="po_num" value="" placeholder="0">
+			<input type="hidden" name="lid" value="<?=(isset($id)) ? $id : 0;?>">
+			Начальный номер наклейки
+			<input type="text" id="startnum" style="margin-left: 55px;" name="startnum" value="" placeholder="00000-000-000-000">
+		</div>
 	</div>
 
 	<div class="modal-body">
-		
-		<div id="addsoft">
-			список имеющихся типов Софта
-		</div>
+		<table class="table table-bordered table-condensed table-hover">
+		<tbody>
+			<tr>
+				<td></td>
+				<td>
+					<button class="btn btn-info pull-right" id="addSoftwareType" type="button" title="Добавить тип">+</button>
+					<input type="text" style="width:420px;" id="newTypeName" placeholder="Имя добавляемого типа программного обеспечения">
+				</td>
+			</tr>
+			<tr>
+				<th>#</th>
+				<th>Название</th>
+			</tr>
+		</tbody>
+		<tbody id="addsoft"></tbody>
+		</table>
 	</div>
 	<div class="modal-footer">
 		<button class="btn" data-dismiss="modal" aria-hidden="true" title="Отказаться от выбора">Отмена</button>
