@@ -109,7 +109,10 @@ class Usefulmodel extends CI_Model {
 
 	public function getNavMenuData() {
 		//$this->output->enable_profiler(TRUE);
-		$data   = array();
+		$data   = array(
+			'tickets'  => 0,
+			'esiaWarn' => false
+		);
 		$where  = ( (int) $this->session->userdata("rank") === 1 ) 
 			? "" 
 			: 'AND `events`.recipient = ?';
@@ -123,9 +126,23 @@ class Usefulmodel extends CI_Model {
 		AND `events`.active_since < NOW()
 		".$where."
 		LIMIT 1", array($this->session->userdata("canSee")));
-		if($result->num_rows()){
+		if ( $result->num_rows() ) {
 			$row = $result->row(0);
 			$data['tickets'] = $row->count;
+		}
+		$result = $this->db->query("SELECT
+		resources_items.id
+		FROM
+		resources_items
+		LEFT OUTER JOIN `users` ON (resources_items.uid = `users`.id)
+		WHERE
+		resources_items.`rid` = 286
+		AND (resources_items.ok)
+		AND (NOT (resources_items.del))
+		AND (NOT (resources_items.`exp`))
+		AND `users`.`fired`");
+		if ( $result->num_rows() ) {
+			$data['esiaWarn'] = true;
 		}
 		return $data;
 	}

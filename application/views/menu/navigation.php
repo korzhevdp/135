@@ -9,14 +9,19 @@
 	<? if (in_array($this->session->userdata("canSee"), array(159, 255, 389, 2187))) { ?>
 	<li<?=(($_SERVER["REQUEST_URI"] == "/reports/timetable") ? ' class="active"' : '')?>><a href="/reports/timetable"><i class="icon-calendar"></i>Табель учёта рабочего времени <!-- <span class="badge badge-warning">New!</span> --></a></li>
 	<? } ?>
-	<? if ($this->session->userdata("rank") == 1 || $this->session->userdata("admin_id") == 16 || $this->session->userdata("admin_id") == 26 || $this->session->userdata("admin_id") == 17) { ?>
+	<? if (
+		$this->session->userdata("rank") == 1 
+		|| $this->session->userdata("admin_id") == 16 
+		|| $this->session->userdata("admin_id") == 26 
+		|| $this->session->userdata("admin_id") == 17
+	) { ?>
 	<li class="nav-header">Информация для отдела ЗИ</li>
 	<li<?=(($_SERVER["REQUEST_URI"] == "/uvmr") ? ' class="active"' : '')?>><a href="/uvmr"><i class="icon-book"></i>Стандартные отчёты ЗИ</a></li>
 	<li<?=(($_SERVER["REQUEST_URI"] == "/uvmr/passport") ? ' class="active"' : '')?>><a href="/uvmr/passport"><i class="icon-book"></i>Паспорта АРМ</a></li>
 	<? } ?>
 
 
-	<li<?=(($_SERVER["REQUEST_URI"] == "/reports/esia") ? ' class="active"' : '')?>><a href="/reports/esia">ЕСИА / Госуслуги</a></li>
+	<li<?=(($_SERVER["REQUEST_URI"] == "/reports/esia") ? ' class="active"' : '');?>><a href="/reports/esia" <?=( ($esiaWarn) ? ' style="color:red;font-weight:bold !important' : '' );?>><i class="icon-certificate"></i>ЕСИА / Госуслуги&nbsp;&nbsp;<?=( ($esiaWarn) ? '<i class="icon-exclamation-sign"></i>' : '' );?></a></li>
 	<? if ($this->session->userdata("rank") == 1) { ?>
 	<li class="nav-header">Информация для отдела СА</li>
 	<li<?=(($_SERVER["REQUEST_URI"] == "/network") ? ' class="active"' : '')?>><a href="/network">Структура сети</a></li>

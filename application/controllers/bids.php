@@ -11,6 +11,7 @@ class Bids extends CI_Controller {
 		$this->load->model('bidsmodel');								// подключается модель заявок
 		$this->load->model('usefulmodel');								// подключается модель утилит
 		$this->load->helper('url'); 									// подключается хелпер для перенаправления
+				$this->load->library('user_agent');
 		//$this->output->enable_profiler(TRUE);
 	}
 	
@@ -32,7 +33,9 @@ class Bids extends CI_Controller {
 			? $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true)			// либо меню пользователя
 			: '';														// либо пустое поле (пользователь "оформление заявок")
 		
-		$act['content'] = $this->load->view('bids/mainform_dev', $res, true);
+		$act['content'] = ( $this->agent->browser() === "Internet Explorer")
+			? "Ваш браузер не соответствует требованиям.<br>Используйте Mozilla Firefox или Google Chrome"
+			: $this->load->view('bids/mainform_dev', $res, true);
 																		// (!in_array($this->session->userdata('admin_id'), array())) 
 																		// селектор dev-режима. При нужде - добавить в массив ID операторов в array()
 			//? 														// девелоперский режим
