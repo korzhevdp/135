@@ -178,11 +178,11 @@ table.MsoTableGrid
   </td>
   <td width=234 style='width:175.75pt;padding:.75pt .75pt .75pt .75pt'>
   <div>
-  <p class=MsoNormal style='margin-bottom:14.0pt'><span style='font-size:14.0pt'>Заместителю Главы муниципального образования "Город Архангельск" -<br>руководителю аппарата<br style='mso-special-character:line-break'>
+  <p class=MsoNormal style='margin-bottom:14.0pt'><span style='font-size:14.0pt'>Заместителю Главы муниципального образования "Город Архангельск"<br>по вопросам экономического развития и финансам<br style='mso-special-character:line-break'>
   <![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
   <![endif]><o:p></o:p></span></p>
   <p class=MsoNormal style='margin-bottom:14.0pt'><b><span style='font-size:
-  14.0pt'>С.М. <span class=SpellE>Ковалеву</span><o:p></o:p></span></b></p>
+  14.0pt'>Д.В. Шапошникову</span></b></p>
   </div>
   </td>
  </tr>
@@ -485,7 +485,7 @@ table.MsoTableGrid
    <tr style='mso-yfti-irow:19'>
     <td width=327 colspan=3 valign=bottom style='width:245.35pt;border:none;
     padding:0cm 5.4pt 0cm 5.4pt'>
-    <p class=MsoNormal>Заместитель Главы муниципального образования "Город Архангельск" -<br>руководитель аппарата</p>
+    <p class=MsoNormal>Заместитель Главы муниципального образования "Город Архангельск"<br>по вопросам экономического развития и финансам</p>
     </td>
     <td width=16 valign=bottom style='width:11.8pt;border:none;padding:0cm 5.4pt 0cm 5.4pt'>
     <p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
@@ -501,8 +501,7 @@ table.MsoTableGrid
     <td width=165 colspan=2 valign=bottom style='width:124.0pt;border:none;
     border-bottom:solid windowtext 1.0pt;mso-border-bottom-alt:solid windowtext .5pt;
     padding:0cm 5.4pt 0cm 5.4pt'>
-    <p class=MsoNormal align=center style='text-align:center'><b>С.М. <span
-    class=SpellE>Ковалев</span></b></p>
+    <p class=MsoNormal align=center style='text-align:center'><b>Д.В. Шапошников</b></p>
     </td>
    </tr>
    <tr style='mso-yfti-irow:20'>

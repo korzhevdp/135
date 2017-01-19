@@ -178,11 +178,11 @@ p.MsoNormal
   </td>
   <td width=246 style='width:184.3pt;padding:.75pt .75pt .75pt .75pt'>
   <p class=MsoNormal style='margin-top:0cm;margin-right:0cm;margin-bottom:14.0pt;
-  margin-left:0cm'><span style='font-size:14.0pt'>Заместителю Главы муниципального образования "Город Архангельск" -<br>руководителю аппарата<br> 
+  margin-left:0cm'><span style='font-size:14.0pt'>Заместителю Главы муниципального образования "Город Архангельск"<br>по вопросам экономического развития и финансам<br> 
   </span></p>
   <div>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><b><span
-  style='font-size:14.0pt'>С.М. Ковалеву<o:p></o:p></span></b></p>
+  style='font-size:14.0pt'>Д.В. Шапошникову<o:p></o:p></span></b></p>
   </div>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><span
   style='font-size:14.0pt'><o:p>&nbsp;</o:p></span></p>
@@ -605,7 +605,7 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
  </tr>
  <tr style='mso-yfti-irow:1'>
   <td style='border:none;padding:0cm 0cm 0cm 0cm' rowspan=2>
-  <p class=MsoNormal align=center style='margin:0cm;text-align:center'><b>Заместитель Главы муниципального образования "Город Архангельск" -<br>руководитель аппарата</b></p>
+  <p class=MsoNormal align=center style='margin:0cm;text-align:center'><b>Заместитель Главы муниципального образования "Город Архангельск"<br>по вопросам экономического развития и финансам</b></p>
   </td>
   <td style='padding:0cm 0cm 0cm 0cm'>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>&nbsp;</p>
@@ -617,7 +617,7 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>&nbsp;</p>
   </td>
   <td style='border:none;border-bottom:solid black 1.0pt;mso-border-bottom-alt:solid black .75pt;padding:0cm 0cm 0cm 0cm;vertical-align:bottom'>
-  <p class=MsoNormal align=center style='margin:0cm;text-align:center'><b>С.М. Ковалев&nbsp;<o:p></o:p></b></p>
+  <p class=MsoNormal align=center style='margin:0cm;text-align:center'><b>Д.В. Шапошников&nbsp;<o:p></o:p></b></p>
   </td>
  </tr>
  <tr style='mso-yfti-irow:2;mso-yfti-lastrow:yes'>

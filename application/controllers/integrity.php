@@ -4,12 +4,12 @@ class Integrity extends CI_Controller {
 
 	public function __construct() {
 		parent::__construct();
-		if(!$this->session->userdata('admin_id')){
+		if (!$this->session->userdata('admin_id')) {
 			$this->load->helper('url');
 			redirect('login/index/auth');
 		}
 		(!$this->session->userdata('filter')) ? $this->session->set_userdata('filter','') : "";
-		(!$this->session->userdata('uid')) ? $this->session->set_userdata('uid',1) : "";
+		(!$this->session->userdata('uid'))    ? $this->session->set_userdata('uid',1)     : "";
 		$this->load->model('integritymodel');
 		$this->load->model('usefulmodel');
 		//$this->output->enable_profiler(TRUE);

@@ -177,13 +177,11 @@ p.MsoNormal
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>&nbsp;</p>
   </td>
   <td width=246 style='width:184.3pt;padding:.75pt .75pt .75pt .75pt'>
-  <p class=MsoNormal style='margin-top:0cm;margin-right:0cm;margin-bottom:14.0pt;
-  margin-left:0cm'><span style='font-size:14.0pt'>Заместителю Главы муниципального образования "Город Архангельск" -<br>руководителю аппарата<br> 
-  </span></p>
-  <div>
-  <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><b><span
-  style='font-size:14.0pt'>С.М. Ковалеву<o:p></o:p></span></b></p>
-  </div>
+  <p class=MsoNormal style='margin-bottom:14.0pt'><span style='font-size:14.0pt'><?=$authorityStaffD;?><br style='mso-special-character:line-break'>
+  <![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+  <![endif]><o:p></o:p></span></p>
+  <p class=MsoNormal style='margin-bottom:14.0pt'><b><span style='font-size:
+  14.0pt'><?=$authorityInitials;?> <span class=SpellE><?=$authorityName;?>у</span><o:p></o:p></span></b></p>
   <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><span
   style='font-size:14.0pt'><o:p>&nbsp;</o:p></span></p>
   </td>
@@ -603,22 +601,28 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
   style='font-size:.5pt;mso-bidi-font-size:12.0pt'><o:p>&nbsp;</o:p></span></p>
   </td>
  </tr>
- <tr style='mso-yfti-irow:1'>
-  <td style='border:none;padding:0cm 0cm 0cm 0cm' rowspan=2>
-  <p class=MsoNormal align=center style='margin:0cm;text-align:center'><b>Заместитель Главы муниципального образования "Город Архангельск" -<br>руководитель аппарата</b></p>
-  </td>
-  <td style='padding:0cm 0cm 0cm 0cm'>
-  <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>&nbsp;</p>
-  </td>
-  <td style='border:none;border-bottom:solid black 1.0pt;mso-border-bottom-alt:solid black .75pt;padding:0cm 0cm 0cm 0cm'>
-  <p class=MsoNormal align=center style='margin:0cm;margin-bottom:.0001pt;text-align:center'><b>&nbsp;<o:p></o:p></b></p>
-  </td>
-  <td style='padding:0cm 0cm 0cm 0cm'>
-  <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>&nbsp;</p>
-  </td>
-  <td style='border:none;border-bottom:solid black 1.0pt;mso-border-bottom-alt:solid black .75pt;padding:0cm 0cm 0cm 0cm;vertical-align:bottom'>
-  <p class=MsoNormal align=center style='margin:0cm;text-align:center'><b>С.М. Ковалев&nbsp;<o:p></o:p></b></p>
-  </td>
+ <tr style='mso-yfti-irow:19'>
+    <td width=327 colspan=3 valign=bottom style='width:245.35pt;border:none;
+    padding:0cm 5.4pt 0cm 5.4pt'>
+    <p class=MsoNormal><?=$authorityStaff;?></p>
+    </td>
+    <td width=16 valign=bottom style='width:11.8pt;border:none;padding:0cm 5.4pt 0cm 5.4pt'>
+    <p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
+    </td>
+    <td width=116 colspan=2 valign=bottom style='width:87.2pt;border:none;
+    border-bottom:solid windowtext 1.0pt;mso-border-bottom-alt:solid windowtext .5pt;
+    padding:0cm 5.4pt 0cm 5.4pt'>
+    <p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
+    </td>
+    <td width=16 valign=bottom style='width:11.8pt;border:none;padding:0cm 5.4pt 0cm 5.4pt'>
+    <p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
+    </td>
+    <td width=165 colspan=2 valign=bottom style='width:124.0pt;border:none;
+    border-bottom:solid windowtext 1.0pt;mso-border-bottom-alt:solid windowtext .5pt;
+    padding:0cm 5.4pt 0cm 5.4pt'>
+    <p class=MsoNormal align=center style='text-align:center'><b><?=$authorityInitials;?> <span
+    class=SpellE><?=$authorityName;?></span></b></p>
+    </td>
  </tr>
  <tr style='mso-yfti-irow:2;mso-yfti-lastrow:yes'>
   <td style='padding:0cm 0cm 0cm 0cm'>

@@ -2,28 +2,30 @@
 
 class Bidsfactorymodel extends CI_Model {
 
-	private $dbwrite       = false;		// запись в базу вкл/выкл
-	private $expose        = false;
-	private $wrap_to_word  = true;			// обёртка в Word
-	private $wDirectory    = 'bids/papers2/';
-	private $UID           = 0;
+	private $dbwrite       = false;										// запись в базу  вкл/выкл
+	private $expose        = false;										// профайлер      вкл/выкл
+	private $wrap_to_word  = true;										// обёртка в Word вкл/выкл
+	private $wDirectory    = 'bids/papers2/';							// директория с формулярами заявок
+	private $UID           = 0;											// текущий пользовательский идентификатор
 	private $resItems      = array();
 	private $resList       = array();
 	private $bidsData      = false;
-	private $itemID        = 0;
-	private $primary       = true;
-	private $mailBox       = "";
-	private $defaultReason = " для выполнения служебных обязанностей";
+	private $itemID        = 0;											// текущий идентификатор заявки
+	private $primary       = true;										// режим генерации заявок
+	private $mailBox       = '';
+	private $defaultReason = ' для выполнения служебных обязанностей';
 	private $decisions     = array(
-		100 => "зарегистрировать адрес электронной почты",
+		100 => 'зарегистрировать адрес электронной почты',
 		101 => 'предоставить доступ к международной сети "Интернет"',
 		286 => 'предоставить доступ в указанные группы Единой системы идентификации и аутентификации',
 		274 => 'предоставить доступ к беспроводной сети'
 	);
-	private $pidData      = array();
-	private $resData      = array();
-	private $selfHeader   = array(10, 52, 81, 82);
-	private $assertedHead = 25;
+	private $pidData       = array();
+	private $fnFIO         = '';										// ФИО текущего пользователя для имени файла
+	private $resData       = array();
+	private $selfHeader    = array(10, 52, 81, 82);						// список идентификаторов
+	private $assertedHead  = 25;
+	private $confAuthority = 2587;//id подписанта документов ДСП. e.g. 2333 - Шапошников; 2587 - Евменов
 
 	function __construct() {
 		parent::__construct();						// Call the Model constructor
@@ -150,7 +152,7 @@ class Bidsfactorymodel extends CI_Model {
 		return $output;
 	}
 
-	private function getTemplate() {
+	private function getTemplateData() {
 		// заполнение бланка заявки типовыми данными
 		// получаем данные массива _POST переданные со страницы
 		// пользователю предоставлена возможность исправить данные о себе
@@ -238,8 +240,6 @@ class Bidsfactorymodel extends CI_Model {
 			$outdata['fulladdress'] = $addr['fulladdress'];
 		}
 		
-		
-
 		if ( $addrtag ) {
 			$query = "SELECT `address` FROM `locations` WHERE `id` IN ('".$addrtag."')";
 		} else {
@@ -260,10 +260,47 @@ class Bidsfactorymodel extends CI_Model {
 		if (!isset($outdata['ddate']) || !strlen($outdata['ddate'])) {
 			$outdata['ddate'] = date("d.m.Y");
 		}
-		if (!isset($outdata['dnum']) ||  !strlen($outdata['dnum']))  {
+		if (!isset($outdata['dnum'])  || !strlen($outdata['dnum']))  {
 			$outdata['dnum'] = '';
 		}
+
+		$confAuthorityData = $this->getConfAuthority();
+		$outdata['authorityInitials'] = $confAuthorityData['initials'];
+		$outdata['authorityName']     = $confAuthorityData['name'];
+		$outdata['authorityStaff']    = $confAuthorityData['staff'];
+		$outdata['authorityStaffD']   = $confAuthorityData['staffD'];
 		return $outdata;
+	}
+
+	private function getConfAuthority() {
+		$output = array(
+			'initials' => "Нет данных",
+			'name'     => "Нет данных",
+			'staff'    => "Нет данных",
+			'staffD'   => "Нет данных"
+		);
+		$result = $this->db->query("SELECT
+		staff.staff,
+		users.name_f,
+		CONCAT(LEFT(users.name_i, 1), '.', LEFT(users.name_o, 1), '.') AS initials
+		FROM
+		users
+		LEFT OUTER JOIN `staff` ON (users.staff_id = `staff`.id)
+		WHERE
+		(users.id = ?)", array( $this->confAuthority ));
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$staffD    = explode(" ", $row->staff);
+				$staffD[0] = "Заместителю";
+				$output    = array(
+					'initials' => $row->initials,
+					'name'     => $row->name_f,
+					'staff'    => $row->staff,
+					'staffD'   => implode( $staffD, " " )
+				);
+			}
+		}
+		return $output;
 	}
 
 	################# SUBS #################
@@ -353,7 +390,7 @@ class Bidsfactorymodel extends CI_Model {
 	}
 
 	private function getSpecialDomain() {
-		$templatedata = $this->getTemplate($this->itemID);						// получаем данные для заявки.
+		$templatedata = $this->getTemplateData($this->itemID);						// получаем данные для заявки.
 		if (!$this->session->userdata('uid')) {									// прерываем исполнение, если есть подозрение, что пользователь уже есть в базе
 			$userID  = $this->insertNewUser($templatedata);						// вставляем нового пользователя в базу данных, получаем индекс этой вставки
 			$orderID = $this->insertNewOrder();									// вставляем в базу новую заявку, получаем индекс новой заявки
@@ -364,7 +401,7 @@ class Bidsfactorymodel extends CI_Model {
 	}
 
 	private function getSpecialIM() {
-		$templatedata				= $this->getTemplate();						// получаем данные для заявки.
+		$templatedata				= $this->getTemplateData();						// получаем данные для заявки.
 		$templatedata['action']		= array();
 		$templatedata['decision']	= array();
 		$resdata					= array();
@@ -425,7 +462,7 @@ class Bidsfactorymodel extends CI_Model {
 	}
 
 	private function getSpecialWiFi() {
-		$templatedata = $this->getTemplate();									// получаем данные для заявки.
+		$templatedata = $this->getTemplateData();									// получаем данные для заявки.
 		$templatedata['mailaction'] = "";
 		$templatedata['inetaction'] = 'предоставить доступ к Интернет-ресурсам средствами беспроводной сети для '.iconv('utf-8', 'windows-1251', $this->input->post('wf_reason'));
 		$templatedata['decision']   = $this->decisions[274];
@@ -440,7 +477,7 @@ class Bidsfactorymodel extends CI_Model {
 	}
 
 	private function getAdmRights() {
-		$templatedata               = $this->getTemplate();		// получаем данные для заявки.
+		$templatedata               = $this->getTemplateData();		// получаем данные для заявки.
 		if ( !$this->primary ) {
 			$reason = (isset($this->pidData[283][12])) ? $this->pidData[283][12] : " исполнения служебных обязанностей";
 		}
@@ -460,7 +497,7 @@ class Bidsfactorymodel extends CI_Model {
 	########################################
 	##
 
-	private function wipeEmptyLayerIDs($layerList) {
+	private function wipeEmptyLayerIDs( $layerList ) {
 		$layerList = explode(",", $layerList);
 		foreach ( $layerList as $key=>$val ) {
 			if ( !$val || !strlen($val) ) {
@@ -583,7 +620,7 @@ class Bidsfactorymodel extends CI_Model {
 		$papers    = array();
 		$localData = array();
 		//$outdata      = $this->getUserProperties($this->UID);
-		$templatedata = $this->getTemplate();							// получаем данные темплейта для заявки.
+		$templatedata = $this->getTemplateData();							// получаем данные темплейта для заявки.
 		$templatedata['fulladdress'] = preg_replace("/[^А-Яа-я0-9\.\- ]/ism", '', $templatedata['fulladdress']);
 		// получаем рабочие массивы
 		$resdata = $this->getPapersGroup();
@@ -716,6 +753,22 @@ class Bidsfactorymodel extends CI_Model {
 			$userID = $row->uid;
 		}
 		return $userID;
+	}
+
+	private function getUserFIOByOrder( $UID ) {
+		if ( $this->primary ) {
+			return implode( array( $this->input->post('name_f'), $this->input->post('name_i'), $this->input->post('name_o') ), "_"); 
+		}
+		$result = $this->db->query("SELECT
+		CONCAT_WS(' ', `users`.name_f, `users`.name_i, `users`.name_o) AS fio
+		FROM users
+		WHERE
+		users.id = ?", array($UID));
+		if ($result->num_rows()) {
+			$row = $result->row();
+			return $row->fio;
+		}
+		return '';
 	}
 
 	private function getPids() {
@@ -1064,26 +1117,29 @@ class Bidsfactorymodel extends CI_Model {
 		if ($this->expose) {
 			$this->output->enable_profiler(TRUE);
 		}
-		$outfile        = "";
-		if ($this->primary) {
+		$outfile            = "";
+		if ( $this->primary ) {
 			$this->UID      = $this->input->post('uid');
 			$this->resItems = explode( ",", $this->input->post("res") );
 			$this->mailBox  = $this->input->post("esiaMailAddr");
 			$this->bidsData = $this->getPrimaryBidsData();
 		}
 
-		if (!$this->primary) {
+		if ( !$this->primary ) {
 			$this->resItems = explode( ",", $resstring );
-			$this->UID = $this->getUserIDByOrder( $this->resItems[0] );
+			$this->UID      = $this->getUserIDByOrder( $this->resItems[0] );
 			$this->getPids();
 			$this->mailBox  = $this->getUserMailboxDB( $this->UID );
 			$this->bidsData = $this->getBidsData( $this->resItems );
 		}
 
-		$this->resData  = $this->splitResFlow( $this->resItems );
-		$this->resList = $this->getResList();
+		$this->resData      = $this->splitResFlow( $this->resItems );
+		$this->resList      = $this->getResList();
 
-		$papers        = $this->getSpecialPapers();
+		$papers             = $this->getSpecialPapers();
+
+		$this->fnFIO        = $this->getUserFIOByOrder($this->UID);
+
 		$this->wipeOutSpecials();
 		/*
 		* конфиденциальные ресурсы и обычные - извлекаются в 2 режимах
@@ -1099,12 +1155,7 @@ class Bidsfactorymodel extends CI_Model {
 		if ( $this->wrap_to_word ) {
 			$pagebreak = "<span lang=EN-US style='font-size:12.0pt;font-family:\"Times New Roman\";mso-fareast-font-family:\"Times New Roman\";mso-ansi-language:EN-US;mso-fareast-language:EN-US;mso-bidi-language:JI'><br clear=all style='page-break-before:always;mso-break-type:section-break'></span>";
 			$outfile   = implode(array_merge($papers, $commons), $pagebreak);
-			$filename  = 'Заявки на информационные ресурсы '.implode(
-			array(
-				$this->input->post('name_f'),
-				$this->input->post('name_i'),
-				$this->input->post('name_o')
-			), "_").'.doc';
+			$filename  = 'Заявки на информационные ресурсы '.$this->fnFIO.'.doc';
 			$this->load->helper('download');
 			force_download($filename, $outfile);
 			return true;
@@ -1118,6 +1169,7 @@ class Bidsfactorymodel extends CI_Model {
 
 	public function reget_orders() {
 		//$this->output->enable_profiler(TRUE);
+		//return false;
 		$this->primary = false;
 		$this->dbwrite = false;
 		$this->papers_get($this->input->post("resources"));

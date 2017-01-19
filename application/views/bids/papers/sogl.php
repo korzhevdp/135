@@ -106,6 +106,6 @@
 <tr>
 	<td style="width:70mm;font-size:11pt">"____" ______________ <?=date("Y");?> </td>
 	<td style="width:60mm;"></td>
-	<td>С.М. Ковалев</td>
+	<td>Д.В. Шапошников</td>
 </tr>
 </table>

@@ -178,11 +178,11 @@ table.MsoTableGrid
   </td>
   <td width=234 style='width:175.75pt;padding:.75pt .75pt .75pt .75pt'>
   <div>
-  <p class=MsoNormal style='margin-bottom:14.0pt'><span style='font-size:14.0pt'>Заместителю Главы муниципального образования "Город Архангельск" -<br>руководителю аппарата<br style='mso-special-character:line-break'>
+  <p class=MsoNormal style='margin-bottom:14.0pt'><span style='font-size:14.0pt'>Заместителю Главы муниципального образования "Город Архангельск"<br>по вопросам экономического развития и финансам<br style='mso-special-character:line-break'>
   <![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
   <![endif]><o:p></o:p></span></p>
   <p class=MsoNormal style='margin-bottom:14.0pt'><b><span style='font-size:
-  14.0pt'>С.М. <span class=SpellE>Ковалеву</span><o:p></o:p></span></b></p>
+  14.0pt'>Д.В. Шапошникову</span></b></p>
   </div>
   </td>
  </tr>

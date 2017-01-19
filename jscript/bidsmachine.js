@@ -3,7 +3,11 @@ var state	   = 0,
 	subs	   = [],
 	confs	   = [],
 	bmode	   = 'new',
+	controller = 'bids',
 	allowedRes = {
+		/*
+		идентификатор подразделения departments : [массив идентификаторов разрешённых ресурсов]
+		*/
 		'81' : [ 100, 101, 102 ]
 	};
 
@@ -34,7 +38,7 @@ function getUserData() {
 	uid = $("#userSelector").val();
 	if ( uid != null ) {
 		$.ajax({
-			url: "/bids2/getuserdata",
+			url: "/" + controller + "/getuserdata",
 			type: "POST",
 			data: {
 				uid: uid
@@ -79,7 +83,7 @@ function addToList(item) {
 			$("#esiaMail").removeClass("hide");
 		}
 		$.ajax({
-			url      : "/bids2/get_subproperties/" + resID,
+			url      : "/" + controller + "/get_subproperties/" + resID,
 			type     : "POST",
 			dataType : "html",
 			success  : function (data) {
@@ -253,7 +257,7 @@ $("#newUser").click( function() {
 	$("#breadCrumbs, #userdata, #userOKButtons").fadeIn(700);
 	$("#r_102").appendTo('#selectedList').removeClass("btn-info").addClass("btn-success");
 	$.ajax({
-		url      : "/bids2/resetUID",
+		url      : "/" + controller + "/resetUID",
 		type     : "GET",
 		dataType : "text",
 		success  : function () {},
@@ -270,7 +274,7 @@ $("#office").change(function() {
 $("#userDataOK, #stage1").unbind().click(function() {
 	uid = $("#userSelector").val();
 	$.ajax({
-		url      : "/bids2/getuserresources",
+		url      : "/" + controller + "/getuserresources",
 		type     : "POST",
 		data     : {
 			uid  : uid
@@ -396,7 +400,7 @@ $("#portalSectionFilter").keyup(function() {
 	}
 	search = $(this).val();
 	$.ajax({
-		url: "/bids2/getwebportalsection",
+		url: "/" + controller + "/getwebportalsection",
 		type: "POST",
 		data: {
 			search: search
@@ -475,6 +479,7 @@ $("#regetOrder").click(function () {
 	$(".paperChecker:checked").each(function () {
 		ids.push(parseInt($(this).attr("ref")));
 	});
+	//alert(ids);
 	$("#r_name_f").val($("#sname").val());
 	$("#r_name_i").val($("#name").val());
 	$("#r_name_o").val($("#fname").val());
@@ -485,7 +490,7 @@ $("#regetOrder").click(function () {
 	$("#r_phone").val($("#phone").val());
 	$("#r_uid").val($("#passedUID").val());
 	$("#resources").val(ids.join(","));
-	$("#regetForm").submit().remove();
+	$("#regetForm").submit();
 	//console.log(ids.join(","));
 });
 
