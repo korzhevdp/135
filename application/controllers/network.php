@@ -31,7 +31,8 @@ class Network extends CI_Controller {
 			'page'      => (isset($input['page']))      ? $input['page']      : 1,
 			'data'      => (isset($input['data']))      ? $input['data']      : '',
 			'pcsearch'  => (isset($input['pcsearch']))  ? $input['pcsearch']  : '',
-			'macsearch' => (isset($input['macsearch'])) ? $input['macsearch'] : ''
+			'macsearch' => (isset($input['macsearch'])) ? $input['macsearch'] : '',
+			'switchip'  => (isset($input['switchip']))  ? $input['switchip']  : ''
 		);
 		$act = array(
 			'menu'     => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
@@ -540,6 +541,63 @@ class Network extends CI_Controller {
 		}
 		print "</table>";
 		ob_end_flush();
+	}
+
+	public function get_swusers($host = "") {
+		if (!strlen($host)) {
+			if ($this->input->post("switchip") && strlen($this->input->post("switchip"))) {
+				$host = $this->input->post("switchip");
+			} else {
+				$this->show_page(array(2));
+			}
+		}
+
+		$output = array('<table class="table table-condensed table-bordered table-striped">
+		<tr>
+			<td>Host</td>
+			<td>Адрес</td>
+			<td>MAC</td>
+			<td>Switch IP</td>
+			<td>Switch Port</td>
+		</tr>');
+		$result = $this->db->query("SELECT DISTINCT 
+		switch_mac_rawdata.ip,
+		switch_mac_rawdata.mac,
+		switch_mac_rawdata.port,
+		switch_mac_rawdata.ts,
+		`hosts`.hostname,
+		CONCAT_WS(locations1.address, `locations`.address) AS address
+		FROM
+		`hosts`
+		RIGHT OUTER JOIN switch_mac_rawdata ON (`hosts`.mac = switch_mac_rawdata.mac)
+		LEFT OUTER JOIN users ON (`hosts`.uid = users.id)
+		LEFT OUTER JOIN `locations` ON (users.office_id = `locations`.id)
+		LEFT OUTER JOIN `locations` locations1 ON (`locations`.parent = locations1.id)
+		WHERE
+		(switch_mac_rawdata.ip = ?)
+		AND (switch_mac_rawdata.port <> 1)
+		AND (switch_mac_rawdata.port < 49)
+		AND (NOT (users.fired))
+		ORDER BY
+		switch_mac_rawdata.mac", array($host));
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$string = '<tr>
+				<td>'.$row->hostname.'</td>
+				<td><small>'.$row->address.'</small></td>
+				<td>'.$row->mac.'</td>
+				<td><a target="_blank" href="http://'.$row->ip.'">'.$row->ip.'</a></td>
+				<td>'.$row->port.'</td>
+				</tr>';
+				array_push($output, $string);
+			}
+		}
+		$viewdata = array(
+			'page'     => 2,
+			'data'     => implode($output, "\n")."</table>",
+			'switchip' => $host
+		);
+		$this->show_page($viewdata);
 	}
 
 	public function get_host($host = "") {

@@ -11,14 +11,17 @@
 	</div>
 
 	<div class="tab-pane <?=($page === 2) ? 'active' : "fade" ?>" id="user">
-		Поиск компьютеров<br>
+		<form method="post" action="/network/get_swusers">
+			SWITCH:&nbsp;<input type="text" name="switchip" id="switchip" placeholder="192.168." value="<?=($switchip) ? $switchip : "192.168." ?>">
+			<button type="submit" class="btn btn-primary btn-small" style="margin-top:-8px;">Поиск</button>
+		</form>
 		<form method="post" action="/network/get_host">
-			HOST:&nbsp;<input type="text" name="host" id="PCHost" placeholder="hostname%" value="<?=($pcsearch) ? $pcsearch : "" ?>">
+			HOST:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" name="host" id="PCHost" placeholder="hostname%" value="<?=($pcsearch) ? $pcsearch : "" ?>">
 			<button type="submit" class="btn btn-primary btn-small" style="margin-top:-8px;">Поиск</button>
 		</form>
 		<form method="post" action="/network/get_mac">
-			MAC:&nbsp;&nbsp;<input name="mac" type="text" id="PCMAC" placeholder="MAC: %ff:ff" value="<?=($macsearch) ? $macsearch : "" ?>">
-			<button type="submit" class="btn btn-primary btn-small" style="margin-top:-8px;">Сканировать</button>
+			MAC:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input name="mac" type="text" id="PCMAC" placeholder="MAC: %ff:ff" value="<?=($macsearch) ? $macsearch : "" ?>">
+			<button type="submit" class="btn btn-primary btn-small" style="margin-top:-8px;">Поиск</button>
 		</form>
 		<div id="result" style="width:99%;height:500px;overflow:auto;border:2px solid grey;"><?=$data;?></div>
 	</div>

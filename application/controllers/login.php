@@ -7,11 +7,11 @@ class Login extends CI_Controller{
 	}
 
 	public function index($mode='auth'){
-		if($this->input->post('name') && $this->input->post('pass')){
-			$this->loginmodel->_test_user();
-		}else{
-			$this->loginmodel->index($mode);
+		if ( $this->input->post('name') && $this->input->post('pass') ) {
+			$this->loginmodel->test_user();
+			return true;
 		}
+		$this->loginmodel->index($mode);
 	}
 
 	public function logout(){

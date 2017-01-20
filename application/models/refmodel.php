@@ -594,30 +594,45 @@ class Refmodel extends CI_Model {
 	############################
 	#		Операторы системы
 	############################
-	public function admins_list_get(){
+	public function admins_list_get() {
 		$result = $this->db->query("SELECT 
-		`admins`.id,
-		`admins`.user,
-		`admins`.rank,
-		IF(`admins`.rank = 0, 'Оператор', 'Администратор') as userrank,
-		IF (LENGTH(`admins`.description), CONCAT( '(', `admins`.description, ')' ), '') as `desc`,
-		`admins`.active
+		admins.id,
+		admins.user,
+		admins.rank,
+		IF(admins.rank = 0, 'Оператор', 'Администратор') AS userrank,
+		IF(LENGTH(admins.description), CONCAT('(', admins.description,')'), '') AS `desc`,
+		admins.active,
+		CONCAT_WS(' ', users.name_f,  CONCAT(LEFT(users.name_i,  1), '.', LEFT(users.name_o,  1), '.')) AS supervisorfio,
+		CONCAT_WS(' ', users1.name_f, CONCAT(LEFT(users1.name_i, 1), '.', LEFT(users1.name_o, 1), '.')) AS adminfio
 		FROM
-		`admins`
+		admins
+		LEFT OUTER JOIN users ON (admins.supervisor = users.id)
+		LEFT OUTER JOIN users users1 ON (admins.base_id = users1.id)
+		WHERE NOT users1.fired
 		ORDER BY
-		`admins`.rank desc,
-		`admins`.user");
+		admins.rank DESC,
+		`desc`,
+		supervisorfio,
+		adminfio");
 		$output = array();
 
-		if ($result->num_rows()){
-			foreach($result->result() as $row){
+		if ($result->num_rows()) {
+			foreach ( $result->result() as $row ) {
 				$classes = array();
-				($row->rank) ? array_push($classes,"warning") : '';
-				($row->active) ? '' : array_push($classes,"muted");
-				$class = (sizeof($classes)) ? 'class="'.implode($classes," ").'"' : '';
+				($row->rank)
+					? array_push( $classes, "warning" )
+					: '';
+				(!$row->active) 
+					? array_push( $classes, "muted" )
+					: '';
+				$class = (sizeof($classes))
+					? 'class="'.implode($classes, " ").'"'
+					: '';
 				
 				$string = '<tr '.$class.'>
-				<td><i class="icon-user"></i>&nbsp;'.$row->user.'&nbsp;&nbsp;<small class="muted">'.$row->desc.'</small></td>
+				<td><i class="icon-user"></i>&nbsp;<strong>'.$row->user.'</strong></td>
+				<td>'.$row->adminfio.' '.$row->desc.'</td>
+				<td>'.$row->supervisorfio.'</td>
 				<td>'.$row->userrank.'</td>
 				<td><button type="submit" class="btn btn-mini btn-primary" name="showUser" value="'.$row->id.'">Показать</button></td>
 				</tr>';
@@ -649,7 +664,7 @@ class Refmodel extends CI_Model {
 			'user'       => '',
 			'description'=> ''
 		);
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		admins.user,
 		admins.rank,
 		admins.description,
@@ -658,7 +673,7 @@ class Refmodel extends CI_Model {
 		FROM
 		admins
 		WHERE
-		admins.id = ?",array(
+		admins.id = ?", array(
 			$this->input->post("showUser")
 		));
 		if ($result->num_rows()){
@@ -667,22 +682,19 @@ class Refmodel extends CI_Model {
 		}
 		//print $row['uid'];
 		$result = $this->db->query("SELECT
-		CONCAT('<option value=',
-		users.id, 
-		IF(users.id IN (".$this->session->userdata('uid')."),' selected',''),
-		'>',
-		CONCAT_WS(' ',users.name_f,users.name_i,users.name_o),
-		'</option>') AS options
+		users.id,
+		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio
 		FROM
 		users
-		WHERE users.sman AND
-		NOT users.fired
-		ORDER BY 
-		CONCAT(users.name_f,users.name_i,users.name_o)");
+		WHERE users.sman
+		AND NOT users.fired
+		ORDER BY fio");
 		if ($result->num_rows()){
 			$output=array();
 			foreach($result->result() as $row2) {
-				array_push($output, $row2->options);
+				$selected = ( $row2->id == $this->session->userdata('uid') ) ? ' selected="selected"': '';
+				$string = '<option value="'.$row2->id.'"'.$selected.'>'.$row2->fio.'</option>';
+				array_push($output, $string);
 			}
 			$row['followers'] = implode($output,"\n");
 		}
@@ -690,13 +702,12 @@ class Refmodel extends CI_Model {
 		$result = $this->db->query("SELECT
 		users.id,
 		users.login,
-		CONCAT_WS(' ',users.name_f,users.name_i,users.name_o) AS `fio`
+		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS `fio`
 		FROM
 		users
 		WHERE
 		NOT users.fired
-		ORDER BY 
-		CONCAT(users.name_f,users.name_i,users.name_o)");
+		ORDER BY `fio`");
 		if ($result->num_rows()){
 			$output=array("<option value=0>выберите кандидата</option>");
 			foreach($result->result() as $row2){
