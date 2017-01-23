@@ -4,6 +4,9 @@ class Bids extends CI_Controller {
 	/*
 	Класс оформления заявок на информационные ресурсы
 	*/
+	
+	private $online = 1;
+	
 	public function __construct() {
 		parent::__construct();
 		$this->load->model('bidsmodel2');								// подключается модель UI заявок
@@ -30,9 +33,16 @@ class Bids extends CI_Controller {
 			? $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true)
 			: '';														// либо пустое поле (пользователь "оформление заявок")
 
-		$act['content'] = ( $this->agent->browser() === "Internet Explorer")
-			? "Ваш браузер не соответствует требованиям.<br>Используйте Mozilla Firefox или Google Chrome"
-			: $this->load->view('bids/mainform2', $res, true);
+		if ($this->online) {
+			$act['content'] = ( $this->agent->browser() === "Internet Explorer")
+				? "Ваш браузер не соответствует требованиям.<br>Используйте Mozilla Firefox или Google Chrome"
+				: $this->load->view('bids/mainform2', $res, true);
+		}
+		if (!$this->online ) {
+			$act['content'] = ((int)$this->session->userdata('admin_id') === 1)
+				? $this->load->view('bids/mainform2', $res, true)
+				: "<h4>Подача заявок временно отключена.</h4>Идут технические работы. Попробуйте позже.";
+		}
 			// (!in_array($this->session->userdata('admin_id'), array()))
 																		// селектор dev-режима. При нужде - добавить в массив ID операторов в array()
 			//? $this->load->view('bids/mainform2', $res, true)			// девелоперский режим

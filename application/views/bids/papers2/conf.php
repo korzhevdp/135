@@ -601,43 +601,44 @@ style='display:none;mso-hide:all'><o:p>&nbsp;</o:p></span></p>
   style='font-size:.5pt;mso-bidi-font-size:12.0pt'><o:p>&nbsp;</o:p></span></p>
   </td>
  </tr>
- <tr style='mso-yfti-irow:19'>
-    <td width=327 colspan=3 valign=bottom style='width:245.35pt;border:none;
-    padding:0cm 5.4pt 0cm 5.4pt'>
-    <p class=MsoNormal><?=$authorityStaff;?></p>
+
+   <tr style='mso-yfti-irow:19'>
+    <td width=327 colspan=3 valign=bottom style='width:245.35pt;border:none;padding:0cm 5.4pt 0cm 5.4pt'>
+		<p class=MsoNormal><b><?=$authorityStaff;?></b></p>
     </td>
     <td width=16 valign=bottom style='width:11.8pt;border:none;padding:0cm 5.4pt 0cm 5.4pt'>
-    <p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
+		<p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
     </td>
-    <td width=116 colspan=2 valign=bottom style='width:87.2pt;border:none;
-    border-bottom:solid windowtext 1.0pt;mso-border-bottom-alt:solid windowtext .5pt;
-    padding:0cm 5.4pt 0cm 5.4pt'>
-    <p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
+    <td width=116 colspan=2 valign=bottom style='width:87.2pt;border:none;border-bottom:solid windowtext 1.0pt;mso-border-bottom-alt:solid windowtext .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+		<p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
     </td>
     <td width=16 valign=bottom style='width:11.8pt;border:none;padding:0cm 5.4pt 0cm 5.4pt'>
+		<p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
+    </td>
+    <td width=165 colspan=2 valign=bottom style='width:124.0pt;border:none;border-bottom:solid windowtext 1.0pt;mso-border-bottom-alt:solid windowtext .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+		<p class=MsoNormal align=center style='text-align:center'><b><?=$authorityInitials;?> <?=$authorityName;?></b></p>
+    </td>
+   </tr>
+
+   <tr style='mso-yfti-irow:20'>
+    <td width=327 colspan=3 valign=top style='width:245.35pt;border:none;
+    padding:0cm 5.4pt 0cm 5.4pt'>
     <p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
     </td>
-    <td width=165 colspan=2 valign=bottom style='width:124.0pt;border:none;
-    border-bottom:solid windowtext 1.0pt;mso-border-bottom-alt:solid windowtext .5pt;
-    padding:0cm 5.4pt 0cm 5.4pt'>
-    <p class=MsoNormal align=center style='text-align:center'><b><?=$authorityInitials;?> <span
-    class=SpellE><?=$authorityName;?></span></b></p>
+    <td width=16 valign=top style='width:11.8pt;border:none;padding:0cm 5.4pt 0cm 5.4pt'>
+    <p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
     </td>
- </tr>
- <tr style='mso-yfti-irow:2;mso-yfti-lastrow:yes'>
-  <td style='padding:0cm 0cm 0cm 0cm'>
-  <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>&nbsp;</p>
-  </td>
-  <td valign=top style='padding:0cm 0cm 0cm 0cm'>
-  <p class=MsoNormal align=center style='margin:0cm;margin-bottom:.0001pt;text-align:center'><sup><span style='font-size:10.0pt'>(Подпись)</span></sup><span style='font-size:10.0pt'><o:p></o:p></span></p>
-  </td>
-  <td style='padding:0cm 0cm 0cm 0cm'>
-  <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'>&nbsp;</p>
-  </td>
-  <td valign=top style='padding:0cm 0cm 0cm 0cm'>
-  <p class=MsoNormal align=center style='margin:0cm;margin-bottom:.0001pt; text-align:center'><sup><span style='font-size:10.0pt'>(И.О. Фамилия)</span></sup><span style='font-size:10.0pt'><o:p></o:p></span></p>
-  </td>
- </tr>
+    <td width=116 colspan=2 valign=top style='width:87.2pt;border:none;mso-border-top-alt:solid windowtext .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+    <p class=MsoNormal align=center style='text-align:center'><sup><span
+    style='font-size:10.0pt'>(Подпись)</span></sup></p>
+    </td>
+    <td width=16 valign=top style='width:11.8pt;border:none;padding:0cm 5.4pt 0cm 5.4pt'>
+    <p class=MsoNormal align=center style='text-align:center'><o:p>&nbsp;</o:p></p>
+    </td>
+    <td width=165 colspan=2 valign=top style='width:124.0pt;border:none;mso-border-top-alt:solid windowtext .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+    <p class=MsoNormal align=center style='text-align:center'><sup><span style='font-size:10.0pt'>(И.О. Фамилия)</span></sup></p>
+    </td>
+   </tr>
 </table>
 
 <p class=MsoNormal style='margin:0cm;margin-bottom:.0001pt'><o:p>&nbsp;</o:p></p>

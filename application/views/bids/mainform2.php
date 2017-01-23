@@ -7,7 +7,7 @@
 </h3>
 
 <div id="breadCrumbs" class="acField hide">
-	<a class="stageMarker muted" href="bids2">Начало</a>
+	<a class="stageMarker muted" href="bids">Начало</a>
 	<i class="icon-play"></i>
 	<span class="stageMarker" id="stage2">Данные пользователя</span>
 	<i class="icon-play"></i>

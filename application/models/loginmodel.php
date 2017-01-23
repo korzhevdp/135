@@ -21,12 +21,12 @@ class Loginmodel extends CI_Model{
 		(users.id = ?)", array($row->base_id));
 		if ($result->num_rows()){
 			$row2 = $result->row();
-		$this->session->set_userdata('admin_id',  $row->id);					// id оператора для модулей
-		$this->session->set_userdata('canSee',    $row->supervisor);			// руководитель
-		$this->session->set_userdata('base_id',   $row->base_id);				// учётный номер в базе данных
-		$this->session->set_userdata('rank',      $row->rank);					// ранг оператора
-		$this->session->set_userdata('user_name', $this->input->post('name'));	// системное имя оператора (для аудита)
-			$this->session->set_userdata('selfname',  $row2->fio);					// Человеческое имя оператора - для заголовка
+		$this->session->set_userdata('admin_id',  (int) $row->id);					// id оператора для модулей
+		$this->session->set_userdata('canSee',    $row->supervisor);				// руководитель
+		$this->session->set_userdata('base_id',   (int) $row->base_id);				// учётный номер в базе данных
+		$this->session->set_userdata('rank',      $row->rank);						// ранг оператора
+		$this->session->set_userdata('user_name', $this->input->post('name'));		// системное имя оператора (для аудита)
+			$this->session->set_userdata('selfname',  $row2->fio);					// человеческое имя оператора - для заголовка
 			$this->session->set_userdata('is_sup',    $row2->supervisor);			// булево значение - супервизор ли
 			$this->usefulmodel->insert_audit("Зарегистрирован вход оператора #".$this->session->userdata('user_name'));
 			return true;
@@ -53,7 +53,7 @@ class Loginmodel extends CI_Model{
 	}
 
 	public function test_user() {
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		`admins`.id,
 		`admins`.base_id,
 		`admins`.password,

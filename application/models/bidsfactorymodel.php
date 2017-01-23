@@ -2,13 +2,14 @@
 
 class Bidsfactorymodel extends CI_Model {
 
-	private $dbwrite       = false;										// запись в базу  вкл/выкл
+	private $dbwrite       = true;										// запись в базу  вкл/выкл
 	private $expose        = false;										// профайлер      вкл/выкл
 	private $wrap_to_word  = true;										// обёртка в Word вкл/выкл
 	private $wDirectory    = 'bids/papers2/';							// директория с формулярами заявок
 	private $UID           = 0;											// текущий пользовательский идентификатор
 	private $resItems      = array();
 	private $resList       = array();
+	private $resNamesList  = array();
 	private $bidsData      = false;
 	private $itemID        = 0;											// текущий идентификатор заявки
 	private $primary       = true;										// режим генерации заявок
@@ -272,7 +273,7 @@ class Bidsfactorymodel extends CI_Model {
 		return $outdata;
 	}
 
-	private function getConfAuthority() {
+	private function getConfAuthority() { // выборка подписанта ДСП заявок
 		$output = array(
 			'initials' => "Нет данных",
 			'name'     => "Нет данных",
@@ -281,7 +282,10 @@ class Bidsfactorymodel extends CI_Model {
 		);
 		$result = $this->db->query("SELECT
 		staff.staff,
+		staff.id,
 		users.name_f,
+		users.io,
+		users.vrio,
 		CONCAT(LEFT(users.name_i, 1), '.', LEFT(users.name_o, 1), '.') AS initials
 		FROM
 		users
@@ -290,12 +294,22 @@ class Bidsfactorymodel extends CI_Model {
 		(users.id = ?)", array( $this->confAuthority ));
 		if ($result->num_rows()) {
 			foreach ($result->result() as $row) {
-				$staffD    = explode(" ", $row->staff);
+				$staff = $staffD = explode(" ", $row->staff);
 				$staffD[0] = "Заместителю";
+				if ( $row->id == 52 ) {
+					$staffD[6] = "руководителю";
+				}
+				if ($row->io) {
+					array_unshift($staffD, "И.o.");
+					$staffD[1] = "заместителя";
+					$staff = explode(" ",$row->staff);
+					array_unshift($staff, "И.o.");
+					$staff[1] = "заместителя";
+				}
 				$output    = array(
 					'initials' => $row->initials,
 					'name'     => $row->name_f,
-					'staff'    => $row->staff,
+					'staff'    => implode( $staff," "),
 					'staffD'   => implode( $staffD, " " )
 				);
 			}
@@ -554,6 +568,7 @@ class Bidsfactorymodel extends CI_Model {
 		$output = array();
 		if ($result->num_rows()) {
 			foreach ($result->result() as $row) {
+				$this->resNamesList[$row->id] = $row->name;
 				//print "1111<br>";
 				$additional_info = "";
 				if ($row->id == 286) {
@@ -627,11 +642,12 @@ class Bidsfactorymodel extends CI_Model {
 		
 		$agreedForms = array(
 			// depID => resID
-			'12' => '14'
+			'12' => '14',
+			'21' => '21'
 			//69 => 69
 		);
 		
-		//print_r($resdata);
+		//print_r($this->resList);
 
 		//print "<br><br><br>";
 
@@ -648,9 +664,9 @@ class Bidsfactorymodel extends CI_Model {
 			foreach ($resourceSet as $cat => $data) {
 				//print_r($data);
 				//return false;
-				$templatedata['res_container'] = implode($data, "");
-				$templatedata['owner_staff']   = $resdata['owners'][$owner]['owner_staff'];
-				$templatedata['r_owner']       = $resdata['owners'][$owner]['otv_dl_name'];
+				$templatedata['res_container']  = implode($data, "");
+				$templatedata['owner_staff']    = $resdata['owners'][$owner]['owner_staff'];
+				$templatedata['r_owner']        = $resdata['owners'][$owner]['otv_dl_name'];
 				$sogltype = (isset($agreedForms[$owner])) ? $agreedForms[$owner] : false; 
 				$page = ( $cat > 1 )
 					? $this->load->view($this->wDirectory.'conf',   $templatedata, true) 
@@ -658,6 +674,8 @@ class Bidsfactorymodel extends CI_Model {
 				array_push($papers, $page);														// оформляем заявку
 				if ( $cat > 1 ) {
 					if ( $sogltype ) {
+						$currentResIDs = array_keys($data);
+						$templatedata['currentResName'] = $this->resNamesList[$currentResIDs[0]];
 						array_push($papers, $this->load->view($this->wDirectory.'sogl'.$sogltype, $templatedata, true));
 					}
 					array_push($papers, $this->load->view($this->wDirectory.'ordermemo', $templatedata, true));
@@ -935,7 +953,7 @@ class Bidsfactorymodel extends CI_Model {
 				$data['service'],
 				$data['dept'],
 				(isset($data['addr2']) && strlen($data['addr2']) && $data['addr2']) ? $data['addr2'] : $data['addr1'],
-				$data['staff_id']
+				$data['staff']
 			));
 			
 			$userID = $this->db->insert_id();
@@ -1114,6 +1132,10 @@ class Bidsfactorymodel extends CI_Model {
 		* Получение заявок (первичное). Принимает на вход отсортированные данные из _POST
 		* Выдаёт строку в HTML, направляемую пользователю
 		*/
+		$this->dbwrite      = ((int)$this->session->userdata('admin_id') === 1) ? false : true;
+		$this->expose       = ((int)$this->session->userdata('admin_id') === 1) ? true  : false;
+		$this->wrap_to_word = ((int)$this->session->userdata('admin_id') === 1) ? false : true;
+
 		if ($this->expose) {
 			$this->output->enable_profiler(TRUE);
 		}
