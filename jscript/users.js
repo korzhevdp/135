@@ -1,6 +1,6 @@
 $("#userid").on("keyup",function(){
 	$.ajax({
-		url: "/ajax_users/apply_filter/",
+		url: "/ajax_users/apply_filter",
 		type: "POST",
 		data: {
 			search : $(this).val(),
@@ -9,51 +9,27 @@ $("#userid").on("keyup",function(){
 		dataType: "html",
 		cache: false,
 		success: function(data){
-			//alert(data);
 			$("#userSelector").empty().append(data);
-			$('#foundCounter').html($('#userSelector').find('option').size());
-			$("#userSelector").dblclick(function(){
+			$("#userSelector").dblclick(function() {
 				$("#passedUID").val($("#userSelector").val());
 				$("#userSForm").submit();
 			});
-			$("#userSelector").find("option").each(function(){
-				if($(this).val() == $("#passedUID").val()){
-					$(this).attr("selected","selected");
-				}else{
-					$(this).removeAttr("selected");
+			$("#userSelector option").each(function() {
+				if ($(this).val() === $("#passedUID").val()) {
+					$(this).prop("selected", true);
 				}
+				$(this).prop("selected", false);
 			});
 		},
-		error: function(data,stat,err){
-			//alert([data,stat,err].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
 
 
-/*
-$("#office").change(function(){
-	var id = $(this).val();
-	if(id != "0"){
-		$.ajax({
-			url: "/admin/roomsget/" + id,
-			cache: false,
-			success: function(data){
-				$("#office2").empty().append(data);
-			},
-			error: function(data,stat,err){
-				//$("#consoleContent").html([data,stat,err].join("<br>"));
-			}
-		});
-	}else{
-		$("#office2").empty().append("<option value=0>Выберите помещение</option>");
-	}
-});
-*/
-
 $("#c_login, #c_host").click(function(){
-	id = $(this).attr("ref");
-	$("#" + id).val(recode_field)
+	$("#" + $(this).attr("ref")).val(recode_field)
 });
 
 function recode_field(){
@@ -140,25 +116,27 @@ function recode_field(){
 		},
 		out = 'Конверсия закончилась неудачей';
 
-	if (sname.length && name.length && fname.length){
-		for (i = 1; i < sname.length; ++i){
+	if (!sname.length || !name.length || !fname.length) {
+		return false;
+	}
+
+	for (i = 1; i < sname.length; ++i) {
+		if ( r[sname.charAt(i)] !== undefined ) {
 			sname_conv.push(r[sname.charAt(i)]);
 		}
-
-		fname_conv.push(sr[fname.charAt(0)]);
-		name_conv.push(sr[name.charAt(0)]);
-
-		out = [ 
-			r[sname.charAt(0)].charAt(0).toUpperCase(),
-			r[sname.charAt(0)].substr(1),
-			sname_conv.join(''),
-			name_conv.join(''),
-			fname_conv.join('')
-		].join('');
-		return out;
 	}
-	//alert(out);
-	return false;
+
+	fname_conv.push(sr[fname.charAt(0)]);
+	name_conv.push(sr[name.charAt(0)]);
+
+	return [
+		r[sname.charAt(0)].charAt(0).toUpperCase(),
+		r[sname.charAt(0)].substr(1),
+		sname_conv.join(''),
+		name_conv.join(''),
+		fname_conv.join('')
+	].join('');
+	
 }
 
 
@@ -227,46 +205,46 @@ function recode(){
 	$("#f_login").val(output);
 }
 */
-$(".activate").click(function(){
+$(".activate").click(function() {
 	var id = $(this).attr('prop');
 	$.ajax({
-		url: "/admin/ressubmit/",
-		type: "POST",
-		data: {
-			id: id,
-			num:   (typeof $("#nm_" + id).val()    != 'undefined' && $("#nm_" + id).val().length) ? $("#nm_" + id).val() : 0,
-			date:  (typeof $("#date_" + id).val()  != 'undefined') ? $("#date_" + id).val() : 0,
-			ip:    (typeof $("#ip_" + id).val()    != 'undefined' && $("#ip_" + id).val().length) ? $("#ip_" + id).val() : 0,
-			email: (typeof $("#email_" + id).val() != 'undefined' && $("#email_" + id).val().length) ? $("#email_" + id).val() : 0
+		url     : "/admin/ressubmit",
+		type    : "POST",
+		data    : {
+			id    : id,
+			num   : ($("#nm_" + id).val()    === undefined || !$("#nm_" + id).val().length)   ? 0 : $("#nm_" + id).val(),
+			ip    : ($("#ip_" + id).val()    === undefined || $("#ip_" + id).val().length)    ? 0 : $("#ip_" + id).val(),
+			email : ($("#email_" + id).val() === undefined || $("#email_" + id).val().length) ? 0 : $("#email_" + id).val(),
+			date  : ($("#date_" + id).val()  === undefined) ? 0 : $("#date_" + id).val()
 		},
-		success: function(data){
+		success : function(data) {
 			$(".activate[prop="+ id +"]").removeClass("btn-primary").addClass("btn-success");
 			$(".activate[prop="+ id +"]").html('<i class="icon-edit icon-white"></i>&nbsp;Подключена');
 			$("#ss" + id).appendTo('#actconn');
 			$("#expnum").html($('#expconn').children().length);
 			$("#actnum").html($('#actconn').children().length);
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
 
-$(".hookup").click(function(){
+$(".hookup").click(function() {
 	var id = $(this).attr('prop');
 	$.ajax({
-		url: "/admin/reshookup/" + id,
-		success: function(data){
+		url     : "/admin/reshookup/" + id,
+		success : function(data){
 			$(".hookup[prop="+ id +"]").removeClass("btn-primary").addClass("btn-success");
 			$(".hookup[prop="+ id +"]").html('<i class="icon-edit icon-white"></i>&nbsp;Исполнена');
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
 
-$(".expire").click(function(){
+$(".expire").click(function() {
 	var id = $(this).attr('prop');
 	$.ajax({
 		url: "/admin/resexpire/" + id,
@@ -275,8 +253,8 @@ $(".expire").click(function(){
 			$("#expnum").html($('#expconn').children().length);
 			$("#actnum").html($('#actconn').children().length);
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
@@ -290,38 +268,43 @@ $(".delete").click(function(){
 			$("#expnum").html($('#expconn').children().length);
 			$("#actnum").html($('#actconn').children().length);
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
 
-$("#usermerge").click(function(){
-	vals = $("#userSelector").val();
-	//alert ("/admin/usermerge/" + vals[0] + "/" + vals.slice(1).join("_"));
-	//return false;
+$("#usermerge").click(function() {
+	var values = $("#userSelector").val(); // select multiple
 	$.ajax({
-		url: "/admin/usermerge/" + vals[0] + "/" + vals.slice(1).join("_"),
-		success: function(data){
-	//		alert(11);
+		url     : "/admin/usermerge",
+		type    : "POST",
+		data    : {
+			target  : values[0],
+			sources : values.slice(1)
+		},
+		success : function(data) {
 			$("#userid").keyup();
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
 
 $(".invsaver").click(function() {
-	var id = $(this).attr("ref"),
-		val = $("#inv" + id).val();
 	$.ajax({
-		url: "/admin/invnumupdate/" + id + "/" + val,
-		success: function(data){
+		url     : "/admin/invnumupdate",
+		type    : "POST",
+		data    : {
+			id  : $(this).attr("ref"),
+			val : $("#inv" + id).val()
+		},
+		success : function(data) {
 			$(this).removeClass("btn-warning").addClass("btn-success");
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
@@ -355,16 +338,17 @@ $(".fireSw").click(function() {
 		dataType: 'script',
 		success : function() {
 			if (data.error === 0) {
-				( button.hasClass("btn-info") )
-					? button.removeClass("btn-info").addClass("btn-inverse").empty().html("Уволен(а)")
-					: button.removeClass("btn-inverse").addClass("btn-info").empty().html("Уволить");
-				console.log(data.message);
+				if ( button.hasClass("btn-info") ) {
+					button.removeClass("btn-info").addClass("btn-inverse").empty().html("Уволен(а)");
+					return true;
+				}
+				button.removeClass("btn-inverse").addClass("btn-info").empty().html("Уволить");
 				return true;
 			}
-			alert(data.message);
+			console.log(data.message);
 		},
-		error: function( data, stat, err ) {
-			$("#consoleContent").html([ data, stat, err ].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
@@ -375,67 +359,55 @@ $("#curSw").click(function(){
 	$.ajax({
 		url: "/admin/switchsman/" + id,
 		success: function(data){
-			(data == "1") ? button.removeClass("btn-info").addClass("btn-warning") : button.removeClass("btn-warning").addClass("btn-info") ;
-			//$(this).empty().html(data);
+			if (data == "1") {
+				button.removeClass("btn-info").addClass("btn-warning");
+				return true;
+			}
+			button.removeClass("btn-warning").addClass("btn-info") ;
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
 
 $("#airSw").click(function(){
-	button = $(this);
-	id = $(this).attr('ref');
+	var button	= $(this),
+		id		= button.attr('ref');
 	$.ajax({
-		url: "/admin/switchair/" + id,
-		success: function(data){
-			(data == "1") ? button.removeClass("btn-info").addClass("btn-warning") : button.removeClass("btn-warning").addClass("btn-info") ;
-			//$(this).empty().html(data);
+		url     : "/admin/switchair/" + id,
+		success : function(data) {
+			if (data == "1") {
+				button.removeClass("btn-info").addClass("btn-warning");
+				return true;
+			}
+			button.removeClass("btn-warning").addClass("btn-info") ;
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
 
 $("#birSw").click(function(){
-	button = $(this);
-	id = $(this).attr('ref');
+	var button	= $(this),
+		id		= button.attr('ref');
 	$.ajax({
-		url: "/admin/switchbir/" + id,
-		success: function(data){
-			(data == "1") ? button.removeClass("btn-info").addClass("btn-warning") : button.removeClass("btn-warning").addClass("btn-info") ;
-			//$(this).empty().html(data);
+		url     : "/admin/switchbir/" + id,
+		success : function(data) {
+			if (data == "1") {
+				button.removeClass("btn-info").addClass("btn-warning");
+				return true;
+			}
+			button.removeClass("btn-warning").addClass("btn-info");
 		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	});
 });
-/*
-$(".invsaver").click(function() {
-	var id = $(this).attr("ref"),
-		val = $("#inv" + id).val();
-	$.ajax({
-		url: "/admin/removeFromARM/" + id + "/" + val,
-		success: function(data){
-			$(this).removeClass("btn-warning").addClass("btn-success");
-		},
-		error: function(data,stat,err){
-			$("#consoleContent").html([data,stat,err].join("<br>"));
-		}
-	});
-});
-*/
-/*
-$("#host, #login").keyup(function(){
-	$("#t_host").val($("#host").val());
-	$("#t_login").val($("#login").val());
-});
-*/
+
 $("#userid").keyup();
-//$("#office").change();
 
 $(".pcflowtab").dblclick(function(){
 	var href = $(this).attr("href");
@@ -445,26 +417,28 @@ $(".pcflowtab").dblclick(function(){
 $(".pcflowtab").click(function(){
 	var id = $(this).attr("ref");
 	$.ajax({
-		url: "/console/pcconf/" + id,
-		type: "GET",
-		dataType: "html",
-		success: function(data){
+		url      : "/console/pcconf/" + id,
+		type     : "GET",
+		dataType : "html",
+		success  : function(data) {
 			$("#confcontainer").html(data);
+		},
+		error   : function( data, stat, err) {
+			console.log( [data, stat, err] );
 		}
 	})
 });
 
-$(".confhide").click(function(){
+$(".confhide").click(function() {
 	$(".table-arm, #hideallarm").addClass("hide");
 });
 
-$("#inactiveToggler").click(function(){
-	if($(this).prop("checked")){
+$("#inactiveToggler").click(function() {
+	if ($(this).prop("checked")) {
 		$(".table-licenses tr.muted").removeClass("hide");
-	}else{
-		$(".table-licenses tr.muted").addClass("hide");
+		return false;
 	}
-	
+	$(".table-licenses tr.muted").addClass("hide");
 });
 
 $(function($){

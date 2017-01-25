@@ -11,6 +11,7 @@ class Admin extends CI_Controller {
 		(!$this->session->userdata('filter')) ? $this->session->set_userdata('filter', '') : "";
 		(!$this->session->userdata('uid'))    ? $this->session->set_userdata('uid', 1) : "";
 		$this->load->model('adminmodel');
+
 		$this->load->model('usefulmodel');
 		$this->load->model('licensemodel');
 		//if($this->session->userdata("admin_id") == 1){
@@ -20,10 +21,10 @@ class Admin extends CI_Controller {
 
 	public function index($user_id=0, $page=1){
 		$data = array('tickets' => 0);
-		
+		$this->load->model('startscreenmodel');
 		$act = array(
 			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
-			'content' => $this->adminmodel->startscreen_show(),
+			'content' => $this->startscreenmodel->startscreen_show(),
 			'footer'  => $this->load->view('page_footer', '', true)
 		);
 		$this->load->view('page_container', $act);
@@ -209,6 +210,10 @@ class Admin extends CI_Controller {
 	}
 
 	public function resexpire($id=0){
+		if ((int)$this->session->userdata('rank') !== 1) {
+			print 0;
+			return false;
+		}
 		$result = $this->db->query("UPDATE 
 			resources_items 
 			SET 
@@ -218,8 +223,7 @@ class Admin extends CI_Controller {
 			WHERE
 			resources_items.id = ?", array($id));
 		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") отменил заявку #".$id);
-		$out = ($this->db->affected_rows()) ? 1 : 0 ;
-		print $out;
+		($this->db->affected_rows()) ? print 1 : print 0;
 	}
 
 	public function ingroup($id=0){
@@ -255,7 +259,11 @@ class Admin extends CI_Controller {
 		print $out;
 	}
 
-	public function resdelete($id=0){
+	public function resdelete($id=0) {
+		if ((int)$this->session->userdata('rank') !== 1) {
+			print 0;
+			return false;
+		}
 		$result = $this->db->query("UPDATE 
 			resources_items 
 			SET 
@@ -263,9 +271,8 @@ class Admin extends CI_Controller {
 			resources_items.deldate = NOW()
 			WHERE
 			resources_items.id = ?", array($id));
-		$out = ($this->db->affected_rows()) ? 1 : 0 ;
 		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") удалил заявку #".$id);
-		print $out;
+		($this->db->affected_rows()) ? print 1 : print 0;
 	}
 
 	public function reshookup($id=0){
@@ -281,13 +288,17 @@ class Admin extends CI_Controller {
 		print $out;
 	}
 
-	public function usermerge($t_id=0, $rest_id=0){
-		$rest_id = implode(explode("_", $rest_id), ",");
-		$result = $this->db->query("UPDATE resources_items SET resources_items.uid = ? WHERE resources_items.uid IN (".$rest_id.")", array($t_id));
-		$result = $this->db->query("DELETE FROM users WHERE users.id IN (".$rest_id.")");
-		$this->usefulmodel->insert_audit("Куратор #".$this->session->userdata('user_name')." объединил учётные записи #".$t_id." и ".$rest_id);
-		$out = ($this->db->affected_rows()) ? 1 : 0 ;
-		print $out;
+	public function usermerge() {
+		$target  = $this->input->post('target');
+		$sources = implode($this->input->post('sources'), ", ");
+		$result  = $this->db->query("UPDATE
+		resources_items 
+		SET
+		resources_items.uid = ?
+		WHERE resources_items.uid IN (".$sources.")", array($target));
+		$result  = $this->db->query("DELETE FROM users WHERE users.id IN (".$sources.")");
+		$this->usefulmodel->insert_audit("Куратор #".$this->session->userdata('user_name')." объединил учётные записи #".$target." и ".$sources);
+		print ($this->db->affected_rows()) ? 1 : 0 ;
 	}
 
 	public function roomsget($id=0){

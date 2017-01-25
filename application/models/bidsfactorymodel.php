@@ -378,7 +378,7 @@ class Bidsfactorymodel extends CI_Model {
 	}
 
 	######## выдача ТЕКСТОВ заявок #########
-	private function getSpecialPapers( ) {
+	private function getSpecialPapers() {
 		//print_r($this->resList);
 		$papers = array();
 		$IMStat = false;
@@ -817,7 +817,7 @@ class Bidsfactorymodel extends CI_Model {
 		return false;
 	}
 
-	private function getPrimaryBidsData ( ) {
+	private function getPrimaryBidsData () {
 		return array( '0' => array(
 			'staffname'   => '',
 			'phone'       => $this->input->post('phone'),
@@ -899,7 +899,7 @@ class Bidsfactorymodel extends CI_Model {
 		AND `resources_items`.order_id IN (".implode($processedData['orderIDs'], ",").")", array($this->UID));
 		if ($result->num_rows()) {
 			foreach($result->result() as $row) {
-				if ( isset($layers[$row->rid]) ) {
+				if ( isset($layers[$row->rid]) && is_array($layers[$row->rid]) ) {
 					array_push( $subsdata, "(2, '".implode($layers[$row->rid], "\n")."',".$row->id.")" );
 				}
 			}
@@ -1132,7 +1132,7 @@ class Bidsfactorymodel extends CI_Model {
 		* Получение заявок (первичное). Принимает на вход отсортированные данные из _POST
 		* Выдаёт строку в HTML, направляемую пользователю
 		*/
-		$this->dbwrite      = ((int)$this->session->userdata('admin_id') === 1) ? false : true;
+		$this->dbwrite      = ((int)$this->session->userdata('admin_id') === 1) ? true : true;
 		$this->expose       = ((int)$this->session->userdata('admin_id') === 1) ? true  : false;
 		$this->wrap_to_word = ((int)$this->session->userdata('admin_id') === 1) ? false : true;
 
@@ -1198,5 +1198,5 @@ class Bidsfactorymodel extends CI_Model {
 	}
 }
 
-/* End of file bidsmodel2.php */
-/* Location: ./application/models/bidsmodel2.php */
+/* End of file bidsfactorymodel.php */
+/* Location: ./application/models/bidsfactorymodel.php */

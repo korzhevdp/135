@@ -229,41 +229,39 @@ class Adminmodel extends CI_Model {
 	}
 
 	public function user_resources_get($user_id) {
-		$active		= array();
-		$expired	= array();
 		$res		= array();
 		$result = $this->db->query("SELECT 
-			resources_items.id,
-			resources_items.rid,
-			resources_items.uid,
-			resources_items.order_id,
-			resources_pid.pid,
-			IF(resources_pid.pid = 6, REPLACE(INET_NTOA(resources_pid.pid_value), '192.168.', ''), resources_pid.pid_value) AS pid_value,
-			resources_items.apply,
-			resources_items.applydate,
-			resources_items.ok,
-			DATE_FORMAT(resources_items.okdate, '%e.%m.%Y %H:%i') AS okdate,
-			resources_items.`exp`,
-			resources.shortname,
-			resources.location,
-			resources.`action`,
-			resources.`cat`,
-			resources.bitmask,
-			resources_orders.docnum,
-			(DATE_FORMAT(resources_orders.docdate, '%e.%m.%Y')) AS docdate,
-			`users`.supervisor
+		resources_items.id,
+		resources_items.rid,
+		resources_items.uid,
+		resources_items.order_id,
+		resources_pid.pid,
+		IF(resources_pid.pid = 6, REPLACE(INET_NTOA(resources_pid.pid_value), '192.168.', ''), resources_pid.pid_value) AS pid_value,
+		resources_items.apply,
+		resources_items.applydate,
+		resources_items.ok,
+		DATE_FORMAT(resources_items.okdate, '%e.%m.%Y %H:%i') AS okdate,
+		resources_items.`exp`,
+		resources.shortname,
+		resources.location,
+		resources.`action`,
+		resources.`cat`,
+		resources.bitmask,
+		resources_orders.docnum,
+		(DATE_FORMAT(resources_orders.docdate, '%e.%m.%Y')) AS docdate,
+		`users`.supervisor
 		FROM
-			resources_pid
-			RIGHT OUTER JOIN resources_items ON (resources_pid.item_id = resources_items.id)
-			LEFT OUTER JOIN resources ON (resources_items.rid = resources.id)
-			INNER JOIN resources_orders ON (resources_items.order_id = resources_orders.id)
-			INNER JOIN `users` ON (resources_items.uid = `users`.id)
+		resources_pid
+		RIGHT OUTER JOIN resources_items ON (resources_pid.item_id = resources_items.id)
+		LEFT OUTER JOIN resources ON (resources_items.rid = resources.id)
+		INNER JOIN resources_orders ON (resources_items.order_id = resources_orders.id)
+		INNER JOIN `users` ON (resources_items.uid = `users`.id)
 		WHERE
-			(resources_items.uid = ?) AND 
-			(NOT (resources_items.del))
-			ORDER BY
-			resources_items.ok", array($user_id));
-		if($result->num_rows()){
+		(resources_items.uid = ?)
+		AND NOT (resources_items.del)
+		ORDER BY
+		resources_items.ok, resources_items.id DESC", array($user_id));
+		if($result->num_rows()) {
 			foreach($result->result_array() as $row){
 				if(!isset($res[$row['id']])){
 					$res[$row['id']] = array();
@@ -273,46 +271,21 @@ class Adminmodel extends CI_Model {
 				$res[$row['id']] = array_merge($res[$row['id']], $row);
 			}
 		}
-		foreach ($res as $key=>$row){
+		$output = $this->fillResourceListTemplate($res);
+		return $this->load->view("reslisttemplate", $output, true);
+	}
+
+	private function fillResourceListTemplate($res) {
+		$active	 = array();
+		$expired = array();
+		foreach ($res as $key=>$row) {
 			$row['editAllowed'] = ($this->session->userdata('rank') || $this->session->userdata("admin_id") == 26) ? '' : ' disabled="disabled"';
 			####################
 			$row['ipChunk']  = (in_array($row['rid'], array(100,101)))	? $this->load->view("iptemplate", $row, true) : '';
 			$row['mnChunk']  = (in_array($row['rid'], array(100)))		? $this->load->view("mntemplate", $row, true) : '';
 			$row['osa_date'] = ( $row["ok"] ) ? "исполнено ОСА: ".$row['okdate'] : "";
 			#####################
-			$row['button1'] = '<span class="btn btn-'.(($row["ok"])
-				? (($row["apply"])
-					? "success"
-					: "inverse" )
-				: "primary").' btn-small activate" prop="'.$row['id'].'" title="'.(($row["ok"])
-					? (($row["apply"])
-						? "Архив"
-						: "Обновить данные заявки" )
-					: "Пометить исполненной отделом СА").'">
-			<i class="'.(($row["ok"])
-				? "icon-edit" 
-				: "icon-ok-sign").' icon-white"></i>&nbsp;'.(($row["ok"])
-					? (($row["apply"]) 
-						? "Исполнено"
-						: "Ждём куратора" ) 
-					: "Активировать").'</span>';
-
-			$row['button1'] = ($this->session->userdata('rank') || $this->session->userdata("admin_id") == 26) 
-				? $row['button1'] 
-				: '<span class="btn btn-'.(($row["apply"])
-					? "success"
-					: "warning").' btn-small'
-					.(($this->session->userdata('canSee') == $row['supervisor'])
-					? ' hookup'
-					: "").'" prop="'.$row['id'].'"><i class="'.(($row["ok"])
-					? "icon-edit"
-					: "icon-ok-sign")
-				.' icon-white"></i>&nbsp;'.(($row["apply"])
-					? "Исполнено"
-					: "Доложить об исполнении")
-			.'&nbsp;</span>
-			<span class="btn btn-info btn-small makeBackEvent" prop="'.$row['id'].'"  title="Создать сообщение администратору"><i class="icon-calendar icon-white"></i>&nbsp;</span>';
-
+			$row['button1'] = $this->getButton1($row);
 			$row['button2'] = ($this->session->userdata('rank')) 
 				? '<span class="btn btn-warning btn-small expire" prop="'.$row['id'].'" title="Отменить"><i class="icon-remove-sign icon-white"></i>&nbsp;</span>
 				<span class="btn btn-danger btn-small delete" prop="'.$row['id'].'"  title="Удалить"><i class="icon-trash icon-white"></i>&nbsp;</span>
@@ -322,17 +295,52 @@ class Adminmodel extends CI_Model {
 				? '<span class="btn btn-warning btn-small expire" prop="'.$row['id'].'" title="Отменить"><i class="icon-remove-sign icon-white"></i>&nbsp;</span>'
 				: $row['button2'];
 
-
 			$template = $this->load->view("restemplate", $row, true);
 			($row['exp']) ? array_push($expired, $template) : array_push($active, $template);
 		}
-		$output = array(
+		return array(
 			'asize'		=> sizeof($active),
 			'active'	=> implode($active, "\n"),
 			'esize'		=> sizeof($expired),
 			'expired'	=> implode($expired, "\n")
 		);
-		return $this->load->view("reslisttemplate", $output, true);
+	}
+	
+	private function getButton1($row) {
+		if ((int)$this->session->userdata('rank') === 0 || (int)$this->session->userdata("admin_id") === 26) {
+			$button1 = '<span class="btn btn-'.(($row["apply"])
+				? "success"
+				: "warning").' btn-small'
+				.(($this->session->userdata('canSee') == $row['supervisor'])
+					? ' hookup'
+					: "").'" prop="'.$row['id'].'"><i class="'.(($row["ok"])
+					? "icon-edit"
+					: "icon-ok-sign")
+				.' icon-white"></i>&nbsp;'.(($row["apply"])
+					? "Исполнено"
+					: "Доложить об исполнении")
+			.'&nbsp;</span>
+			<span class="btn btn-info btn-small makeBackEvent" prop="'.$row['id'].'"  title="Создать сообщение администратору"><i class="icon-calendar icon-white"></i>&nbsp;</span>';
+			return $button1;
+		}
+
+		$button1  = '<span class="btn btn-'.(($row["ok"])
+			? (($row["apply"])
+				? "success"
+				: "inverse" )
+			: "primary").' btn-small activate" prop="'.$row['id'].'" title="'.(($row["ok"])
+				? (($row["apply"])
+					? "Архив"
+					: "Обновить данные заявки" )
+				: "Пометить исполненной отделом СА").'">
+		<i class="'.(($row["ok"])
+			? "icon-edit"
+			: "icon-ok-sign").' icon-white"></i>&nbsp;'.(($row["ok"])
+				? (($row["apply"])
+					? "Исполнено"
+					: "Ждём куратора" )
+				: "Активировать").'</span>';
+		return $button1;
 	}
 
 	public function user_arm_get($user_id) {
@@ -455,356 +463,6 @@ class Adminmodel extends CI_Model {
 		);
 	}
 
-	public function no_cache() {
-		header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-		header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
-		header("Cache-Control: no-store, no-cache, must-revalidate");
-		header("Cache-Control: post-check=0, pre-check=0", false);
-		header("Pragma: no-cache"); 
-	}
-
-	public function filter_users($filter = "") {
-		$uid = ($this->session->userdata("uid")) ? $this->session->userdata("uid") : "1";
-		$filter = iconv('UTF-8', 'Windows-1251' , urldecode($filter)).'%';
-		$mode = (preg_match("/[a-zA-Z]/",$filter)) ? "host" : "name";
-		$output = array();
-		if ($mode == "name") {
-			$result =$this->db->query("SELECT 
-			CONCAT('<option value=',
-			`users`.`id`,
-			IF(`users`.id = ?, ' selected = \"selected\">', '>'),
-			CONCAT_WS(' ', TRIM(`users`.`name_f`), TRIM(`users`.`name_i`), TRIM(`users`.`name_o`)), '</option>') AS `options`
-			FROM
-			`users`
-			WHERE
-			LOWER(CONCAT_WS(' ', `users`.name_f, `users`.name_i, `users`.name_o)) LIKE ?
-			ORDER BY TRIM(`users`.name_f) ASC, TRIM(`users`.name_i) ASC, TRIM(`users`.name_o) ASC", array($uid, $filter));
-		} else {
-			$result = $this->db->query("SELECT 
-			CONCAT('<option value=',
-			`users`.id,
-			IF(`users`.id = ?, ' selected = \"selected\">', '>'),
-			CONCAT_WS(' ', TRIM(`users`.name_f), TRIM(`users`.name_i), TRIM(`users`.name_o)),
-			'</option>') as options
-			FROM
-			`users`
-			WHERE 
-			users.host LIKE ?
-			ORDER BY TRIM(`users`.name_f) ASC, TRIM(`users`.name_i) ASC, TRIM(`users`.name_o) ASC",array($uid, $filter));
-		}
-		if ($result->num_rows()) {
-			foreach ($result->result() as $row) {
-				array_push($output,$row->options);
-			}
-		}
-		$list = implode($output, "\n");
-		print $list;
-	}
-
-	public function summary_show() {
-		$this->db->query("SET lc_time_names = 'ru_RU';");
-		$summary		= array(
-			'user_num'       => "",
-			'user_table'     => "",
-			'servicemendata' => "",
-			'tabs'           => "",
-			'graph'          => "",
-			'panes'          => ""
-
-		);
-		$usertable		= array();
-		$usertable_l	= array();
-		$a_id			= $this->session->userdata("admin_id");
-		$is_sup			= $this->session->userdata('is_sup');
-		$base_id		= $this->session->userdata('base_id');
-		$my_sup			= $this->session->userdata('canSee');
-		$rank			= $this->session->userdata('rank');
-		$this->load->helper("form");
-
-		$result = $this->db->query("SELECT 
-		users.id,
-		users.service,
-		CONCAT(users.name_f, ' ', SUBSTR(users.name_i, 1, 1),'.', SUBSTR(users.name_o, 1, 1), '. [', departments.alias,']') AS userfio,
-		CONCAT(users1.name_f,' ',LEFT(users1.name_i,1),'.',LEFT(users1.name_o,1),'.') AS curator
-		FROM
-		users
-		INNER JOIN departments ON (users.dep_id = departments.id)
-		INNER JOIN `users` users1 ON (users.service = users1.id)
-		WHERE
-		NOT `users`.fired ".(( (int) $rank == 1) ? "" : "AND `users`.supervisor = ".$my_sup ));
-
-		$summary['user_num'] = $result->num_rows();
-		if ($summary['user_num']) {
-			foreach ($result->result() as $row){
-				$string = '<tr><td><a href="/admin/users/'.$row->id.'">'.$row->userfio.'</a></td>
-				<td>'.$row->curator.'</td>
-				<td><button type="button" class="btn btn-mini btn-warning">пометить уволенным</button></td></tr>';
-				array_push($usertable, $string);
-			}
-			$summary['user_table'] = implode($usertable,"\n");
-		}
-
-		$servicemen = array();
-		$result = $this->db->query("SELECT 
-		COUNT(users.id) AS `count`,
-		CONCAT_WS(' ', users1.name_f, users1.name_i, users1.name_o) AS curator
-		FROM
-		users users1
-		INNER JOIN users ON (users1.id = users.service)
-		WHERE
-		NOT users.fired AND
-		NOT users1.fired ".(( $rank == 1) ? "" : "AND `users`.supervisor = ".$my_sup)."
-		GROUP BY
-		users.service", array($base_id));
-		if($result->num_rows()){
-			foreach ($result->result() as $row){
-				$string = "['".$row->curator." [".$row->count."]', ".$row->count."]";
-				array_push($servicemen,$string);
-			}
-			$summary['servicemendata'] = implode($servicemen,", ");
-		}
-
-
-		$orders		= array();
-		$otabs		= array();
-		$opanes		= array();
-		$graphdata	= array();
-		$result		= $this->db->query("SELECT 
-		DATE_FORMAT(resources_orders.docdate, '%b.') as `mnth`,
-		COUNT(resources_items.id) AS fdate,
-		DATE_FORMAT(resources_orders.docdate, '%Y') AS fyr
-		FROM
-		resources_items
-		INNER JOIN resources_orders ON (resources_items.order_id = resources_orders.id)
-		INNER JOIN users ON (resources_items.uid = users.id)
-		WHERE
-		NOT users.fired ".(( (int) $rank == 1) ? "" : "AND `users`.supervisor = ".$my_sup)." AND
-		DATE_FORMAT(resources_orders.docdate, '%Y') > (DATE_FORMAT(NOW(), '%Y') - 4)
-		GROUP BY
-		DATE_FORMAT(resources_orders.docdate, '%Y.%M')
-		ORDER BY
-		resources_orders.docdate", array($base_id));
-		if($result->num_rows()){
-			foreach ($result->result() as $row){
-				(!isset($orders[$row->fyr])) ? $orders[$row->fyr] = array() : "" ;
-				array_push($orders[$row->fyr], "['".$row->mnth."(".$row->fdate.")', ".$row->fdate."]");
-			}
-			foreach($orders as $key=>$val){
-				array_push($graphdata,'\''.$key.'\' : ['.implode($orders[$key],",").']');
-				array_push($otabs, '<li class="'.((date("Y") == $key) ? 'active' : '').'"><a href="#tab'.$key.'" data-toggle="tab" class="tabber" key="'.$key.'">'.$key.' год</a></li>');
-				array_push($opanes, '<div class="tab-pane '.((date("Y") == $key) ? 'active' : '').'" id="tab'.$key.'"><div class="span12" style="height:200px;margin-left:0px;margin-bottom:20px;display:block;" id="ordchart'.$key.'"></div></div>');
-			}
-			$summary['tabs'] = implode($otabs,"\n");
-			$summary['graph'] = implode($graphdata,",\n\t\t");
-			$summary['panes'] = implode($opanes,"\n");
-		}
-
-
-		$o_ok		= array();
-		$o_toapply	= array();
-		$o_applied	= array();
-		$result		= $this->db->query("SELECT 
-		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio,
-		resources.name,
-		resources_items.ok,
-		resources_items.apply,
-		DATE_FORMAT(`resources_orders`.docdate,'%d.%m.%Y') as `date`
-		FROM
-		resources_items
-		LEFT OUTER JOIN users ON (resources_items.uid = users.id)
-		LEFT OUTER JOIN resources ON (resources_items.rid = resources.id)
-		LEFT OUTER JOIN resources_orders ON (resources_items.order_id = resources_orders.id)
-		WHERE
-		NOT (resources_items.del) AND
-		(NOT (resources_items.exp)) AND
-		resources_items.uid ".(( (int) $rank == 1) ? "" : "AND `users`.supervisor = ".$my_sup)."
-		ORDER BY
-		resources_orders.docdate");
-		//print $this->db->last_query();
-		$summary['o_overall'] = $result->num_rows();
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				if(!$row->apply){
-					array_push($o_toapply,$row->apply);
-				}else{
-					array_push($o_applied,$row->apply);
-				}
-				if($row->ok){
-					array_push($o_ok,$row->ok);
-				}
-			}
-		}
-		$summary['o_ok'] = sizeof($o_ok);
-		$summary['o_toapply'] = sizeof($o_toapply);
-		$summary['o_applied'] = sizeof($o_applied);
-
-		$output = array();
-		array_push($output,'<table class="table table-bordered table-condensed table-striped table-hover" style="margin-left:0px">
-		<tr>
-			<th class="span4">ФИО</th>
-			<th class="span5">Ресурс</th>
-			<th class="span1">Дата</th>
-			<th class="span1">СА</th>
-			<th class="span1">ИСП</th>
-		</tr>');
-		$result = $this->db->query("SELECT 
-		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio,
-		users.id AS userid,
-		resources.shortname,
-		resources_items.id,
-		DATE_FORMAT(resources_orders.docdate,'%d.%m.%Y') as docdate,
-		resources_items.ok
-		FROM
-		resources
-		RIGHT OUTER JOIN resources_items ON (resources.id = resources_items.rid)
-		LEFT OUTER JOIN users ON (resources_items.uid = users.id)
-		LEFT OUTER JOIN resources_orders ON (resources_items.order_id = resources_orders.id)
-		WHERE
-		NOT resources_items.apply AND
-		NOT `resources_items`.`exp` AND
-		(resources_items.uid) AND 
-		NOT resources_items.del
-		".(( (int) $rank == 1) ? "" : "AND `users`.supervisor = ".$my_sup)."
-		ORDER BY
-		resources_orders.docdate DESC
-		LIMIT 50");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				array_push($output,'<tr>
-					<td><a href="/admin/users/'.$row->userid.'">'.$row->fio.'</a></td>
-					<td>'.$row->shortname.'</td>
-					<td>'.$row->docdate.'</td>
-					<td><center>'.(($row->ok) ? '<i class="icon-ok"></i>' : '<i class="icon-remove icon-white"></i>').'</center></td>
-					<td>
-						<div class="btn-group">
-							<a class="btn btn-warning btn-mini dropdown-toggle" data-toggle="dropdown" id="btn'.$row->id.'" href="#">Действие&nbsp;&nbsp;<span class="caret"></span></a>
-							<ul class="dropdown-menu">
-								<li class="serv_complete" ref="'.$row->id.'"><a href="#">Выполнено</a><li>
-								<li class="divider"></li>
-								<li class="serv_decline" ref="'.$row->id.'"><a href="#">Отклонена</a><li>
-							</ul>
-						</div>
-					</td>
-				</tr>');
-			}
-		}
-		$summary['ordprocessing'] = implode($output,"\n")."\n</table>";
-
-		$output = array();
-		$result = $this->db->query("SELECT 
-			admins.id,
-			CONCAT(users.name_f, ' ', SUBSTR(users.name_i, 1, 1),'.', SUBSTR(users.name_o, 1, 1),'.') AS fio,
-			`departments`.dn
-			FROM
-			admins
-			INNER JOIN users ON (admins.base_id = users.id)
-			INNER JOIN `departments` ON (users.dep_id = `departments`.id)
-			WHERE NOT users.fired
-			ORDER BY fio");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				$string = '<label class="checkbox" title="'.$row->fio.' '.$row->dn.'" style="width:48%;float:left;clear:none;margin:5px;cursor:pointer;"><input type="checkbox" name="rec[]" value="'.$row->id.'" style="vertical-align:middle;margin-top:3px;margin-right:5px;"> '.$row->fio.'</label>';
-				array_push($output, $string);
-			}
-		}
-
-		$summary['receivers'] = implode($output);
-
-		
-		return $this->load->view('page_summary', $summary, true);
-	}
-
-	public function startscreen_show() {
-		$this->db->query("SET lc_time_names = 'ru_RU';");
-		$summary	= array(
-			'last_approved' => "Заявки, обработанные ОСА (последние 50)",
-			'awaiting'      => "Заявки, стоящие в очереди на получение в ОСА"
-		);
-		$a_id		= $this->session->userdata("admin_id");
-		$is_sup		= $this->session->userdata('is_sup');
-		$base_id	= $this->session->userdata('base_id');
-		$my_sup		= $this->session->userdata('canSee');
-		$rank		= $this->session->userdata('rank');
-
-		$result = $this->db->query("SELECT 
-		CONCAT(users.name_f, ' ', UPPER(LEFT(users.name_i, 1)),'.', UPPER(LEFT(users.name_o, 1)),'.') AS fio,
-		departments.alias,
-		resources.shortname,
-		resources_items.id,
-		users.phone,
-		users.id AS uid,
-		CONCAT_WS(' ', `locations`.address, locations1.address) AS address,
-		DATE_FORMAT( `resources_items`.okdate, '%d.%m.%Y' ) AS okdate,
-		DATE_FORMAT( `resources_items`.initdate, '%d.%m.%Y' ) AS initdate,
-		`resources_orders`.docnum, '%d.%m.%Y'
-		FROM
-		resources_items
-		LEFT OUTER JOIN users ON (resources_items.uid = users.id)
-		LEFT OUTER JOIN departments ON (users.dep_id = departments.id)
-		LEFT OUTER JOIN resources ON (resources_items.rid = resources.id)
-		LEFT OUTER JOIN `locations` ON (`locations`.id = users.office_id)
-		LEFT OUTER JOIN `locations` locations1 ON (locations1.id = `locations`.parent)
-		LEFT OUTER JOIN `resources_orders` ON (resources_items.order_id = `resources_orders`.id)
-		WHERE
-		(resources_items.ok) 
-		AND NOT (resources_items.del)
-		AND NOT (resources_items.exp)
-		AND NOT (resources_items.apply)
-		AND (users.sman = ? OR users.supervisor = ? OR ? = 1)
-		-- AND (resources_items.okdate >= DATE_SUB(NOW(), INTERVAL 10 DAY))
-		ORDER BY `resources_items`.okdate DESC
-		LIMIT 50", array($a_id, $my_sup, $rank));
-		$summary['last_approved'] = $this->make_res_table($result);
-
-		$result = $this->db->query("SELECT 
-		CONCAT(users.name_f, ' ', UPPER(LEFT(users.name_i, 1)),'.', UPPER(LEFT(users.name_o, 1)),'.') AS fio,
-		departments.alias,
-		resources.shortname,
-		resources_items.id,
-		users.phone,
-		users.id AS uid,
-		CONCAT_WS(' ', `locations`.address, locations1.address) AS address,
-		DATE_FORMAT( `resources_items`.okdate, '%d.%m.%Y' ) AS okdate,
-		DATE_FORMAT( `resources_items`.initdate, '%d.%m.%Y' ) AS initdate,
-		`resources_orders`.docnum, '%d.%m.%Y'
-		FROM
-		resources_items
-		LEFT OUTER JOIN users ON (resources_items.uid = users.id)
-		LEFT OUTER JOIN departments ON (users.dep_id = departments.id)
-		LEFT OUTER JOIN resources ON (resources_items.rid = resources.id)
-		LEFT OUTER JOIN `locations` ON (`locations`.id = users.office_id)
-		LEFT OUTER JOIN `locations` locations1 ON (locations1.id = `locations`.parent)
-		LEFT OUTER JOIN `resources_orders` ON (resources_items.order_id = `resources_orders`.id)
-		WHERE
-		NOT (resources_items.ok)
-		AND NOT (resources_items.del)
-		AND NOT (resources_items.exp)
-		AND (users.sman = ? OR users.supervisor = ? OR ? = 1)
-		-- AND (resources_items.okdate >= DATE_SUB(NOW(), INTERVAL 10 DAY))
-		ORDER BY `resources_items`.id DESC
-		LIMIT 50", array($a_id, $my_sup, $rank));
-		$summary['awaiting'] = $this->make_res_table($result);
-
-		return $this->load->view('startscreen', $summary, true);
-	}
-
-	private function make_res_table($result) {
-		$output = array();
-		if ($result->num_rows()) {
-			foreach($result->result() as $row){
-				$docnum = ($row->docnum == "0") ? "б/н" : $row->docnum;
-				$string = '<tr>
-				<td style="width:330px;"><a href="/admin/users/'.$row->uid.'" target="_blank">'.$row->fio.'</a><br><small class="muted">'.$row->alias.', '.$row->address.' тел.: '.$row->phone.'</small></td>
-				<td>'.$row->shortname.'<br><small class="muted">от '.$row->initdate.' № '.$docnum.'</small></td>
-				<td style="vertical-align:middle;width:130px;text-align:center">'.$row->okdate.'</td>
-				<td style="vertical-align:middle;width:148px;"><a href="/admin/applyitem/'.$row->id.'" class="btn btn-warning">Снять с контроля</a></td>
-				</tr>';
-				array_push($output, $string);
-			}
-			return implode($output, "\n");
-		}
-	}
-
 	public function user_save() {
 		$this->updateFEEntry($this->input->post('saveID'));
 		$result = $this->db->query("UPDATE
@@ -873,57 +531,6 @@ class Adminmodel extends CI_Model {
 				$DB2->query("UPDATE `fios` SET `fios`.`fio` = TRIM(?) WHERE TRIM(`fios`.`fio`) = TRIM(?)", array( $newfio, $fio ));
 			}
 		}
-	}
-
-	public function stuck_orders() {
-		$is_sup  = $this->session->userdata('is_sup');
-		$base_id = $this->session->userdata('base_id');
-		$rank    = $this->session->userdata('rank');
-
-		$output = array();
-		array_push($output,'<h2>Застрявшие заявки</h2>');
-		array_push($output,'<table class="span12 table table-bordered table-striped table-hover table-condensed" style="margin-left:0px;margin-bottom:80px;">
-		<tr>
-			<th class="span4">Пользователь</th>
-			<th class="span1">Дата подачи</th>
-			<th class="span5">Информационный ресурс</th>
-			<th class="span2">Ссылки</th>
-		</tr>');
-
-		$result = $this->db->query("SELECT 
-		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio,
-		users.id as `userid`,
-		resources.shortname,
-		resources_items.id,
-		DATE_FORMAT(resources_orders.docdate, '%d.%m.%Y') as docdate
-		FROM
-		resources
-		RIGHT OUTER JOIN resources_items ON (resources.id = resources_items.rid)
-		LEFT OUTER JOIN users ON (resources_items.uid = users.id)
-		LEFT OUTER JOIN resources_orders ON (resources_items.order_id = resources_orders.id)
-		WHERE
-		(NOT users.fired)
-		AND (NOT (resources_items.ok))
-		AND (NOT (resources_items.exp))
-		AND (resources_items.uid)
-		AND (NOT (resources_items.del)) ".(( (int) $rank == 1) ? "" : (($is_sup == 1) ? "AND `users`.supervisor = ".$base_id : " AND `users`.service = ".$base_id))."
-		ORDER BY resources.shortname, fio");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				$string ='<tr>
-				<td>'.$row->fio.'</td>
-				<td>'.$row->docdate.'</td>
-				<td>'.$row->shortname.'</td>
-				<td>
-					'.((strlen($row->userid) && $row->userid) ? '<a href="/admin/users/'.$row->userid.'/2" target="_blank">Учётная карточка</a><br>' : '').'
-					'.((!$row->userid) ? '<button class="deleter btn btn-warning btn-mini" id="bt'.$row->id.'" prop="'.$row->id.'" >Удалить</button>' : '').'
-				</td>
-				</tr>';
-				array_push($output,$string);
-			}
-		}
-
-		return implode($output,"\n")."</table>";
 	}
 
 	public function quick_add() {
@@ -998,5 +605,5 @@ class Adminmodel extends CI_Model {
 	}
 }
 
-/* End of file admin.php */
-/* Location: ./application/controllers/admin.php */
+/* End of file adminmodel.php */
+/* Location: ./application/models/adminmodel.php */
