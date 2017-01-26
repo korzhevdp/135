@@ -99,7 +99,7 @@
 				<div class="controls">
 					<select class="span12" name="dept" id="dept">
 						<option value=0>--выберите--</option>
-						<?=$id_dep;?>
+						<?=$dept;?>
 					</select>
 				</div>
 			</div>

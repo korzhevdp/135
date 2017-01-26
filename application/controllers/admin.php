@@ -24,7 +24,7 @@ class Admin extends CI_Controller {
 		$this->load->model('startscreenmodel');
 		$act = array(
 			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
-			'content' => $this->startscreenmodel->startscreen_show(),
+			'content' => $this->startscreenmodel->startScreenShow(),
 			'footer'  => $this->load->view('page_footer', '', true)
 		);
 		$this->load->view('page_container', $act);
@@ -84,7 +84,7 @@ class Admin extends CI_Controller {
 		$invnum = $this->input->post("invnum");
 		$user   = $this->input->post("user");
 		$mode   = ($this->input->post("block") == "block") ? 0 : 1;
-		$this->adminmodel->blockpc($invnum, $mode);
+		$this->db->query("UPDATE `hash_items` SET `hash_items`.active = ? WHERE `hash_items`.`id` = ?", array($mode, $invnum));
 		$this->usefulmodel->insert_audit("У пользователя #".$user. " переключён статус компонента АРМ РС #".$invnum." в ".$mode."(".$this->input->post("block").")");
 		$this->load->helper("url");
 		redirect("admin/users/".$user."/4");
@@ -300,7 +300,7 @@ class Admin extends CI_Controller {
 		$this->usefulmodel->insert_audit("Куратор #".$this->session->userdata('user_name')." объединил учётные записи #".$target." и ".$sources);
 		print ($this->db->affected_rows()) ? 1 : 0 ;
 	}
-
+	/*
 	public function roomsget($id=0){
 		$out = array('<option value=0>Выберите помещение</option>');
 		$result = $this->db->query("SELECT 
@@ -321,7 +321,7 @@ class Admin extends CI_Controller {
 		}
 		print implode($out,"\n");
 	}
-
+	*/
 	public function setfired($id=0){
 		$result = $this->db->query("UPDATE 
 		users 
@@ -387,18 +387,23 @@ class Admin extends CI_Controller {
 			// если не уволен
 			$this->db->query("UPDATE users SET users.fired = 1, users.fired_date = NOW() WHERE users.id = ?", array( trim($id) ));
 			//print "fired set\n<br>";
-			$result = $this->db->query("SELECT IF(COUNT(`events`.id) > 0, 0, 1) AS f1 FROM `events` WHERE `events`.`type` = 1 AND `events`.active AND `events`.`uid` = ?", array(trim($id)));
+			$result = $this->db->query("SELECT 
+			IF(COUNT(`events`.id) > 0, 0, 1) AS f1 
+			FROM `events` 
+			WHERE `events`.`type` = 1 
+			AND `events`.active 
+			AND `events`.`uid` = ?", array(trim($id)));
 			if ($result->num_rows()) {
 				$rowz = $result->row(0);
 				if ($rowz->f1 == 1) {
 					$this->db->query("INSERT INTO
 					`events` (
-						`events`.active,
-						`events`.owner,
-						`events`.active_since,
-						`events`.`text`,
-						`events`.uid,
-						`events`.type
+					`events`.active,
+					`events`.owner,
+					`events`.active_since,
+					`events`.`text`,
+					`events`.uid,
+					`events`.type
 					) VALUES ( 1, 1, DATE_ADD(NOW(), INTERVAL 14 DAY ), ?, ?, ? )", array(
 						'<td class="text toAdmin">Заблокировать учётную запись в домене:<br><a href="/admin/users/'.$id.'">'.$row->fio.'</a></td><td class="more">Комментарий:<br>Удаление старых учётных записей в домене</td>',
 						$id,
