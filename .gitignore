@@ -21,4 +21,5 @@ application/libraries/
 application/third_party/
 application/models/bidsmodelold.php
 application/models/bidsmodel2.php
+application/models/bidsmodel.php
 application/controllers/bidsold*
