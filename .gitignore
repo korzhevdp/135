@@ -19,3 +19,6 @@ application/errors/*
 application/language/*
 application/libraries/
 application/third_party/
+application/models/bidsmodelold.php
+application/models/bidsmodel2.php
+application/controllers/bidsold*
