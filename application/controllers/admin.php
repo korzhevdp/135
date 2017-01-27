@@ -30,7 +30,7 @@ class Admin extends CI_Controller {
 		$this->load->view('page_container', $act);
 	}
 
-	public function applyitem($id = 0){
+	public function applyitem($itemID = 0){
 		$result = $this->db->query("UPDATE
 		`resources_items`
 		SET
@@ -38,9 +38,9 @@ class Admin extends CI_Controller {
 		`resources_items`.applydate = NOW(),
 		`resources_items`.applyer = ?
 		WHERE
-		`resources_items`.id = ?", array($this->session->userdata('base_id'), $id));
+		`resources_items`.id = ?", array($this->session->userdata('base_id'), $itemID));
 		//$this->load->view('page_container', $act);
-		$this->usefulmodel->insert_audit("Помечена исполненной заявка #".$id." на доступ к информационному ресурсу. Исполнитель: #".$this->session->userdata("admin_id")." (b#".$this->session->userdata('base_id'));
+		$this->usefulmodel->insert_audit("Помечена исполненной заявка #".$itemID." на доступ к информационному ресурсу. Исполнитель: #".$this->session->userdata("admin_id")." (b#".$this->session->userdata('base_id'));
 		$this->load->helper('url');
 		redirect("");
 	}
@@ -90,8 +90,8 @@ class Admin extends CI_Controller {
 		redirect("admin/users/".$user."/4");
 	}
 
-	public function audit($id=0){
-		$this->load->view('audit', $this->adminmodel->getAuditData($id));
+	public function audit($itemID=0){
+		$this->load->view('audit', $this->adminmodel->getAuditData($itemID));
 	}
 
 	######## AJAX-секция
@@ -101,10 +101,10 @@ class Admin extends CI_Controller {
 	}
 
 	public function ressubmit(){
-		$id      = $this->input->post('id');
+		$itemID      = $this->input->post('id');
 		$num     = iconv('UTF-8', 'Windows-1251' , urldecode($this->input->post('num')));
 		$date    = $this->input->post('date');
-		$ip      = $this->input->post('ip');
+		$ipAddr  = $this->input->post('ip');
 		$email   = $this->input->post('email');
 		$date    = (!$date) ? date("Y-m-d") : implode(array_reverse(explode('.', $date)), "-");
 		$res_id  = 0;
@@ -117,7 +117,7 @@ class Admin extends CI_Controller {
 		`resources_items`.uid
 		FROM
 		`resources_items`
-		WHERE `resources_items`.`id` = ?", array($id));
+		WHERE `resources_items`.`id` = ?", array($itemID));
 		if ($result->num_rows()) {
 			$row = $result->row(0);
 			$res_id  = $row->rid;
@@ -131,7 +131,7 @@ class Admin extends CI_Controller {
 		resources_items.exp = 0,
 		resources_items.okdate = NOW()
 		WHERE
-		resources_items.id = ?", array($id));
+		resources_items.id = ?", array($itemID));
 
 		$DB1->query("UPDATE
 		resources_orders
@@ -142,22 +142,22 @@ class Admin extends CI_Controller {
 		resources_orders.id = (SELECT resources_items.order_id FROM resources_items WHERE resources_items.id = ?)", array(
 			$num,
 			$date,
-			$id
+			$itemID
 		));
 
-		if ($ip || $email) {
-			$ipc      = explode(".",$ip);
+		if ($ipAddr || $email) {
+			$ipc      = explode(".",$ipAddr);
 			$ipappend = (sizeof($ipc) !== 2 && $ipc[0] == "192" && $ipc[1] == "168") ? $ipc[0].".".$ipc[1] : "192.168" ;
 			$ipflex   = implode(array_splice($ipc, ((sizeof($ipc) == 2) ? 0 : 2)), ".");
 			if (!$email) {
 				//print 111;
-				$DB1->query("DELETE FROM resources_pid WHERE resources_pid.item_id = ? AND resources_pid.pid NOT IN (12,2)", array($id));
-				$DB1->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,INET_ATON('".$ipappend.".".$ipflex."'),?)", array(6, $id));
+				$DB1->query("DELETE FROM resources_pid WHERE resources_pid.item_id = ? AND resources_pid.pid NOT IN (12,2)", array($itemID));
+				$DB1->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,INET_ATON('".$ipappend.".".$ipflex."'),?)", array(6, $itemID));
 				$this->aclgen();
 			} else {
-				$DB1->query("DELETE FROM resources_pid WHERE resources_pid.item_id = ? AND resources_pid.pid NOT IN (12,2)", array($id));
-				$DB1->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,INET_ATON('".$ipappend.".".$ipflex."'),?)", array(6, $id));
-				$DB1->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,?,?)", array(1, $email, $id));
+				$DB1->query("DELETE FROM resources_pid WHERE resources_pid.item_id = ? AND resources_pid.pid NOT IN (12,2)", array($itemID));
+				$DB1->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,INET_ATON('".$ipappend.".".$ipflex."'),?)", array(6, $itemID));
+				$DB1->query("INSERT INTO resources_pid (pid, pid_value, item_id) VALUES (?,?,?)", array(1, $email, $itemID));
 			}
 		}
 
@@ -206,10 +206,10 @@ class Admin extends CI_Controller {
 			}
 		}
 
-		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") выполнил заявку #".$id);
+		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") выполнил заявку #".$itemID);
 	}
 
-	public function resexpire($id=0){
+	public function resexpire($itemID=0){
 		if ((int)$this->session->userdata('rank') !== 1) {
 			print 0;
 			return false;
@@ -221,12 +221,12 @@ class Admin extends CI_Controller {
 			resources_items.exp = 1,
 			resources_items.expdate = NOW()
 			WHERE
-			resources_items.id = ?", array($id));
-		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") отменил заявку #".$id);
+			resources_items.id = ?", array($itemID));
+		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") отменил заявку #".$itemID);
 		($this->db->affected_rows()) ? print 1 : print 0;
 	}
 
-	public function ingroup($id=0){
+	public function ingroup($itemID=0){
 		$this->db->query("UPDATE 
 		resources_items
 		SET 
@@ -234,7 +234,7 @@ class Admin extends CI_Controller {
 		resources_items.ingroupdate = NOW()
 		WHERE
 		resources_items.id = ?", array($this->input->post("itemID")));
-		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") включил в группу ЕСИА пользователя по заявке #".$id);
+		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") включил в группу ЕСИА пользователя по заявке #".$itemID);
 		if ($this->db->affected_rows()) {
 			print 1;
 			return true;
@@ -243,7 +243,7 @@ class Admin extends CI_Controller {
 		return false;
 	}
 
-	public function resexpiredandapplied($id=0){
+	public function resexpiredandapplied($itemID=0){
 		$result = $this->db->query("UPDATE 
 			resources_items 
 			SET 
@@ -253,13 +253,13 @@ class Admin extends CI_Controller {
 			resources_items.apply     = 1,
 			resources_items.applydate = NOW()
 			WHERE
-			resources_items.id = ?", array($id));
-		$this->usefulmodel->insert_audit("Администратор #".$this->session->userdata('user_name').") отменил заявку #".$id. " как повторную.");
+			resources_items.id = ?", array($itemID));
+		$this->usefulmodel->insert_audit("Администратор #".$this->session->userdata('user_name').") отменил заявку #".$itemID. " как повторную.");
 		$out = ($this->db->affected_rows()) ? 1 : 0 ;
 		print $out;
 	}
 
-	public function resdelete($id=0) {
+	public function resdelete($itemID=0) {
 		if ((int)$this->session->userdata('rank') !== 1) {
 			print 0;
 			return false;
@@ -270,20 +270,20 @@ class Admin extends CI_Controller {
 			resources_items.del = 1,
 			resources_items.deldate = NOW()
 			WHERE
-			resources_items.id = ?", array($id));
-		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") удалил заявку #".$id);
+			resources_items.id = ?", array($itemID));
+		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") удалил заявку #".$itemID);
 		($this->db->affected_rows()) ? print 1 : print 0;
 	}
 
-	public function reshookup($id=0){
+	public function reshookup($itemID=0){
 		$result = $this->db->query("UPDATE 
 			resources_items 
 			SET 
 			resources_items.apply     = ?,
 			resources_items.applydate = NOW()
 			WHERE
-			resources_items.id = ?", array($this->session->userdata('admin_id'), $id));
-		$this->usefulmodel->insert_audit("Куратор #".$this->session->userdata('user_name')." выполнил заявку #".$id);
+			resources_items.id = ?", array($this->session->userdata('admin_id'), $itemID));
+		$this->usefulmodel->insert_audit("Куратор #".$this->session->userdata('user_name')." выполнил заявку #".$itemID);
 		$out = ($this->db->affected_rows()) ? 1 : 0 ;
 		print $out;
 	}
@@ -301,7 +301,7 @@ class Admin extends CI_Controller {
 		print ($this->db->affected_rows()) ? 1 : 0 ;
 	}
 	/*
-	public function roomsget($id=0){
+	public function roomsget($itemID=0){
 		$out = array('<option value=0>Выберите помещение</option>');
 		$result = $this->db->query("SELECT 
 		locations.`id`,
@@ -312,7 +312,7 @@ class Admin extends CI_Controller {
 			ELSE LPAD(locations.`address`, 16, '0') END AS `vsort`
 		FROM `locations`
 		WHERE `locations`.parent = ?
-		ORDER BY `vsort`", array($id));
+		ORDER BY `vsort`", array($itemID));
 		if(sizeof($result->num_rows())){
 			foreach($result->result() as $row){
 				$string = "<option value=".$row->id.">".$row->address."</option>";
@@ -322,12 +322,12 @@ class Admin extends CI_Controller {
 		print implode($out,"\n");
 	}
 	*/
-	public function setfired($id=0){
+	public function setfired($itemID=0){
 		$result = $this->db->query("UPDATE 
 		users 
 		SET
 		users.fired = 1 
-		WHERE users.id = ?", array(trim($id)));
+		WHERE users.id = ?", array(trim($itemID)));
 		if ($this->db->affected_rows()) {
 			$this->db->query("UPDATE
 			`arm`
@@ -335,7 +335,7 @@ class Admin extends CI_Controller {
 			active  = 0,
 			out_ts  = NOW()
 			WHERE
-			arm.uid = ?", array(trim($id)));
+			arm.uid = ?", array(trim($itemID)));
 			if ($this->db->affected_rows()) {
 				print 1;
 				return true;
@@ -346,7 +346,7 @@ class Admin extends CI_Controller {
 
 	public function switchfired(){
 		// checkin io state or new 
-		$id = $this->input->post("id");
+		$itemID = $this->input->post("id");
 		$result = $this->db->query("SELECT 
 		departments.chief,
 		users.id
@@ -357,42 +357,42 @@ class Admin extends CI_Controller {
 		WHERE
 		NOT (users.fired)
 		AND departments.id = (SELECT `users`.dep_id FROM `users` WHERE `users`.id = ?)
-		AND `users`.id <> ?", array($id, $id));
+		AND `users`.id <> ?", array($itemID, $itemID));
 		if ($result->num_rows()) {
-			$this->fireUser($id);
+			$this->fireUser($itemID);
 			print 'data = { error : 0, message : "Увольнение прошло успешно" };';
 			return true;
 		}
 		print "data = { error : 1, message : 'Невозможно уволить пользователя. Подразделение остаётся без руководителя. Укажите для подразделения нового руководителя или укажите и.о. руководителя.' };";
 	}
 
-	private function fireUser($id) {
+	private function fireUser($itemID) {
 		// getting state
 		$result = $this->db->query("SELECT 
 		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio,
 		`users`.fired AS state
 		FROM
 		`users`
-		WHERE users.id = ?", array($id));
+		WHERE users.id = ?", array($itemID));
 
 		if ($result->num_rows()) {
 			$row = $result->row();
 			if($row->state){
 				//если пользователь уволен
-				$this->db->query("UPDATE users SET users.fired = 0 WHERE users.id = ?", array( trim($id) ));
-				$this->db->query("UPDATE `arm` SET active  = 1, out_ts  = '0000-00-00' WHERE arm.uid = ?", array( trim($id) ));
+				$this->db->query("UPDATE users SET users.fired = 0 WHERE users.id = ?", array( trim($itemID) ));
+				$this->db->query("UPDATE `arm` SET active  = 1, out_ts  = '0000-00-00' WHERE arm.uid = ?", array( trim($itemID) ));
 				return true;
 				//print "arm active\n<br>";
 			}
 			// если не уволен
-			$this->db->query("UPDATE users SET users.fired = 1, users.fired_date = NOW() WHERE users.id = ?", array( trim($id) ));
+			$this->db->query("UPDATE users SET users.fired = 1, users.fired_date = NOW() WHERE users.id = ?", array( trim($itemID) ));
 			//print "fired set\n<br>";
 			$result = $this->db->query("SELECT 
 			IF(COUNT(`events`.id) > 0, 0, 1) AS f1 
 			FROM `events` 
 			WHERE `events`.`type` = 1 
 			AND `events`.active 
-			AND `events`.`uid` = ?", array(trim($id)));
+			AND `events`.`uid` = ?", array(trim($itemID)));
 			if ($result->num_rows()) {
 				$rowz = $result->row(0);
 				if ($rowz->f1 == 1) {
@@ -405,63 +405,63 @@ class Admin extends CI_Controller {
 					`events`.uid,
 					`events`.type
 					) VALUES ( 1, 1, DATE_ADD(NOW(), INTERVAL 14 DAY ), ?, ?, ? )", array(
-						'<td class="text toAdmin">Заблокировать учётную запись в домене:<br><a href="/admin/users/'.$id.'">'.$row->fio.'</a></td><td class="more">Комментарий:<br>Удаление старых учётных записей в домене</td>',
-						$id,
+						'<td class="text toAdmin">Заблокировать учётную запись в домене:<br><a href="/admin/users/'.$itemID.'">'.$row->fio.'</a></td><td class="more">Комментарий:<br>Удаление старых учётных записей в домене</td>',
+						$itemID,
 						1
 					));
 				}
 			}
-			$this->db->query("UPDATE `arm` SET active  = 0, out_ts  = NOW() WHERE arm.uid = ?", array(trim($id)));
+			$this->db->query("UPDATE `arm` SET active  = 0, out_ts  = NOW() WHERE arm.uid = ?", array(trim($itemID)));
 			//print "arm inactive\n<br>";
 		}
 		//$this->aclgen();
 	}
 
-	public function switchsman($id=0){
-		if($id){
-			$this->db->query("UPDATE users SET users.sman = IF(users.sman = 0,1,0) WHERE users.id = ?", array($id));
-			$result = $this->db->query("SELECT users.sman, LOWER(users.host) as `host` FROM users WHERE users.id = ?", array($id));
+	public function switchsman($itemID=0){
+		if($itemID){
+			$this->db->query("UPDATE users SET users.sman = IF(users.sman = 0,1,0) WHERE users.id = ?", array($itemID));
+			$result = $this->db->query("SELECT users.sman, LOWER(users.host) as `host` FROM users WHERE users.id = ?", array($itemID));
 			if($result->row()){
 				$row = $result->row();
 				$this->usefulmodel->insert_audit("Куратор #".$this->session->userdata('user_name')." ".(($row->sman) ? "выдал" : "отменил")." статус куратора пользователю сети #".$row->host);
 			}
 		}
 		$this->load->helper("url");
-		redirect("admin/users/".$id."/3");
+		redirect("admin/users/".$itemID."/3");
 	}
 
-	public function switchair($id=0){
-		if($id){
-			$this->db->query("UPDATE users SET users.air = IF(users.air = 0,1,0) WHERE users.id = ?", array($id));
-			$result = $this->db->query("SELECT users.air, LOWER(users.host) as `host` FROM users WHERE users.id = ?", array($id));
+	public function switchair($itemID=0){
+		if($itemID){
+			$this->db->query("UPDATE users SET users.air = IF(users.air = 0,1,0) WHERE users.id = ?", array($itemID));
+			$result = $this->db->query("SELECT users.air, LOWER(users.host) as `host` FROM users WHERE users.id = ?", array($itemID));
 			if($result->row()){
 				$row = $result->row();
 				$this->usefulmodel->insert_audit("Куратор #".$this->session->userdata('user_name')." ".(($row->air) ? "выдал" : "отменил")." статус администратора информационных ресурсов пользователю сети #".$row->host);
 			}
 		}
 		$this->load->helper("url");
-		redirect("admin/users/".$id."/3");
+		redirect("admin/users/".$itemID."/3");
 	}
 
-	public function switchbir($id=0){
-		if($id){
-			$this->db->query("UPDATE users SET users.bir = IF(users.bir = 0,1,0) WHERE users.id = ?", array($id));
-			$result = $this->db->query("SELECT users.bir, LOWER(users.host) as `host` FROM users WHERE users.id = ?", array($id));
+	public function switchbir($itemID=0){
+		if($itemID){
+			$this->db->query("UPDATE users SET users.bir = IF(users.bir = 0,1,0) WHERE users.id = ?", array($itemID));
+			$result = $this->db->query("SELECT users.bir, LOWER(users.host) as `host` FROM users WHERE users.id = ?", array($itemID));
 			if($result->row()){
 				$row = $result->row();
 				$this->usefulmodel->insert_audit("Куратор #".$this->session->userdata('user_name')." ".(($row->bir) ? "выдал" : "отменил")." статус администратора безопасности информационных ресурсов пользователю сети #".$row->host);
 			}
 		}
 		$this->load->helper("url");
-		redirect("admin/users/".$id."/3");
+		redirect("admin/users/".$itemID."/3");
 	}
 
-	public function invnumupdate($id=0, $number=0){
+	public function invnumupdate($itemID=0, $number=0){
 		$result = $this->db->query("UPDATE 
 		hash_items
 		SET
 		`hash_items`.`inv_number` = ?
-		WHERE `hash_items`.`id` = ?", array(trim($number),trim($id)));
+		WHERE `hash_items`.`id` = ?", array(trim($number),trim($itemID)));
 		if($this->db->affected_rows()) {
 			print 1;
 		}else{
@@ -469,7 +469,7 @@ class Admin extends CI_Controller {
 		}
 	}
 
-	public function stuck($id=0){
+	public function stuck($itemID=0){
 		$act = array(
 			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->adminmodel->stuck_orders(),

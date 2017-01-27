@@ -58,7 +58,7 @@ class Reports extends CI_Controller {
 		return implode($output, "\n");
 	}
 
-	function get_dc( $year = 0, $month = 0 ) {
+	private function get_dc( $year = 0, $month = 0 ) {
 		$year = ($year) ? $year : date("Y");
 		$month = ($month) ? $month : date("n");
 		$day_count = array(
@@ -82,7 +82,7 @@ class Reports extends CI_Controller {
 		}
 	}
 
-	function get_month($month = 0) {
+	private function get_month($month = 0) {
 		$month = ($month) ? $month : date("n");
 		$months = array(
 			1  => 'Январь',
@@ -101,7 +101,7 @@ class Reports extends CI_Controller {
 		return $months[$month];
 	}
 
-	function get_wd($daynum = 0, $mode="short") {
+	private function get_wd($daynum = 0, $mode="short") {
 		$daynum = ($daynum) ? $daynum : date("N");
 		$days = array(
 			1  => array('day' => 'Понедельник', 'short' => 'пн'),
@@ -118,12 +118,12 @@ class Reports extends CI_Controller {
 	public function timetable($year = 0, $month = 0, $mode="html") {
 		$year      = ($year)  ? $year  : date("Y");
 		$month     = ($month) ? $month : date("n");
-		$pm        = mktime(0, 0, 0, $month-1, 1, $year);
-		$nm        = mktime(0, 0, 0, $month+1, 1, $year);
-		$plink     = date("Y/n", $pm);
-		$nlink     = date("Y/n", $nm);
-		$prevmonth = $this->get_month(date("n", $pm)).' '.date("Y", $pm);
-		$nextmonth = $this->get_month(date("n", $nm)).' '.date("Y", $nm);
+		$prevMth   = mktime(0, 0, 0, $month-1, 1, $year);
+		$nextMth   = mktime(0, 0, 0, $month+1, 1, $year);
+		$plink     = date("Y/n", $prevMth);
+		$nlink     = date("Y/n", $nextMth);
+		$prevmonth = $this->get_month(date("n", $prevMth)).' '.date("Y", $prevMth);
+		$nextmonth = $this->get_month(date("n", $nextMth)).' '.date("Y", $nextMth);
 		$prevbut   = '<a href="/reports/timetable/'.$plink.'" class="btn btn-info btn-small pull-left" style="margin-bottom:15px;"><< '.$prevmonth.'</a>';
 		$nextbut   = '<a href="/reports/timetable/'.$nlink.'" class="btn btn-info btn-small pull-right" style="margin-bottom:15px;"> >> '.$nextmonth.'</a>';
 		$sqllow    = $year.str_pad($month, 2, "0", STR_PAD_LEFT)."00";
@@ -155,9 +155,9 @@ class Reports extends CI_Controller {
 		}
 		//print_r($wkstat);
 		
-		$tw = $this->get_dc($year, $month);
+		$tableWidth = $this->get_dc($year, $month);
 		$table = array('<table class="table table-condensed table-bordered table-striped" ><tr><th style="text-align:center;">Число&nbsp;месяца /<br> работник</th>');
-		for($a = 1; $a <= $tw; $a++){
+		for($a = 1; $a <= $tableWidth; $a++){
 			array_push($table, '<th style="width:3%;vertical-align:middle;text-align:center;" dh="'.$year.str_pad($month, 2, "0", STR_PAD_LEFT).str_pad($a, 2, "0", STR_PAD_LEFT).'" class="markAll" title="Установить для всех...">'.$this->get_wd(date("N", mktime(0, 0, 0, $month, $a, $year)))."<br>".$a."</th>");
 		}
 		array_push($table, "</tr>");
@@ -175,8 +175,8 @@ class Reports extends CI_Controller {
 			$rowc = 1;
 			foreach($result->result() as $row){
 				$line = array('<td style="vertical-align:middle;" id="uid'.$row->id.'">'.$row->fio."</td>");
-				for($a = 1; $a <= $tw; $a++){
-					$dh = $year.str_pad($month, 2, "0", STR_PAD_LEFT).str_pad($a, 2, "0", STR_PAD_LEFT);
+				for($a = 1; $a <= $tableWidth; $a++){
+					$dayHRead = $year.str_pad($month, 2, "0", STR_PAD_LEFT).str_pad($a, 2, "0", STR_PAD_LEFT);
 					$celltext = "--";
 					$classes = array("dayCell");
 					$styles  = array();
@@ -191,11 +191,11 @@ class Reports extends CI_Controller {
 						array_push($classes, "workday");
 						array_push($titles,  $this->get_wd($cday)." - Рабочий день");
 					}
-					$stat     = (isset($wkstat[$row->id][$dh])) ? $wkstat[$row->id][$dh] : 0;
+					$stat     = (isset($wkstat[$row->id][$dayHRead])) ? $wkstat[$row->id][$dayHRead] : 0;
 					$celltext = ($stat) 
 						? $statuses[$stat] 
 						: "&middot;";
-					array_push($line, '<td style="'.implode($styles, " ").'" class="'.implode($classes, " ").'" row="'.$rowc.'" uid="'.$row->id.'" title="'.implode($titles, "\n").'" dh="'.$dh.'">'.$celltext."</td>");
+					array_push($line, '<td style="'.implode($styles, " ").'" class="'.implode($classes, " ").'" row="'.$rowc.'" uid="'.$row->id.'" title="'.implode($titles, "\n").'" dh="'.$dayHRead.'">'.$celltext."</td>");
 				}
 				$string = "<tr>".implode($line, "\n")."</tr>";
 				array_push($table, $string);
@@ -225,22 +225,19 @@ class Reports extends CI_Controller {
 			break;
 			
 		}
-
-		//$this->load->view('page_container', $act);
 	}
 
 	private function getEsiaStates() {
-		$output = array("<h3>ЕСИА / Госуслуги</h3>");
-		$input  = array();
-		$result = $this->db->query("SELECT 
+		$output = array();
+		$result = $this->db->query("SELECT
 		resources_items.id,
 		resources_items.uid,
 		resources_items.ok,
 		resources_items.ingroup,
-		DATE_FORMAT(resources_items.initdate, '%d.%m.%Y')    AS initdate,
-		DATE_FORMAT(resources_items.initdate, '%Y%m%d')      AS sortmode,
-		DATE_FORMAT(resources_items.ingroupdate, '%d.%m.%Y') AS ingroupdate,
-		DATE_FORMAT(resources_items.okdate, '%d.%m.%Y')      AS okdate,
+		DATE_FORMAT(resources_items.initdate, '%d.%m.%Y')        AS initdate,
+		DATE_FORMAT(resources_items.initdate, '%Y%m%d')          AS sortmode,
+		DATE_FORMAT(resources_items.ingroupdate, '%d.%m.%Y')     AS ingroupdate,
+		DATE_FORMAT(resources_items.okdate, '%d.%m.%Y')          AS okdate,
 		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio,
 		users.fired,
 		resources_pid.pid_value,
@@ -252,66 +249,60 @@ class Reports extends CI_Controller {
 		LEFT OUTER JOIN resources_pid ON (resources_items.id = resources_pid.item_id)
 		LEFT OUTER JOIN `departments` ON (users.dep_id = `departments`.id)
 		WHERE
-		(resources_items.rid = 286) AND 
-		(NOT (resources_items.del)) AND 
-		(NOT (resources_items.`exp`))
+		(resources_items.rid = 286) 
+		AND (NOT (resources_items.del))
+		AND (NOT (resources_items.`exp`))
 		ORDER BY
-		fired DESC,
-		sortmode DESC,
-		alias,
-		fio");
+		fired DESC, sortmode DESC, alias, fio");
 		if ($result->num_rows()) {
-			array_push($output, '<table class="table table-bordered table-condensed"><tr>
-			<th>Пользователь</th>
-			<th>Подразделение</th>
-			<th>Заявленные группы</th>
-			<th><i class="icon-envelope" title="Выслано приглашение на email"></th>
-			<th style="text-align:center"><i class="icon-tags" title="Добавлен в группу"></i></th>
-			<th style="text-align:center"><i class="icon-ban-circle" title="Снять с учёта"></i></th>
-			</tr>');
-			foreach($result->result() as $row) {
-				if (!isset($input[$row->initdate])) {
-					$input[$row->initdate] = array('<tr><td colspan=6><h4 class="pull-right">'.$row->initdate.'</h4></td></tr>');
-				}
-				$style  = (!$row->ok)     ? ' class = "warning"' : '';
-				$style  = ($row->ingroup) ? ' class = "success"' : $style;
-				$style  = ($row->fired)   ? ' class = "error"'   : $style;
-				$string = '<tr'.$style.'>
-					<td><a href="/admin/users/'.$row->uid.'/2" target="_blank">'.$row->fio.'</a></td>
-					<td title="'.$row->dn.'">'.$row->alias.'</td>
-					<td>'.nl2br($row->pid_value).'</td><td>'.(($row->ok) ? '<i class="icon-ok" title="Приглашение отправлено '.$row->okdate.'"></i>' : '<i class="icon-remove"></i>' ).'</td>
-					<td>'.(($row->ingroup) 
-						? '<i class="icon-ok" title="Включено в группу '.$row->ingroupdate.'"></i>' 
-						: '<button type="button" class="btn btn-mini btn-danger inGroupSw" ref="'.$row->id.'" title="Нажать только после включения в группу ЕСИА"><i class="icon-question-sign icon-white"></i></button>' ).
-					'</td>
-					<td>
-						<button type="button" class="btn btn-mini btn-warning ESIAOff" ref="'.$row->id.'" title="Снять с учёта"><i class="icon-ban-circle icon-white"></i></button>
-					</td>
-					</tr>';
-					$string2 = '<tr'.$style.'>
-					<td><a href="/admin/users/'.$row->uid.'/2" target="_blank">'.$row->fio.'</a></td>
-					<td title="'.$row->dn.'">'.$row->alias.'</td>
-					<td>'.nl2br($row->pid_value).'</td>
-					<td>'.(($row->ok) 
-						? '<i class="icon-ok" title="Приглашение отправлено '.$row->okdate.'"></i>'
-						: '<i class="icon-remove" title="Приглашение не было отправлено"></i>' ).
-					'</td>
-					<td>'.(($row->ingroup) 
-						? '<i class="icon-ok" title="Включено в группу '.$row->ingroupdate.'"></i>'
-						: '<i class="icon-question-sign" title="Ожидает включения в группу (при необходимости)"></i>' ).
-					'</td>
-					<td>
-						<i class="icon-minus"></i>
-					</td>
-					</tr>';
-				array_push($input[$row->initdate], ( ($this->session->userdata('rank') == 1) ? $string : $string2 ) );
-			}
-			foreach($input as $val){
+			$input = $this->getESIAInputArray($result);
+			foreach ($input as $val) {
 				array_push($output, implode($val, "\n"));
 			}
-			array_push($output, "</table>");
 		}
-		return implode($output, "\n");
+		return $this->load->view("reports/esiareport", array("tablecontent" => implode($output, "\n")), true);
+	}
+
+	private function getESIAInputArray($result) {
+		$input  = array();
+		foreach ($result->result() as $row) {
+			if (!isset($input[$row->initdate])) {
+				$input[$row->initdate] = array('<tr><td colspan=6><h4 class="pull-right">'.$row->initdate.'</h4></td></tr>');
+			}
+			$style  = (!$row->ok)     ? ' class = "warning"' : '';
+			$style  = ($row->ingroup) ? ' class = "success"' : $style;
+			$style  = ($row->fired)   ? ' class = "error"'   : $style;
+
+			if ((int)$this->session->userdata('rank') === 1) {
+				$nest0 = ($row->ok) ? '<i class="icon-ok" title="Приглашение отправлено '.$row->okdate.'"></i>' : '<i class="icon-remove"></i>';
+				$nest1 = ($row->ingroup)
+					? '<i class="icon-ok" title="Включено в группу '.$row->ingroupdate.'"></i>'
+					: '<button type="button" class="btn btn-mini btn-danger inGroupSw" ref="'.$row->id.'" title="Нажать только после включения в группу ЕСИА"><i class="icon-question-sign icon-white"></i></button>';
+				$nest2 = '<button type="button" class="btn btn-mini btn-warning ESIAOff" ref="'.$row->id.'" title="Снять с учёта"><i class="icon-ban-circle icon-white"></i></button>';
+			}
+
+			if ((int)$this->session->userdata('rank') !== 1) {
+				$nest0 = ($row->ok)
+					? '<i class="icon-ok" title="Приглашение отправлено '.$row->okdate.'"></i>'
+					: '<i class="icon-remove" title="Приглашение не было отправлено"></i>';
+				$nest1 = ($row->ingroup)
+					? '<i class="icon-ok" title="Включено в группу '.$row->ingroupdate.'"></i>'
+					: '<i class="icon-question-sign" title="Ожидает включения в группу (при необходимости)"></i>';
+				$nest2 = '<i class="icon-minus"></i>';
+			}
+
+			$string = '<tr'.$style.'>
+				<td><a href="/admin/users/'.$row->uid.'/2" target="_blank">'.$row->fio.'</a></td>
+				<td title="'.$row->dn.'">'.$row->alias.'</td>
+				<td>'.nl2br($row->pid_value).'</td>
+				<td>'.$nest0.'</td>
+				<td>'.$nest1.'</td>
+				<td>'.$nest2.'</td>
+			</tr>';
+
+			array_push($input[$row->initdate], $string);
+		}
+		return $input;
 	}
 
 	public function esia() {
@@ -324,7 +315,6 @@ class Reports extends CI_Controller {
 	}
 
 	public function insert_wkt_data() {
-		//$this->output->enable_profiler(TRUE);
 		if($this->input->post('dh') && is_array($this->input->post('dh'))){
 			$this->db->query("DELETE 
 			FROM `wkt` 
@@ -379,7 +369,7 @@ class Reports extends CI_Controller {
 		//$this->output->enable_profiler(TRUE);
 		$staff_list = array( 8, 9, 10, 4, 11, 21, 22, 23, 27, 32, 45, 28, 29, 40 );
 		$output     = array();
-		$i          = 1;
+		$iterator   = 1;
 		$result     = $this->db->query("SELECT DISTINCT
 		LOWER(CONCAT(resources_pid.pid_value, '@arhcity.ru')) AS mail,
 		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio,
@@ -401,28 +391,11 @@ class Reports extends CI_Controller {
 		ORDER BY mail");
 		if ($result->num_rows()) {
 			foreach ($result->result() as $row) {
-				array_push($output, "<tr><td>".$i++.". ".$row->mail."</td><td>".$row->fio."</td><td>".$row->staff."</td><td>".$row->dn."</td></tr>");
+				array_push($output, "<tr><td>".$iterator++.". ".$row->mail."</td><td>".$row->fio."</td><td>".$row->staff."</td><td>".$row->dn."</td></tr>");
 			}
 		}
 		return implode($output, "\n");
 	}
-
-	public function cfstest(){
-		$DB1 = $this->load->database('12', TRUE);
-		$result = $DB1->db->query("SELECT 
-		`files`.fid,
-		`files`.folder,
-		`files`.new_filename
-		FROM
-		`files`
-		LIMIT 10");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				print 1123;
-			}
-		}
-	}
-
 }
 
 /* End of file reports.php */

@@ -116,56 +116,29 @@ class Bidsuimodel extends CI_Model {
 		);
 		
 		// создаётся список подразделений
-		$result = $this->db->query("SELECT
-		CONCAT('<option value=',departments.id,'>',departments.dn,'</option>') AS options
-		FROM
-		departments
-		ORDER BY 
-		departments.dn");
-		$output = array("<option value=0>не выбрано</option>");
-		if ($result->num_rows()){
-			foreach($result->result() as $row){
-				array_push($output,$row->options);
-			}
-		}
-		$return['dept'] = implode($output,"\n");
-
+		$return['dept']  = $this->blankDataDeptList();
 		// создаётся список должностей
-		$result = $this->db->query("SELECT
-		CONCAT('<option value=',`staff`.`id`,'>',`staff`.`staff`,'</option>') as options
-		FROM
-		`staff`
-		ORDER BY `staff`.`staff`");
-		$output = array("<option value=0>не выбрано</option>");
-		if ($result->num_rows()){
-			foreach($result->result() as $row){
-				array_push($output ,$row->options);
-			}
-		}
-		$return['staff'] = implode($output,"\n");
+		$return['staff'] = $this->blankDataStaffList();
 
 		// создаётся список помещений
-		$result = $this->db->query("SELECT 
-		CONCAT('<option value=',locations.id,'>',locations.address,'</option>') AS options
-		FROM locations
-		WHERE `locations`.parent = 0 AND
-		`locations`.id <> 0
-		ORDER BY `locations`.`address`");
-		if ($result->num_rows()){
-			$output = array("<option value=0>не выбрано</option>");
-			foreach($result->result() as $row){
-				array_push($output,$row->options);
-			}
-			$return['location'][0] = implode($output, "\n");
-		}
+		$return['location'][0] = $this->blankDataLocationsList();
 
+		$return['rlist'] = $this->blankDataResList();
+		
+		// список ресурсов пуст, априорно :)
+		$return['ordersProcessed']='<h3 class="muted">Не выбран пользователь</h3>';
+
+		return $return;
+	}
+
+	private function blankDataResList() {
 		// создаётся список ресурсов
 		$result = $this->db->query("SELECT
 		resources.id,
 		resources.shortname,
 		resources.cat,
 		resources.grp,
-		COUNT(resources_layers.id) AS con
+		COUNT(resources_layers.id) AS layers
 		FROM
 		resources
 		INNER JOIN departments ON (resources.owner = departments.id)
@@ -176,27 +149,79 @@ class Bidsuimodel extends CI_Model {
 		resources.id
 		ORDER BY
 		resources.name");
+		$output = array();
 		if ($result->num_rows()){
-			$output = array();
-			foreach($result->result() as $row){
-				(!isset($output[$row->grp])) 
-					? $output[$row->grp] = array() 
-					: '';
-				$class = ($row->cat > 1) 
-					? "btn-warning" 
-					: "btn-info";
-				$conf = ($row->cat > 1) 
-					? "1" 
-					: "0";
-				$string = '<li class="reslist btn '.$class.' span12" id="r_'.$row->id.'" grp="'.$row->grp.'" subs="'.$row->con.'" conf="'.$conf.'" style="margin: 2px 0px;"  title="Щелчок добавит ресурс в список выбранных">'.$row->shortname.'</li>';
-				array_push($output[$row->grp],$string);
+			foreach ($result->result() as $row) {
+				if (!isset($output[$row->grp])) {
+					$output[$row->grp] = array();
+				}
+				$class  = ($row->cat > 1) ? "btn-warning" : "btn-info";
+				$conf   = ($row->cat > 1) ? "1" : "0";
+				$string = '<li 
+					class="reslist btn '.$class.' btn-block"
+					id="r_'.$row->id.'"
+					grp="'.$row->grp.'"
+					subs="'.$row->layers.'"
+					conf="'.$conf.'"
+					style="margin: 2px 0px;"
+					title="Щелчок добавит ресурс в список выбранных">'.$row->shortname.'</li>';
+				array_push($output[$row->grp], $string);
 			}
-			$return['rlist'] = $output;
 		}
-		// список ресурсов пуст, априорно :)
-		$return['ordersProcessed']='<h3 class="muted">Не выбран пользователь</h3>';
+		return $output;
+	}
 
-		return $return;
+	private function blankDataDeptList() {
+		$result = $this->db->query("SELECT
+		departments.id,
+		departments.dn
+		FROM
+		departments
+		ORDER BY 
+		departments.dn");
+		$output = array('<option value="0">не выбрано</option>');
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$string = '<option value="'.$row->id.'">'.$row->dn.'</option>';
+				array_push($output, $string);
+			}
+		}
+		return implode($output, "\n");
+	}
+
+	private function blankDataStaffList() {
+		$result = $this->db->query("SELECT
+		`staff`.`id`,
+		`staff`.`staff`
+		FROM
+		`staff`
+		ORDER BY `staff`.`staff`");
+		$output = array('<option value="0">не выбрано</option>');
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$string = '<option value="'.$row->id.'">'.$row->staff.'</option>';
+				array_push($output, $string);
+			}
+		}
+		return implode($output, "\n");
+	}
+
+	private function blankDataLocationsList() {
+		$result = $this->db->query("SELECT 
+		locations.id,
+		locations.address
+		FROM locations
+		WHERE `locations`.parent = 0 
+		AND `locations`.id <> 0
+		ORDER BY `locations`.`address`");
+		$output = array('<option value="0">не выбрано</option>');
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$string = '<option value="'.$row->id.'">'.$row->address.'</option>';
+				array_push($output, $string);
+			}
+		}
+		return implode($output, "\n");
 	}
 
 	public function user_data_get2($userid) {
