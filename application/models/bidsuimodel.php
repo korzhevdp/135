@@ -4,6 +4,7 @@ class Bidsuimodel extends CI_Model {
 
 	public function __construct(){
 		parent::__construct();
+		$this->load->model("usefulmodel");
 	}
 
 	private function getUserMailFromDB($userid) {
@@ -68,17 +69,6 @@ class Bidsuimodel extends CI_Model {
 		return $output;
 	}
 
-	private function returnList($result) {
-		$output = array('<option value="0">не выбрано</option>');
-		if ($result->num_rows()) {
-			foreach ($result->result() as $row) {
-				$string = '<option value="'.$row->id.'">'.$row->value.'</option>';
-				array_push($output, $string);
-			}
-		}
-		return implode($output, "\n");
-	}
-
 	private function blankDataDeptList() {
 		$result = $this->db->query("SELECT
 		departments.id,
@@ -87,7 +77,7 @@ class Bidsuimodel extends CI_Model {
 		departments
 		ORDER BY 
 		departments.dn");
-		return $this->returnList($result);
+		return $this->usefulmodel->returnList($result);
 	}
 
 	private function blankDataStaffList() {
@@ -97,7 +87,7 @@ class Bidsuimodel extends CI_Model {
 		FROM
 		`staff`
 		ORDER BY `staff`.`staff`");
-		return $this->returnList($result);
+		return $this->usefulmodel->returnList($result);
 	}
 
 	private function blankDataLocationsList() {
@@ -108,7 +98,7 @@ class Bidsuimodel extends CI_Model {
 		WHERE `locations`.parent = 0 
 		AND `locations`.id <> 0
 		ORDER BY `locations`.`address`");
-		return $this->returnList($result);
+		return $this->usefulmodel->returnList($result);
 	}
 
 	public function getResourceAccordion($rlist, $group_id) {

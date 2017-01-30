@@ -3,175 +3,159 @@
 class Licensemodel extends CI_Model {
 	function __construct(){
 		parent::__construct();
+		$this->load->model("usefulmodel");
 	}
 
 	public function hostlist_get($uid=0, $dep_id=0){
-		//print "-".$uid."--".$dep_id."-";
 		$output = array(
-			'users' => array('<option value="0">Выберите пользователя</option>'),
-			'depts' => array('<option value="0">Выберите подразделение</option>')
+			'users' => $this->getUsers($dep_id),
+			'depts' => $this->getDepts($dep_id)
 		);
-		$depmark = ($dep_id) ? "WHERE users.dep_id = ".$dep_id : "";
-		$result = $this->db->query("SELECT
-		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) as fio,
-		users.`id` AS `uid`
-		FROM
-		users ".$depmark."
-		ORDER BY fio");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				array_push($output['users'], '<option value="'.$row->uid.'"'.(($row->uid == $uid) ? ' selected="selected"' : '').'>'.$row->fio.'</option>');
-			}
-		}
-		$result = $this->db->query("SELECT
-		departments.dn AS `name`,
-		departments.`id`
-		FROM
-		departments
-		ORDER BY name");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				array_push($output['depts'], '<option value="'.$row->id.'"'.(($row->id == $dep_id) ? ' selected="selected"' : '').'>'.$row->name.'</option>');
-			}
-		}
-		
-		$output['depts'] = implode($output['depts'],"\n");
-		$output['users'] = implode($output['users'],"\n");
 		return $output;
 	}
 
-	public function userlicenses_get($uid=0){
-		$input	= array();
-		$output	= array();
-		$fired	= "";
-		$result	= $this->db->query("SELECT DISTINCT
-		ak_licenses.product_name,
-		ak_licenses.product_serial,
-		ak_licenses.product_key,
-		RIGHT(ak_licenses.product_key, 5) AS pkshort,
-		ak_licenses.active,
-		ak_licenses.manual,
-		ak_licenses.verify_pk,
-		ak_licenses.item_id,
-		ak_licenses.id,
-		`users`.`fired`,
-		DATE_FORMAT(ak_licenses.scandate, '%d.%m.%Y') as scandate,
-		ak_licenses.hostname,
-		CONCAT_WS('-',substr(ak_licenses.label,2,5), substr(ak_licenses.label,7,3), substr(ak_licenses.label,10,3), substr(ak_licenses.label,13,3)) as label
+	private function getUsers($dep_id) {
+		$depmark = ($dep_id) ? "WHERE users.dep_id = ".$dep_id : "";
+		$result  = $this->db->query("SELECT
+		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) as value,
+		users.`id`
 		FROM
-		`hosts`
-		RIGHT OUTER JOIN ak_licenses ON (`hosts`.hostname = ak_licenses.hostname)
-		INNER JOIN `users` ON (`users`.`id` = `hosts`.`uid`)
-		WHERE
-		(`hosts`.uid = ?) AND
-		NOT `hosts`.noise
-		GROUP BY `ak_licenses`.`id`
-		ORDER BY `ak_licenses`.`hostname` ASC, `ak_licenses`.`scandate` DESC", array($uid));
+		users ".$depmark."
+		ORDER BY value");
+		return $this->usefulmodel->returnList($result, $dep_id);
+	}
 
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				if (!strlen($fired)) {
-					$fired = ($row->fired) ? '<span class="btn-danger btn-small">Уволен(а)</span>' : '';
-				} 
-				$class		= array();
-				$annotation	= array("#".$row->id);
-				$props		= array();
-				$bindto		= "";
-				$intinfo	= "";
+	private function getDepts($dep_id) {
+		$result = $this->db->query("SELECT
+		departments.dn AS value,
+		departments.`id`
+		FROM
+		departments
+		ORDER BY value");
+		return $this->usefulmodel->returnList($result, $dep_id);
+	}
 
-				$label = (strpos($row->product_name, 'indows') === FALSE) 
-					? "" 
-					: '<small class="muted">для получения нужно <a href="#" refid="'.$row->id.'" ref="'.$row->pkshort.'" class="button-take btn btn-mini">изъять из пула</a></small>';
-				$takefrompool = "";
-				if (!isset($input[$row->hostname])){
-					$input[$row->hostname] = array();
-				}
-				if($row->manual){ 
-					array_push($class, "info");
-					array_push($annotation, "добавлена вручную");
-					array_push($props, '<span class="btn-info btn-small">РУЧН</span>');
-					$takefrompool = '';
-					$bindto = ' class="hide"';
-					$intinfo = "Назначены вручную: ";
-					if(stristr($row->product_name,"indows")){
-						$intinfo.=' <span class="btn-info">Windows</span>';
-					}
-					if(stristr($row->product_name,"ffic")){
-						$intinfo.=' <span class="btn-info">Office</span>';
-					}
-				}else{
-					array_push($annotation, "обнаружена при сканировании");
-				}
-				if(!$row->active) {
-					array_push($class, "muted hide");
-					array_push($annotation, "неактивна");
-					array_push($props, '<span class="btn-small">НЕАКТ</span>');
-					$bindto = ' class="hide"';
-					$takefrompool = ' class="hide"';
-					$label = "";
-				}else{
-					array_push($class, "success");
-					array_push($annotation, "активна");
-					array_push($props, '<span class="btn-primary btn-small">АКТ</span>');
-				}
-				if(strpos($row->product_serial,"-OEM-")){
-					array_push($annotation, "OEM");
-					array_push($props, '<span class="btn-danger btn-small">OEM</span>');
-				}
-				if($row->item_id && $row->active){
-					$label = ($this->session->userdata('rank') == 1) ? $row->label : " Получите в отделе ОСА";
-					array_push($props, '<span class="btn-success btn-small">ПУЛ</span>');
-				}
-				if(stristr($row->product_name,"windows") && strlen($row->verify_pk) == 5){
-					array_push($annotation, "Верификация: ".$row->verify_pk);
-				}
-				$string = '<tr class="'.implode($class, " ").'" title="'.implode($annotation,", ").'">
-					<td>'.$row->product_name.'<br>'.$row->product_key.'<br>Номер наклейки: <b>'.$label.'</b> <span class="hide">/ # '.$row->id.'</span><div class="pull-right">'.implode($props,"&nbsp;").'</div></td>
-					<td style="text-align:center;vertical-align:middle;">'.$row->scandate.'</td>
-					<td style="vertical-align:middle;">
-						<div class="btn-group">
-							<a class="btn btn-primary '.(($row->active) ? 'button-reject' : 'button-recall').'" style="width:66%" href="#" title="'.(($row->active) ? 'Отозвать лицензию' : 'Отменить отзыв').'" ref="'.$row->id.'">
-							'.(($row->active) ? 'Отозвать' : 'Отменить отзыв').'
-							</a>
-							<a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></a>
-							<ul class="dropdown-menu">
-								<li'.$bindto.'><a href="#" class="button-bide" title="Заполнить обнаруженную лицензию данными из назначенной вручную" ref="'.$row->id.'">Связать с...</a></li>
-								<li'.$takefrompool.'><a href="#" class="button-take" title="Задействовать лицензию из пула по ключу" refid="'.$row->id.'" ref="'.$row->pkshort.'">Взять из пула...</a></li>
-							</ul>
-						</div>
-					</td>
-				</tr>';
-			array_push($input[$row->hostname], $string);
+	private function getAnnotationString($row) {
+		$annotation = array("#".$row['id']);
+		array_push($annotation, (($row['manual']) ? "добавлена вручную" : "обнаружена при сканировании"));
+		array_push($annotation, (($row['active']) ? "активна" : "неактивна" ));
+		(strpos($row['product_serial'], "-OEM-")) ? array_push($annotation, "OEM") : "";
+		(stristr($row['product_name'], "windows")
+			&& strlen($row['verify_pk']) == 5)    ? array_push($annotation, "Верификация: ".$row['verify_pk']) : "";
+		return implode($annotation, " ");
+	}
+
+	private function getLabelString($row) {
+		$label = "";
+		if (strpos($row['product_name'], 'indows') !== FALSE) {
+			$label = '<small class="muted">для получения нужно <a href="#" refid="'.$row['id'].'" ref="'.$row['pkshort'].'" class="button-take btn btn-mini">изъять из пула</a></small>';
+		}
+		if ($row['active']) {
+			if ($row['item_id']) {
+				$label = ($this->session->userdata('rank') == 1) ? $row['label'] : " Получите в отделе ОСА";
+				return $label;
 			}
-			foreach($input as $key=>$val){
-				array_push($output,'<h4>'.$key.'  '.$fired.' 
-					<div class="btn-group pull-right" style="margin-bottom:10px;">
-							<a class="btn btn-large" href="#" title="" ref="'.$row->id.'">'.$key.'</a>
-							<a class="btn btn-large dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></a>
-							<ul class="dropdown-menu">
-								<li><a href="#" class="button-order" ref="'.$key.'" title="Назначить произвольную лицензию из пула вручную">Назначить лицензию</a></li>
-								<li><a href="#" class="button-convert" ref="'.$key.'" title="Добавить в список лицензий ПО из списка установленного на ПК">Перевести в лицензию</a></li>
-								<li><a href="#" title="Возврат всех лицензий в пул и исключение из АРМ">Списание</a></li>
-							</ul>
-						</div>
-				</h4>
-				'.$intinfo.'
-				<table class="table table-condensed table-bordered table-hover table-licenses">
-				<tr>
-					<th class="span8">Детали лицензий</th>
-					<th class="span1">Дата</th>
-					<th class="span3">Действия</th>'.
-				"</tr>".implode($val,"\n").'</table>');
+			return $label;
+		}
+		return $label;
+	}
+
+	private function getFiredString($row) {
+		if ($row['fired']) {
+			return '<span class="btn-danger btn-small">Уволен(а)</span>';
+		}
+		return '';
+	}
+
+	private function getClassString($row) {
+		$class		= array();
+		($row['manual']) ? array_push($class, "info")    : "";
+		($row['active']) ? array_push($class, "success") : array_push($class, "muted hide");
+		return implode($class, " ");
+	}
+
+	private function getPropsString($row) {
+		$props = array();
+		($row['manual']) ? array_push($props, '<span class="btn-info btn-small">РУЧН</span>')   : "";
+		($row['active']) ? array_push($props, '<span class="btn-primary btn-small">АКТ</span>') : array_push($props, '<span class="btn-small">НЕАКТ</span>');
+		if (strpos( $row['product_serial'], "-OEM-")) {
+			array_push($props, '<span class="btn-danger  btn-small">OEM</span>');
+		}
+		if ($row['item_id'] && $row['active']) {
+			array_push($props, '<span class="btn-success btn-small">ПУЛ</span>');
+		}
+		return implode($props, "");
+	}
+
+	private function getTakePoolString($row) {
+		$string = ($row['active']) ? ' class="hide"' : "";
+		return $string;
+	}
+
+	private function getBindToString($row) {
+		$string = ($row['manual']) ? ' class="hide"' : "";
+		$string = ($row['active']) ? $string : ' class="hide"';
+		return $string;
+	}
+
+	private function getInfoString($row) {
+		$intinfo = array();
+		if ($row['manual']) { 
+			array_push($intinfo, "Назначены вручную: ");
+			if (stristr($row['product_name'], "indows")) {
+				array_push($intinfo, '<span class="btn-info">Windows</span>');
+			}
+			if (stristr($row['product_name'], "ffic")) {
+				array_push($intinfo, '<span class="btn-info">Office</span>');
+			}
+		}
+		return implode($intinfo, " ");
+	}
+
+	private function getLicensesInput($result) {
+		$input = array();
+		foreach ($result->result_array() as $row) {
+			if (!isset($input[$row['hostname']])) {
+				$input[$row['hostname']] = array();
+			}
+			$controls = array (
+				'fired'			=> $this->getFiredString($row),
+				'label'			=> $this->getLabelString($row),
+				'class'			=> $this->getClassString($row),
+				'annotation'	=> $this->getAnnotationString($row),
+				'props'			=> $this->getPropsString($row),
+				'takefrompool'	=> $this->getTakePoolString($row),
+				'bindto'		=> $this->getBindToString($row),
+				'intinfo'		=> $this->getInfoString($row),
+				'buttonClass'	=> ($row['active']) ? 'button-reject'     : 'button-recall',
+				'buttonTitle'	=> ($row['active']) ? 'Отозвать лицензию' : 'Отменить отзыв',
+				'buttonText'	=> ($row['active']) ? 'Отозвать'          : 'Отменить отзыв'
+			);
+			$controls = array_merge($row, $controls);
+			$string = $this->load->view("license/licenserecordtemplate", $controls, true);
+			array_push($input[$row['hostname']], $string);
+		}
+		return $input;
+	}
+
+	private function getFinalList($result) {
+		$output = array();
+		if ($result->num_rows()) {
+			$input = $this->getLicensesInput($result);
+			foreach ($input as $key=>$val) {
+				$recordset = array(
+					'key'	=> $key,
+					'data'	=> implode($val, "\n")
+				);
+				$string = $this->load->view("license/licenserecordsettemplate", $recordset, true);
+				array_push($output, $string);
 			}
 		}
 		return implode($output);
 	}
 
-	public function serverlicenses_get($uid=0){
-		$input	= array();
-		$output	= array();
-		$fired	= "";
-		$result	= $this->db->query("SELECT DISTINCT
+	private function getConditionalData($condition, $value) {
+		$query = $this->db->query("SELECT DISTINCT
 		ak_licenses.product_name,
 		ak_licenses.product_serial,
 		ak_licenses.product_key,
@@ -182,249 +166,34 @@ class Licensemodel extends CI_Model {
 		ak_licenses.item_id,
 		ak_licenses.id,
 		`users`.`fired`,
-		DATE_FORMAT(ak_licenses.scandate, '%d.%m.%Y') as scandate,
+		DATE_FORMAT(ak_licenses.scandate, '%d.%m.%Y') AS scandate,
 		ak_licenses.hostname,
-		CONCAT_WS('-', SUBSTR(ak_licenses.label, 2, 5), SUBSTR(ak_licenses.label, 7, 3), SUBSTR(ak_licenses.label, 10, 3), SUBSTR(ak_licenses.label, 13, 3)) AS label
+		CONCAT_WS('-', SUBSTR(ak_licenses.label,2,5), SUBSTR(ak_licenses.label,7,3), SUBSTR(ak_licenses.label,10,3), SUBSTR(ak_licenses.label,13,3)) AS label
 		FROM
 		`hosts`
 		RIGHT OUTER JOIN ak_licenses ON (`hosts`.hostname = ak_licenses.hostname)
 		INNER JOIN `users` ON (`users`.`id` = `hosts`.`uid`)
 		WHERE
-		`hosts`.server = 1
+		".$condition."
 		AND NOT `hosts`.noise
 		GROUP BY `ak_licenses`.`id`
-		ORDER BY `ak_licenses`.`hostname` ASC, `ak_licenses`.`scandate` DESC");
+		ORDER BY `ak_licenses`.`hostname` ASC, `ak_licenses`.`scandate` DESC", $value);
+		return $query;
+	}
 
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				$class		= array();
-				$annotation	= array("#".$row->id);
-				$props		= array();
-				$bindto		= "";
-				$intinfo	= "";
+	public function userlicenses_get($uid=0){
+		$result = $this->getConditionalData("(`hosts`.uid = ?)", array($uid));
+		return $this->getFinalList($result);
+	}
 
-				$label = (strpos($row->product_name, 'indows') === FALSE) 
-					? "" 
-					: '<small class="muted">для получения нужно <a href="#" refid="'.$row->id.'" ref="'.$row->pkshort.'" class="button-take btn btn-mini">изъять из пула</a></small>';
-				$takefrompool = "";
-				if (!isset($input[$row->hostname])) {
-					$input[$row->hostname] = array();
-				}
-				if ($row->manual) {
-					array_push($class, "info");
-					array_push($annotation, "добавлена вручную");
-					array_push($props, '<span class="btn-info btn-small">РУЧН</span>');
-					$takefrompool = '';
-					$bindto = ' class="hide"';
-					$intinfo = "Назначены вручную: ";
-					if (stristr($row->product_name, "indows")) {
-						$intinfo.=' <span class="btn-info">Windows</span>';
-					}
-					if (stristr($row->product_name, "ffice")) {
-						$intinfo.=' <span class="btn-info">Office</span>';
-					}
-				} else {
-					array_push($annotation, "обнаружена при сканировании");
-				}
-				if ($row->active) {
-					array_push($class, "success");
-					array_push($annotation, "активна");
-					array_push($props, '<span class="btn-primary btn-small">АКТ</span>');
-				} else {
-					array_push($class, "muted hide");
-					array_push($annotation, "неактивна");
-					array_push($props, '<span class="btn-small">НЕАКТ</span>');
-					$bindto = ' class="hide"';
-					$takefrompool = ' class="hide"';
-					$label = "";
-				}
-				if(strpos($row->product_serial, "-OEM-")) {
-					array_push($annotation, "OEM");
-					array_push($props, '<span class="btn-danger btn-small">OEM</span>');
-				}
-				if($row->item_id && $row->active){
-					$label = ($this->session->userdata('rank') === 1) ? $row->label : " Получите в отделе ОСА";
-					array_push($props, '<span class="btn-success btn-small">ПУЛ</span>');
-				}
-				if(stristr($row->product_name,"windows") && strlen($row->verify_pk) === 5){
-					array_push($annotation, "Верификация: ".$row->verify_pk);
-				}
-				$data = array(
-					'label'       => $label,
-					'poolswitch'  => $takefrompool,
-					'bindto'      => $bindto,
-					'mainclass'   => implode($class, " "),
-					'maintitle'   => implode($annotation, ", "),
-					'properties'  => implode($props, "&nbsp;"),
-					'productname' => $row->product_name,
-					'productkey'  => $row->product_key,
-					'scandate'    => $row->scandate,
-					'pkshort'     => $row->pkshort,
-					'license'     => $row->id,
-					'link'        => ($row->active)
-						? '<a class="btn btn-primary button-reject" style="width:66%" href="#" title="Отозвать лицензию" ref="'.$row->id.'">Отозвать</a>'
-						: '<a class="btn btn-primary button-recall" style="width:66%" href="#" title="Отменить отзыв" ref="'.$row->id.'">Отменить отзыв</a>',
-					
-				);
-				$string = $this->load->view("license/licensecontrols", $data, true);
-				array_push($input[$row->hostname], $string);
-			}
-			foreach($input as $key=>$val) {
-				$data = array(
-					'pcref' => $row->id,
-					'ref'   => $key,
-					'info'  => $intinfo,
-					'data'  => implode($val,"\n")
-				);
-				array_push($output, $this->load->view('license/pclicenses', $data, true));
-			}
-		}
-		return implode($output).'<script type="text/javascript" src="/jscript/lsmc.js"></script>';
+	public function serverlicenses_get() {
+		$result = $this->getConditionalData("`hosts`.server = 1", array());
+		return $this->getFinalList($result);
 	}
 
 	public function deptlicenses_get($depid=0){
-		$input	= array();
-		$output	= array();
-		$fired	= "";
-		$users = array();
-		
-		$result	= $this->db->query("SELECT 
-		users.id
-		FROM
-		users
-		WHERE
-		`users`.`dep_id` = ?
-		AND NOT (users.fired)", array($depid));
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				array_push($users, $row->id);
-				//print $row->id;
-			}
-		}
-
-		$result	= $this->db->query("SELECT DISTINCT
-		ak_licenses.product_name,
-		ak_licenses.product_serial,
-		ak_licenses.product_key,
-		RIGHT(ak_licenses.product_key, 5) AS pkshort,
-		ak_licenses.active,
-		ak_licenses.manual,
-		ak_licenses.verify_pk,
-		ak_licenses.item_id,
-		ak_licenses.id,
-		`users`.`fired`,
-		users.id AS uid,
-		DATE_FORMAT(ak_licenses.scandate, '%d.%m.%Y') as scandate,
-		ak_licenses.hostname,
-		CONCAT_WS('-',substr(ak_licenses.label,2,5), substr(ak_licenses.label,7,3), substr(ak_licenses.label,10,3), substr(ak_licenses.label,13,3)) as label
-		FROM
-		`hosts`
-		RIGHT OUTER JOIN ak_licenses ON (`hosts`.hostname = ak_licenses.hostname)
-		INNER JOIN `users` ON (`users`.`id` = `hosts`.`uid`)
-		WHERE
-		(`hosts`.uid IN(".implode($users, ",").")) AND
-		NOT `hosts`.noise
-		GROUP BY `ak_licenses`.`id`
-		ORDER BY `ak_licenses`.`hostname` ASC, `ak_licenses`.`scandate` DESC");
-
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				if (!strlen($fired)) {
-					$fired = ($row->fired) ? '<span class="btn-danger btn-small">Уволен(а)</span>' : '';
-				} 
-				$class		= array();
-				$annotation	= array("#".$row->id);
-				$props		= array();
-				$bindto		= "";
-				$intinfo	= "";
-
-				$label = (strpos($row->product_name, 'indows') === FALSE) 
-					? "" 
-					: '<small class="muted">для получения нужно <a href="#" class="button-take btn btn-mini" refid="'.$row->id.'" ref="'.$row->pkshort.'">изъять из пула</a></small>';
-				$takefrompool = "";
-				if (!isset($input[$row->hostname])){
-					$input[$row->hostname] = array();
-				}
-				if($row->manual){ 
-					array_push($class, "info");
-					array_push($annotation, "добавлена вручную");
-					array_push($props, '<span class="btn-info btn-small">РУЧН</span>');
-					$takefrompool = '';
-					$bindto = ' class="hide"';
-					$intinfo = "Назначены вручную: ";
-					if(stristr($row->product_name,"indows")){
-						$intinfo.=' <span class="btn-info">Windows</span>';
-					}
-					if(stristr($row->product_name,"ffic")){
-						$intinfo.=' <span class="btn-info">Office</span>';
-					}
-				}else{
-					array_push($annotation, "обнаружена при сканировании");
-				}
-				if(!$row->active) {
-					array_push($class, "muted hide");
-					array_push($annotation, "неактивна");
-					array_push($props, '<span class="btn-small">НЕАКТ</span>');
-					$bindto = ' class="hide"';
-					$takefrompool = ' class="hide"';
-					$label = "";
-				}else{
-					array_push($class, "success");
-					array_push($annotation, "активна");
-					array_push($props, '<span class="btn-primary btn-small">АКТ</span>');
-				}
-				if(strpos($row->product_serial,"-OEM-")){
-					array_push($annotation, "OEM");
-					array_push($props, '<span class="btn-danger btn-small">OEM</span>');
-				}
-				if($row->item_id && $row->active){
-					$label = ($this->session->userdata('rank') == 1) ? $row->label : " Получите в отделе ОСА";
-					array_push($props, '<span class="btn-success btn-small">ПУЛ</span>');
-				}
-				if(stristr($row->product_name,"windows") && strlen($row->verify_pk) == 5){
-					array_push($annotation, "Верификация: ".$row->verify_pk);
-				}
-				$string = '<tr class="'.implode($class, " ").'" title="'.implode($annotation,", ").'">
-					<td>'.$row->product_name.'<br>'.$row->product_key.'<br>Номер наклейки: <b>'.$label.'</b> <span class="hide">/ # '.$row->id.'</span><div class="pull-right">'.implode($props,"&nbsp;").'</div></td>
-					<td style="text-align:center;vertical-align:middle;">'.$row->scandate.'</td>
-					<td style="vertical-align:middle;">
-						<div class="btn-group">
-							<a class="btn btn-primary '.(($row->active) ? 'button-reject' : 'button-recall').'" style="width:66%" href="#" title="'.(($row->active) ? 'Отозвать лицензию' : 'Отменить отзыв').'" ref="'.$row->id.'">
-							'.(($row->active) ? 'Отозвать' : 'Отменить отзыв').'
-							</a>
-							<a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></a>
-							<ul class="dropdown-menu">
-								<li'.$bindto.'><a href="#" class="button-bide" title="Заполнить обнаруженную лицензию данными из назначенной вручную" ref="'.$row->id.'">Связать с...</a></li>
-								<li'.$takefrompool.'><a href="#" class="button-take" title="Задействовать лицензию из пула по ключу" refid="'.$row->id.'" ref="'.$row->pkshort.'">Взять из пула...</a></li>
-								<li><a href="/admin/users/'.$row->uid.'/5" title="перейти к пользователю" target="_blank">К пользователю</a></li>
-							</ul>
-						</div>
-					</td>
-				</tr>';
-			array_push($input[$row->hostname], $string);
-			}
-			foreach($input as $key=>$val){
-				array_push($output,'<h4>'.$key.' '.$fired.' 
-					<div class="btn-group pull-right" style="margin-bottom:10px;">
-							<a class="btn btn-large" href="#" title="" ref="'.$row->id.'">'.$key.'</a>
-							<a class="btn btn-large dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></a>
-							<ul class="dropdown-menu">
-								<li><a href="#" class="button-order" ref="'.$key.'" title="Назначить произвольную лицензию из пула вручную">Назначить лицензию</a></li>
-								<li><a href="#" class="button-convert" ref="'.$key.'" title="Добавить в список лицензий ПО из списка установленного на ПК">Перевести в лицензию</a></li>
-								<li><a href="#" title="Возврат всех лицензий в пул и исключение из АРМ">Списание</a></li>
-							</ul>
-						</div>
-				</h4>
-				'.$intinfo.'
-				<table class="table table-condensed table-bordered table-hover table-licenses">
-				<tr>
-					<th class="span8">Детали лицензий</th>
-					<th class="span1">Дата</th>
-					<th class="span3">Действия</th>'.
-				"</tr>".implode($val,"\n").'</table>');
-			}
-		}
-		return implode($output);
+		$result = $this->getConditionalData("(`hosts`.uid IN( SELECT users.id FROM users WHERE `users`.`dep_id` = ? AND NOT (users.fired)))", array($depid));
+		return $this->getFinalList($result);
 	}
 
 	public function get_related_licenses($pk = ""){
@@ -588,18 +357,22 @@ class Licensemodel extends CI_Model {
 		FROM
 		ak_licenses
 		WHERE
-		(ak_licenses.manual) AND
-		ak_licenses.active AND
-		(LOWER(ak_licenses.hostname) = (
+		(ak_licenses.manual) 
+		AND ak_licenses.active 
+		AND (LOWER(ak_licenses.hostname) = (
 			SELECT LOWER(ak_licenses.hostname)
 			FROM ak_licenses
 			WHERE ak_licenses.id = ?
-		))", array($lid,$lid));
+		))", array($lid, $lid));
 		if($result->num_rows()){
 			foreach($result->result() as $row){
 				$string = '<tr>
-					<td style="text-align:center;vertical-align:middle;"><input type="radio" id="item'.$row->id.'" name="itm" class="itemsel" ref="'.$row->id.'"></td>
-					<td><label for="item'.$row->id.'" style="cursor:pointer;">'.$row->product_name.'<br>'.$row->product_key.'</label></td>
+					<td style="text-align:center;vertical-align:middle;">
+						<input type="radio" id="item'.$row->id.'" name="itm" class="itemsel" ref="'.$row->id.'">
+					</td>
+					<td>
+						<label for="item'.$row->id.'" style="cursor:pointer;">'.$row->product_name.'<br>'.$row->product_key.'</label>
+					</td>
 				</tr>';
 				array_push($output,$string);
 			}
@@ -961,8 +734,9 @@ class Licensemodel extends CI_Model {
 
 	private function getSetList($input) {
 		foreach ($input as $val) {
-			$data = array();
-			$data['muted'] = ($val['deleted']) ? " hide" : '';
+			$data = array(
+				'muted' => ($val['deleted']) ? " hide" : ''
+			);
 			unset($val['deleted']);
 			$data['items'] = implode($val,"\n");
 
@@ -1014,13 +788,16 @@ class Licensemodel extends CI_Model {
 		$object = $this->getLicenseData($id);
 		#выбираем справочники реселлеров и лицензиаров
 		## дополняем объект необходимыми полями
-		$object['licr']  = $this->showLicensiars($object['liid']);
-		$object['resl']  = $this->showResellers($object['resid']);
-		$object['stat1'] = "";
-		$object['stat2'] = "";
-		$object['lid']   = $id;
-		// действия на тот случай если нужно показать конкретную лицензию
-		$object['sets'] = $this->getSetsOfLisense($id);
+		$addition = array(
+			'licr'  => $this->showLicensiars($object['liid']),
+			'resl'  => $this->showResellers($object['resid']),
+			'stat1' => "",
+			'stat2' => "",
+			'lid'   => $id,
+			// действия на тот случай если нужно показать конкретную лицензию
+			'sets'  => $this->getSetsOfLisense($id),
+		);
+		$object = array_merge($object, $addition);
 		return $this->load->view("license/newlicenseparams", $object, true);
 	}
 
@@ -1301,7 +1078,7 @@ class Licensemodel extends CI_Model {
 
 	public function getpolist(){
 		$output = array();
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		inv_po_installed_software.po_name,
 		DATE_FORMAT(inv_po_installed_software.scandate, '%d.%m.%Y') AS scandate
 		FROM
@@ -1310,10 +1087,17 @@ class Licensemodel extends CI_Model {
 		(inv_po_installed_software.hostname = ?)
 		ORDER BY
 		inv_po_installed_software.po_name", array($this->input->post('host')));
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				$id=sizeof($output);
-				$string = '<tr><td><input class="poCheck" type="checkbox" id="i'.$id.'" title="'.$row->scandate.'" refn="'.$row->po_name.'"></td><td><label for="i'.$id.'" style="cursor:pointer;">'.$row->po_name.'</label></td></tr>';
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$localID = sizeof($output);
+				$string  = '<tr>
+				<td>
+					<input class="poCheck" type="checkbox" id="i'.$localID.'" title="'.$row->scandate.'" refn="'.$row->po_name.'">
+				</td>
+				<td>
+					<label for="i'.$localID.'" style="cursor:pointer;">'.$row->po_name.'</label>
+				</td>
+				</tr>';
 				array_push($output, $string);
 			}
 			print implode($output, "\n");
