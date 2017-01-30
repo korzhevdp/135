@@ -2,11 +2,116 @@
 
 class Bidsuimodel extends CI_Model {
 
-	function __construct(){
+	public function __construct(){
 		parent::__construct();
 	}
 
-	public function getResourceAccordion($rlist, $group_id){
+	private function getUserMailFromDB($userid) {
+		$email = "";
+		$result = $this->db->query("SELECT 
+		CONCAT(resources_pid.pid_value, '@arhcity.ru') as email
+		FROM
+		resources_pid
+		RIGHT OUTER JOIN resources_items ON (resources_pid.item_id = resources_items.id)
+		WHERE
+		(resources_pid.pid = 1)
+		AND (resources_items.uid = ?)
+		AND (`resources_items`.`ok`)
+		AND NOT (`resources_items`.`del`)
+		AND NOT (`resources_items`.`exp`)
+		ORDER BY resources_items.id DESC
+		LIMIT 1", array($userid));
+		if ($result->num_rows()) {
+			$row   = $result->row();
+			$email = $row->email;
+		}
+		return $email;
+	}
+
+	private function blankDataResList() {
+		// создаётся список ресурсов
+		$result = $this->db->query("SELECT
+		resources.id,
+		resources.shortname,
+		resources.cat,
+		resources.grp,
+		COUNT(resources_layers.id) AS layers
+		FROM
+		resources
+		INNER JOIN departments ON (resources.owner = departments.id)
+		LEFT OUTER JOIN resources_layers ON (resources.id = resources_layers.rid)
+		WHERE
+		(resources.active)
+		GROUP BY
+		resources.id
+		ORDER BY
+		resources.name");
+		$output = array();
+		if ($result->num_rows()){
+			foreach ($result->result() as $row) {
+				if (!isset($output[$row->grp])) {
+					$output[$row->grp] = array();
+				}
+				$class  = ($row->cat > 1) ? "btn-warning" : "btn-info";
+				$conf   = ($row->cat > 1) ? "1" : "0";
+				$string = '<li 
+					class="reslist btn '.$class.' btn-block"
+					id="r_'.$row->id.'"
+					grp="'.$row->grp.'"
+					subs="'.$row->layers.'"
+					conf="'.$conf.'"
+					style="margin: 2px 0px;"
+					title="Щелчок добавит ресурс в список выбранных">'.$row->shortname.'</li>';
+				array_push($output[$row->grp], $string);
+			}
+		}
+		return $output;
+	}
+
+	private function returnList($result) {
+		$output = array('<option value="0">не выбрано</option>');
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$string = '<option value="'.$row->id.'">'.$row->value.'</option>';
+				array_push($output, $string);
+			}
+		}
+		return implode($output, "\n");
+	}
+
+	private function blankDataDeptList() {
+		$result = $this->db->query("SELECT
+		departments.id,
+		departments.dn AS `value`
+		FROM
+		departments
+		ORDER BY 
+		departments.dn");
+		return $this->returnList($result);
+	}
+
+	private function blankDataStaffList() {
+		$result = $this->db->query("SELECT
+		`staff`.`id`,
+		`staff`.`staff` AS `value`
+		FROM
+		`staff`
+		ORDER BY `staff`.`staff`");
+		return $this->returnList($result);
+	}
+
+	private function blankDataLocationsList() {
+		$result = $this->db->query("SELECT 
+		locations.id,
+		locations.address AS value
+		FROM locations
+		WHERE `locations`.parent = 0 
+		AND `locations`.id <> 0
+		ORDER BY `locations`.`address`");
+		return $this->returnList($result);
+	}
+
+	public function getResourceAccordion($rlist, $group_id) {
 		$addition = "";
 		$state    = "";
 		$hide     = "";
@@ -51,7 +156,7 @@ class Bidsuimodel extends CI_Model {
 		</div>';
 	}
 	
-	public function locs_get(){
+	public function locs_get() {
 		$input  = array();
 		$output = array();
 		$result = $this->db->query("SELECT
@@ -78,29 +183,7 @@ class Bidsuimodel extends CI_Model {
 		return "{\n".implode($output, ",\n")."\n}";
 	}
 	
-	private function get_user_mail_from_db($userid) {
-		$email = "";
-		$result = $this->db->query("SELECT 
-		CONCAT(resources_pid.pid_value, '@arhcity.ru') as email
-		FROM
-		resources_pid
-		RIGHT OUTER JOIN resources_items ON (resources_pid.item_id = resources_items.id)
-		WHERE
-		(resources_pid.pid = 1)
-		AND (resources_items.uid = ?)
-		AND (`resources_items`.`ok`)
-		AND NOT (`resources_items`.`del`)
-		AND NOT (`resources_items`.`exp`)
-		ORDER BY resources_items.id DESC
-		LIMIT 1", array($userid));
-		if ($result->num_rows()) {
-			$row   = $result->row();
-			$email = $row->email;
-		}
-		return $email;
-	}
-
-	public function blank_data_get(){
+	public function blank_data_get() {
 		/*
 		* Входные данные не требуются (конструктор)
 		* Возвращается массив данных пользователя
@@ -131,101 +214,8 @@ class Bidsuimodel extends CI_Model {
 		return $return;
 	}
 
-	private function blankDataResList() {
-		// создаётся список ресурсов
-		$result = $this->db->query("SELECT
-		resources.id,
-		resources.shortname,
-		resources.cat,
-		resources.grp,
-		COUNT(resources_layers.id) AS layers
-		FROM
-		resources
-		INNER JOIN departments ON (resources.owner = departments.id)
-		LEFT OUTER JOIN resources_layers ON (resources.id = resources_layers.rid)
-		WHERE
-		(resources.active)
-		GROUP BY
-		resources.id
-		ORDER BY
-		resources.name");
-		$output = array();
-		if ($result->num_rows()){
-			foreach ($result->result() as $row) {
-				if (!isset($output[$row->grp])) {
-					$output[$row->grp] = array();
-				}
-				$class  = ($row->cat > 1) ? "btn-warning" : "btn-info";
-				$conf   = ($row->cat > 1) ? "1" : "0";
-				$string = '<li 
-					class="reslist btn '.$class.' btn-block"
-					id="r_'.$row->id.'"
-					grp="'.$row->grp.'"
-					subs="'.$row->layers.'"
-					conf="'.$conf.'"
-					style="margin: 2px 0px;"
-					title="Щелчок добавит ресурс в список выбранных">'.$row->shortname.'</li>';
-				array_push($output[$row->grp], $string);
-			}
-		}
-		return $output;
-	}
-
-	private function blankDataDeptList() {
-		$result = $this->db->query("SELECT
-		departments.id,
-		departments.dn
-		FROM
-		departments
-		ORDER BY 
-		departments.dn");
-		$output = array('<option value="0">не выбрано</option>');
-		if ($result->num_rows()) {
-			foreach ($result->result() as $row) {
-				$string = '<option value="'.$row->id.'">'.$row->dn.'</option>';
-				array_push($output, $string);
-			}
-		}
-		return implode($output, "\n");
-	}
-
-	private function blankDataStaffList() {
-		$result = $this->db->query("SELECT
-		`staff`.`id`,
-		`staff`.`staff`
-		FROM
-		`staff`
-		ORDER BY `staff`.`staff`");
-		$output = array('<option value="0">не выбрано</option>');
-		if ($result->num_rows()) {
-			foreach ($result->result() as $row) {
-				$string = '<option value="'.$row->id.'">'.$row->staff.'</option>';
-				array_push($output, $string);
-			}
-		}
-		return implode($output, "\n");
-	}
-
-	private function blankDataLocationsList() {
-		$result = $this->db->query("SELECT 
-		locations.id,
-		locations.address
-		FROM locations
-		WHERE `locations`.parent = 0 
-		AND `locations`.id <> 0
-		ORDER BY `locations`.`address`");
-		$output = array('<option value="0">не выбрано</option>');
-		if ($result->num_rows()) {
-			foreach ($result->result() as $row) {
-				$string = '<option value="'.$row->id.'">'.$row->address.'</option>';
-				array_push($output, $string);
-			}
-		}
-		return implode($output, "\n");
-	}
-
 	public function user_data_get2($userid) {
-		$email = $this->get_user_mail_from_db($userid);
+		$email = $this->getUserMailFromDB($userid);
 		$result = $this->db->query("SELECT 
 		users.name_f,
 		users.name_i,
@@ -258,7 +248,7 @@ class Bidsuimodel extends CI_Model {
 		}
 	}
 
-	public function user_res_get($userid){
+	public function user_res_get($userid) {
 		// формируем табличку пользовательских ресурсов
 		$result = $this->db->query("SELECT 
 		DATE_FORMAT(resources_orders.docdate, '%e.%m.%Y') AS docdate,

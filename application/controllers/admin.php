@@ -479,8 +479,10 @@ class Admin extends CI_Controller {
 		$this->load->view('page_container', $act);
 	}
 
-	public function phpinfo(){
-		phpinfo();
+	public function textget(){
+		$file = file_get_contents("\\kd1\R_storage$\DATA1\ADUSHEVVI101.log");
+		print $file;
+		//phpinfo();
 	}
 
 }

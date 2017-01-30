@@ -1132,9 +1132,9 @@ class Bidsfactorymodel extends CI_Model {
 		* Получение заявок (первичное). Принимает на вход отсортированные данные из _POST
 		* Выдаёт строку в HTML, направляемую пользователю
 		*/
-		$this->dbwrite      = ((int)$this->session->userdata('admin_id') === 1) ? true : true;
-		$this->expose       = ((int)$this->session->userdata('admin_id') === 1) ? true  : false;
-		$this->wrap_to_word = ((int)$this->session->userdata('admin_id') === 1) ? false : true;
+		$this->dbwrite      = ((int)$this->session->userdata('admin_id') === 1) ? false : true;
+		$this->expose       = ((int)$this->session->userdata('admin_id') === 1) ? false  : false;
+		$this->wrap_to_word = ((int)$this->session->userdata('admin_id') === 1) ? true : true;
 
 		if ($this->expose) {
 			$this->output->enable_profiler(TRUE);
