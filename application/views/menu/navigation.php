@@ -27,16 +27,16 @@
 	<li<?=(($_SERVER["REQUEST_URI"] == "/network") ? ' class="active"' : '')?>><a href="/network">Структура сети</a></li>
 	<li class="nav-header">Управление лицензиями</li>
 
-	<li<?=(($_SERVER["REQUEST_URI"] == "/licenses/statistics") ? ' class="active"' : '')?>><a href="/licenses/statistics"><i class="icon-certificate"></i>Список лицензий</a></li>
-	<li<?=(($_SERVER["REQUEST_URI"] == "/licenses/contents") ? ' class="active"' : '')?>><a href="/licenses/contents"><i class="icon-certificate"></i>Состав ПО лицензий</a></li>
-	<li<?=(($_SERVER["REQUEST_URI"] == "/licenses/usage") ? ' class="active"' : '')?>><a href="/licenses/usage"><i class="icon-certificate"></i>Использование лицензий</a></li>
-	<li<?=(($_SERVER["REQUEST_URI"] == "/licenses/user") ? ' class="active"' : '')?>><a href="/licenses/user"><i class="icon-certificate"></i>Лицензии на ПК</a></li>
-	<li<?=(($_SERVER["REQUEST_URI"] == "/licenses/servers") ? ' class="active"' : '')?>><a href="/licenses/servers"><i class="icon-certificate"></i>Лицензии на серверах</a></li>
+	<li<? if ($_SERVER["REQUEST_URI"] == "/licensestats")	{ ?> class="active" <? } ?>><a href="/licensestats"><i class="icon-certificate"></i>Список лицензий</a></li>
+	<li<? if ($_SERVER["REQUEST_URI"] == "/licensestats/contents")		{ ?> class="active" <? } ?>><a href="/licensestats/contents"><i class="icon-certificate"></i>Состав ПО лицензий</a></li>
+	<li<? if ($_SERVER["REQUEST_URI"] == "/licensestats/usage")			{ ?> class="active" <? } ?>><a href="/licensestats/usage"><i class="icon-certificate"></i>Использование лицензий</a></li>
+	<li<? if ($_SERVER["REQUEST_URI"] == "/licensestats/user")			{ ?> class="active" <? } ?>><a href="/licensestats/user"><i class="icon-certificate"></i>Лицензии на ПК</a></li>
+	<li<? if ($_SERVER["REQUEST_URI"] == "/licensestats/servers") { ?> class="active"<? } ?>><a href="/licensestats/servers"><i class="icon-certificate"></i>Лицензии на серверах</a></li>
 
 	<? } ?>
 	<? if (
-		   $this->session->userdata("rank")     == 1 
-		|| $this->session->userdata("admin_id") == 38) {
+		   (int)$this->session->userdata("rank")     === 1
+		|| (int)$this->session->userdata("admin_id") === 38) {
 	?>
 	<li class="nav-header">АРМ</li>
 	<li<?=(($_SERVER["REQUEST_URI"] == "/arm") ? ' class="active"' : '')?>><a href="/arm">Автоматизированные РМ</a></li>

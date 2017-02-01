@@ -1,12 +1,12 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 class Licensemodel extends CI_Model {
-	function __construct(){
+	public function __construct(){
 		parent::__construct();
 		$this->load->model("usefulmodel");
 	}
 
-	public function hostlist_get($uid=0, $dep_id=0){
+	public function getHostlist($uid=0, $dep_id=0){
 		$output = array(
 			'users' => $this->getUsers($dep_id),
 			'depts' => $this->getDepts($dep_id)
@@ -181,7 +181,7 @@ class Licensemodel extends CI_Model {
 		return $query;
 	}
 
-	public function userlicenses_get($uid=0){
+	public function userlicenses_get($uid=0) {
 		$result = $this->getConditionalData("(`hosts`.uid = ?)", array($uid));
 		return $this->getFinalList($result);
 	}
@@ -191,12 +191,12 @@ class Licensemodel extends CI_Model {
 		return $this->getFinalList($result);
 	}
 
-	public function deptlicenses_get($depid=0){
+	public function deptlicenses_get($depid=0) {
 		$result = $this->getConditionalData("(`hosts`.uid IN( SELECT users.id FROM users WHERE `users`.`dep_id` = ? AND NOT (users.fired)))", array($depid));
 		return $this->getFinalList($result);
 	}
 
-	public function get_related_licenses($pk = ""){
+	public function get_related_licenses($pk = "") {
 		$search = (strlen($pk)) ? " AND (inv_po_licenses_items.verify_pk = ?)" : " AND (inv_po_licenses_items.verify_pk = '')";
 		$output = array('<table class="table table-bordered table-hover table-condensed">','<tr><th></th><th class="span9">Лицензия</th><th class="span2">Остаток</th></tr>');
 		$result = $this->db->query("SELECT
@@ -249,7 +249,7 @@ class Licensemodel extends CI_Model {
 		return implode($output,"\n");
 	}
 
-	public function get_all_licenses(){
+	public function get_all_licenses() {
 		$output = array();
 		$result = $this->db->query("SELECT
 		inv_po_types.name,
@@ -295,7 +295,7 @@ class Licensemodel extends CI_Model {
 		return implode($output,"\n");
 	}
 
-	public function orderitem(){
+	public function orderitem() {
 		//$this->output->enable_profiler(TRUE);
 		$result = $this->db->query("SELECT 
 		inv_po_licenses_items.value,
@@ -336,20 +336,21 @@ class Licensemodel extends CI_Model {
 		return " Нет данных ";
 	}
 
-	public function get_license_to_bide($lid){
+	public function get_license_to_bide($lid) {
 		$output = array();
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		ak_licenses.product_name,
 		ak_licenses.product_key
 		FROM
 		ak_licenses
 		WHERE
-		(ak_licenses.id = ?)",array($lid));
+		(ak_licenses.id = ?)", array($lid));
 		if($result->num_rows()){
 			$row=$result->row();
 			array_push($output,"<h4>".$row->product_name." <small>".$row->product_key."</small></h4>");
 		}
-		array_push($output, '<table class="table table-bordered table-hover table-condensed">','<tr><th></th><th class="span9">Лицензия</th>');
+		array_push($output, '<table class="table table-bordered table-hover table-condensed">', '<tr><th></th><th class="span9">Лицензия</th>');
+
 		$result = $this->db->query("SELECT 
 		ak_licenses.id,
 		ak_licenses.product_name,
@@ -364,8 +365,8 @@ class Licensemodel extends CI_Model {
 			FROM ak_licenses
 			WHERE ak_licenses.id = ?
 		))", array($lid, $lid));
-		if($result->num_rows()){
-			foreach($result->result() as $row){
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
 				$string = '<tr>
 					<td style="text-align:center;vertical-align:middle;">
 						<input type="radio" id="item'.$row->id.'" name="itm" class="itemsel" ref="'.$row->id.'">
@@ -374,14 +375,14 @@ class Licensemodel extends CI_Model {
 						<label for="item'.$row->id.'" style="cursor:pointer;">'.$row->product_name.'<br>'.$row->product_key.'</label>
 					</td>
 				</tr>';
-				array_push($output,$string);
+				array_push($output, $string);
 			}
 		}
 		array_push($output,'</table>');
 		return implode($output,"\n");
 	}
 
-	public function bideitem(){
+	public function bideitem() {
 		$result = $this->db->query("SELECT 
 		ak_licenses.product_key AS `pk`,
 		ak_licenses.product_name AS `pn`,
@@ -407,8 +408,8 @@ class Licensemodel extends CI_Model {
 			ak_licenses.id = ?", array($this->input->post("itemid")));
 		}
 	}
-	
-	public function full_stat_get(){
+
+	public function full_stat_get() {
 		$output = array();
 		$output['general'] = array();
 		$result = $this->db->query("SELECT 
@@ -448,7 +449,7 @@ class Licensemodel extends CI_Model {
 		return $this->load->view('license/licensestat', $output, true);
 	}
 
-	public function stat_get($lid = 0){
+	public function stat_get($lid = 0) {
 		if(!$lid){
 			$this->load->helper('url');
 			redirect('/licenses/statistics');
@@ -574,13 +575,13 @@ class Licensemodel extends CI_Model {
 		return implode($output, "\n");
 	}
 
-	public function removeitem($item, $redirect){
+	public function removeitem($item, $redirect) {
 		$this->db->query("UPDATE inv_po_licenses_items SET inv_po_licenses_items.act = 0 WHERE inv_po_licenses_items.id = ?", array($item));
 		$this->load->helper("url");
 		redirect("licenses/statistics/".$redirect);
 	}
 
-	public function save_license($lid){
+	public function save_license($lid) {
 		$this->db->query("SET lc_time_names = 'ru_RU'");
 		$this->db->query("UPDATE 
 		`inv_po_licenses` SET
@@ -606,7 +607,7 @@ class Licensemodel extends CI_Model {
 		redirect("licenses/statistics/".$lid);
 	}
 
-	public function verify_license($lid){
+	public function verify_license($lid) {
 		$this->db->query("UPDATE `inv_po_licenses` SET
 		`inv_po_licenses`.verified = 1,
 		`inv_po_licenses`.verify_date = NOW()
@@ -616,7 +617,7 @@ class Licensemodel extends CI_Model {
 		redirect("licenses/statistics/".$lid);
 	}
 
-	public function makemaster($item, $redirect){
+	public function makemaster($item, $redirect) {
 		$result = $this->db->query("SELECT `inv_po_licenses_items`.set_id FROM `inv_po_licenses_items` WHERE `inv_po_licenses_items`.id = ?", array($item));
 		if($result->num_rows()){
 			$row = $result->row();
@@ -784,7 +785,7 @@ class Licensemodel extends CI_Model {
 		return implode($output, "\n");
 	}
 
-	public function license_form_get($id = 0){
+	public function license_form_get($id = 0) {
 		$object = $this->getLicenseData($id);
 		#выбираем справочники реселлеров и лицензиаров
 		## дополняем объект необходимыми полями
@@ -801,7 +802,7 @@ class Licensemodel extends CI_Model {
 		return $this->load->view("license/newlicenseparams", $object, true);
 	}
 
-	public function add_new_license(){
+	public function add_new_license() {
 		if(!$this->input->post('license_id')){
 			$result = $this->db->query("INSERT INTO 
 			inv_po_licenses (
@@ -851,7 +852,7 @@ class Licensemodel extends CI_Model {
 		return $return;
 	}
 
-	public function add_licensiar(){
+	public function add_licensiar() {
 		if(strlen($this->input->post("licr_name"))){
 			$this->db->query("INSERT INTO inv_po_licensiars (inv_po_licensiars.name) VALUES (?)", array($this->input->post("licr_name")));
 		}
@@ -859,7 +860,7 @@ class Licensemodel extends CI_Model {
 		redirect("licenses/addnew/".$this->input->post("redirect"));
 	}
 
-	public function add_reseller(){
+	public function add_reseller() {
 		if($this->input->post("resl_name") && strlen($this->input->post("resl_name")) && strlen($this->input->post("resl_addr"))){
 			$this->db->query("INSERT INTO 
 			inv_po_resellers (
@@ -874,7 +875,7 @@ class Licensemodel extends CI_Model {
 		redirect("licenses/addnew/".$this->input->post("redirect"));
 	}
 
-	public function add_set_to_license($lid){
+	public function add_set_to_license($lid) {
 		$this->load->helper("url");
 		if($lid){
 			$this->db->query("INSERT INTO 
@@ -889,7 +890,7 @@ class Licensemodel extends CI_Model {
 		}
 	}
 
-	public function get_typelist(){
+	public function get_typelist() {
 		$output = array();
 		$result = $this->db->query("SELECT
 		`inv_po_types`.id,
@@ -906,7 +907,7 @@ class Licensemodel extends CI_Model {
 		return implode($output, "\n");
 	}
 
-	public function addpotoset(){
+	public function addpotoset() {
 		$this->output->enable_profiler(TRUE);
 		$set = $this->input->post("typelist");
 		$setid = 0;
@@ -934,7 +935,7 @@ class Licensemodel extends CI_Model {
 		//print $query;
 	}
 
-	public function saveset(){
+	public function saveset() {
 		$result = $this->db->query("UPDATE 
 		inv_po_licenses_items
 		SET 
@@ -955,7 +956,7 @@ class Licensemodel extends CI_Model {
 		return $this->input->post("lid");
 	}
 
-	public function po_usage_get(){
+	public function po_usage_get() {
 		$stat   = array();
 		$output = array();
 		//

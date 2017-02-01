@@ -69,25 +69,25 @@ class Usefulmodel extends CI_Model {
 		$result = $this->db->query("SELECT DISTINCT
 		users.login,
 		`resources_pid`.pid_value,
-		INET_NTOA(`resources_pid`.pid_value) as ip
+		INET_NTOA(`resources_pid`.pid_value) AS ip
 		FROM
 		resources_items
 		INNER JOIN users ON (resources_items.uid = users.id)
 		INNER JOIN `resources_pid` ON (resources_items.id = `resources_pid`.item_id)
 		WHERE
-		(resources_items.ok) AND 
-		(NOT (resources_items.`exp`)) AND 
-		(NOT (resources_items.del)) AND 
-		(resources_items.rid = 101) AND
-		`resources_pid`.`pid` = 6 AND
-		not users.`fired`
+		(resources_items.ok)
+		AND (NOT (resources_items.`exp`))
+		AND (NOT (resources_items.del))
+		AND (resources_items.rid = 101)
+		AND `resources_pid`.`pid` = 6
+		AND not users.`fired`
 		ORDER BY `resources_pid`.pid_value");
-		if($result->num_rows()){
+		if ($result->num_rows()) {
 			foreach($result->result() as $row){
 				$input[$row->ip] = $row->ip."/255.255.255.255 # ".$row->login;
 			}
 		}
-		foreach($input as $key => $val ){
+		foreach($input as $key => $val ) {
 			$subnet = explode(".",$key);
 			if($subnet[2]!==$cl){
 				$cl = $subnet[2];
@@ -95,9 +95,11 @@ class Usefulmodel extends CI_Model {
 			}
 			array_push($output, $val);
 		}
-		$telnet=fsockopen("212.14.176.38", 587);
+		/*
+		$telnet=fsockopen("212.14.176.41", 587);
 		(!$telnet) ? die ("Cannot connect!") : fputs($telnet,implode($output,"\n"));
 		($telnet) ? fclose($telnet) : "";
+		*/
 	}
 
 	public function regenerateMailPWD($itemID) {

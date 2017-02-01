@@ -212,9 +212,9 @@ $(".activate").click(function() {
 		type    : "POST",
 		data    : {
 			id    : id,
-			num   : ($("#nm_" + id).val()    === undefined || !$("#nm_" + id).val().length)   ? 0 : $("#nm_" + id).val(),
-			ip    : ($("#ip_" + id).val()    === undefined || $("#ip_" + id).val().length)    ? 0 : $("#ip_" + id).val(),
-			email : ($("#email_" + id).val() === undefined || $("#email_" + id).val().length) ? 0 : $("#email_" + id).val(),
+			num   : ($("#nm_" + id).val()    === undefined || !$("#nm_" + id).val().length)    ? 0 : $("#nm_" + id).val(),
+			ip    : ($("#ip_" + id).val()    === undefined || !$("#ip_" + id).val().length)    ? 0 : $("#ip_" + id).val(),
+			email : ($("#email_" + id).val() === undefined || !$("#email_" + id).val().length) ? 0 : $("#email_" + id).val(),
 			date  : ($("#date_" + id).val()  === undefined) ? 0 : $("#date_" + id).val()
 		},
 		success : function(data) {

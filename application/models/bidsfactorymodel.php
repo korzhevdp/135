@@ -137,7 +137,8 @@ class Bidsfactorymodel extends CI_Model {
 		`staff`.staff AS `otv_dl`,
 		UCASE(departments.`dn_blank`) AS `org`,
 		departments.`cred`,
-		departments.`zakaz`
+		--departments.`zakaz`,
+		'' AS `zakaz`
 		FROM
 		users
 		INNER JOIN departments ON (users.`dep_id` = departments.id)
@@ -845,6 +846,7 @@ class Bidsfactorymodel extends CI_Model {
 		`users`.name_f,
 		`users`.name_i,
 		`users`.name_o,
+		CONCAT(LEFT(users.name_i, 1),'.', LEFT(users.name_o, 1), '. ', users.name_f) AS fio,
 		`users`.login,
 		`users`.staff_id,
 		`users`.office_id,
@@ -870,6 +872,7 @@ class Bidsfactorymodel extends CI_Model {
 					'phone'       => $row->phone,
 					'login'       => $row->login,
 					'fulladdress' => $row->office,
+					'shortenfio'  => $row->fio,
 					'office2'     => $row->office_id,
 					'office'      => $row->office_id,
 					'staff'       => $row->staff_id,
@@ -1016,12 +1019,20 @@ class Bidsfactorymodel extends CI_Model {
 		if ( $staffID == 40 ) {
 			$otv_dl = 'Помощник Главы муниципального образования "Город Архангельск"';
 		}
+		if ($this->primary) {
+			$fio = $this->input->post("name_f")." ".strtoupper(substr($this->input->post("name_i"), 0, 1).".".substr($this->input->post("name_o").".", 0 ,1));
+		}
+		if (!$this->primary) {
+			$fio = $this->bidsData[$this->itemID]['shortenfio'];
+		}
+
+		//print_r($this->bidsData);
 		return array(
-			'fio'    => $this->input->post("name_f")." ".strtoupper(substr($this->input->post("name_i"), 0, 1).".".substr($this->input->post("name_o").".", 0 ,1)),
+			'fio'    => $fio,
 			'otv_dl' => $otv_dl,
 			'org'    => "", //"Мэрия города Архангельска";
 			'cred'   => "пл.В.И.Ленина, д.5, г.Архангельск, 163000<br>тел. 65-64-84, факс 65-20-71<br>Е-mail: adminkir@arhcity.ru; http:// www.arhcity.ru",
-			'zakaz'  => 'Общий отдел Администрации муниципального образования "Город Архангельск". Заказ 001.  01.01.2016'
+			'zakaz'  => ''//Общий отдел Администрации муниципального образования "Город Архангельск". Заказ 001.  01.01.2016'
 		);
 	}
 
