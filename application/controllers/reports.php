@@ -19,6 +19,7 @@ class Reports extends CI_Controller {
 		$lists           = $this->armmodel->param_lists_get();
 		$lists['cios']   = $this->get_cio();
 		$lists['pcless'] = $this->get_pcless();
+		$lists['emailless'] = $this->get_emailless();
 		$act = array(
 			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->load->view('reports/standardreports', $lists, true),
@@ -391,7 +392,42 @@ class Reports extends CI_Controller {
 		ORDER BY mail");
 		if ($result->num_rows()) {
 			foreach ($result->result() as $row) {
-				array_push($output, "<tr><td>".$iterator++.". ".$row->mail."</td><td>".$row->fio."</td><td>".$row->staff."</td><td>".$row->dn."</td></tr>");
+				array_push($output, "<tr><td>".$iterator++."</td><td>".$row->mail."</td><td>".$row->fio."</td><td>".$row->staff."</td><td>".$row->dn."</td></tr>");
+			}
+		}
+		return implode($output, "\n");
+	}
+	
+	private function get_emailless() {
+		//$this->output->enable_profiler(TRUE);
+		$staff_list = array( 8, 9, 10, 4, 11, 21, 22, 23, 27, 32, 45, 28, 29, 40 );
+		$output     = array();
+		$iterator   = 1;
+		$result     = $this->db->query("SELECT
+		users.id,
+		CONCAT_WS(' ', users.name_f, users.name_i, users.name_o) AS fio,
+		`staff`.staff,
+		`departments`.dn
+		FROM
+		users
+		LEFT OUTER JOIN `staff` ON (users.staff_id = `staff`.id)
+		LEFT OUTER JOIN `departments` ON (users.dep_id = `departments`.id)
+		WHERE
+		(users.staff_id IN (".implode($staff_list, ", ")."))
+		AND (users.id NOT IN (
+			SELECT resources_items.uid 
+			FROM resources_items 
+			WHERE 
+			(resources_items.rid = 100) 
+			AND (resources_items.ok) 
+			AND (NOT (resources_items.`exp`)) 
+			AND (NOT (resources_items.del)))
+		)
+		AND (NOT (users.fired))
+		ORDER BY departments.dn, users.staff_id, fio");
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				array_push($output, "<tr><td>".$iterator++.'</td><td><a href="/admin/users/'.$row->id.'">'.$row->fio."</a></td><td>".$row->staff."</td><td>".$row->dn."</td></tr>");
 			}
 		}
 		return implode($output, "\n");

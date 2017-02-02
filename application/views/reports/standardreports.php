@@ -11,6 +11,7 @@
 	<ul class="nav nav-tabs">
 		<li class="active"><a href="#tab1" data-toggle="tab">Текущие конфигурации ПК</a></li>
 		<li><a href="#tab2" data-toggle="tab">Руководители</a></li>
+		<li><a href="#tab4" data-toggle="tab">Беспочтовые руководители</a></li>
 		<li><a href="#tab3" data-toggle="tab">Бескомпьютерные</a></li>
 	</ul>
 	<div class="tab-content">
@@ -37,9 +38,17 @@
 		<div class="tab-pane" id="tab2">
 			<table class="table table-bordered table-condensed table-striped">
 			<tr>
-				<th>email</th><th>ФИО</th><th>Должность</th><th>Подразделение</th>
+				<th>#</th><th>email</th><th>ФИО</th><th>Должность</th><th>Подразделение</th>
 			</tr>
 			<?=$cios;?>
+			</table>
+		</div>
+		<div class="tab-pane" id="tab4">
+			<table class="table table-bordered table-condensed table-striped">
+			<tr>
+				<th>#</th><th style="width:250px;">ФИО</th><th>Должность</th><th>Подразделение</th>
+			</tr>
+			<?=$emailless;?>
 			</table>
 		</div>
 		<div class="tab-pane" id="tab3">

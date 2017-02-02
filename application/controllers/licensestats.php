@@ -32,11 +32,6 @@ class Licensestats extends CI_Controller {
 	}
 
 	public function servers(){
-		//$this->output->enable_profiler(TRUE);
-		$input   = array();
-		$input2  = array();
-		$output  = array();
-		$setlist = array();
 		$result  = $this->db->query("SELECT DISTINCT
 		ak_licenses.id AS akid,
 		ak_licenses.hostname,
@@ -66,47 +61,14 @@ class Licensestats extends CI_Controller {
 		ak_licenses.product_name,
 		inv_po_licenses.number");
 		if ( $result->num_rows() ) {
-			foreach ( $result->result_array() as $row ) {
-				$input[$row['akid']] = $row;
-				if ( strlen($row['setid']) ) {
-					if ( !isset($setlist[$row['setid']]) ) {
-						$setlist[$row['setid']] = 0;
-					}
-					$setlist[$row['setid']] += 1;
-				}
-			}
-			$result = $this->db->query('SELECT
-			`inv_po_types`.name,
-			`inv_po_licenses_items`.`set_id`
-			FROM
-			`inv_po_licenses_items`
-			INNER JOIN `inv_po_licenses_sets` ON (`inv_po_licenses_items`.set_id = `inv_po_licenses_sets`.id)
-			LEFT OUTER JOIN `inv_po_types` ON (`inv_po_licenses_items`.type_id = `inv_po_types`.id)
-			WHERE `inv_po_licenses_items`.`master`
-			AND `inv_po_licenses_items`.`set_id` IN ('.implode(array_keys($setlist), ",").')');
-			if ($result->num_rows()) {
-				foreach($result->result() as $row) {
-					$input2[$row->set_id] = $row->name;
-				}
-			}
-			foreach ($input as $licenseData) {
-				if (strlen($licenseData['setid']) && isset($input2[$licenseData['setid']])) {
-					$licenseData['from']   = $input2[$licenseData['setid']];
-				} else {
-					$licenseData['lmode']  = "";
-					$licenseData['master'] = 1;
-				}
-				
-				$licenseData['annot'] = ($licenseData['master'])
-					? $licenseData['product_name']
-					: $licenseData['product_name'].' <small class="muted">даунгрейд c '.$licenseData['from']."</small>";
-				array_push($output, $this->load->view("license/listitems/serverlistitem", $licenseData, true));
-			}
+			$input   = $this->getServerLicenseUnits($result);
+			$setlist = $this->collectSets($result);
+			$input2  = $this->getSetMasterSW($setlist);
 		}
 		$data = array(
 			'serverLicenses' => $this->licensemodel->serverlicenses_get(),
 			'modals'		 => $this->load->view('license/modals', array('dep_id' => 77, 'userid' => 592), true),
-			'licenseList'	 => implode($output, "\n")
+			'licenseList'	 => $this->getServerSWTable($input, $input2)
 		);
 		$act = array(
 			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
@@ -117,10 +79,65 @@ class Licensestats extends CI_Controller {
 		$this->load->view('page_container', $act);
 	}
 
-	public function contents(){
-		$input  = array();
+	private function getServerLicenseUnits($result) {
+		$input = array();
+		foreach ( $result->result_array() as $row ) {
+			$input[$row['akid']] = $row;
+		}
+		return $input;
+	}
+
+	private function collectSets($result) {
+		foreach ( $result->result_array() as $row ) {
+			if ( strlen($row['setid']) ) {
+				if ( !isset($setlist[$row['setid']]) ) {
+					$setlist[$row['setid']] = 0;
+				}
+				$setlist[$row['setid']] += 1;
+			}
+		}
+		return $setlist;
+	}
+
+	private function getSetMasterSW($setlist) {
 		$output = array();
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query('SELECT
+		`inv_po_types`.name,
+		`inv_po_licenses_items`.`set_id`
+		FROM
+		`inv_po_licenses_items`
+		INNER JOIN `inv_po_licenses_sets` ON (`inv_po_licenses_items`.set_id = `inv_po_licenses_sets`.id)
+		LEFT OUTER JOIN `inv_po_types` ON (`inv_po_licenses_items`.type_id = `inv_po_types`.id)
+		WHERE `inv_po_licenses_items`.`master`
+		AND `inv_po_licenses_items`.`set_id` IN ('.implode(array_keys($setlist), ",").')');
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
+				$output[$row->set_id] = $row->name;
+			}
+		}
+		return $output;
+	}
+
+	private function getServerSWTable($input, $input2) {
+		$output = array();
+		foreach ($input as $licenseData) {
+			if (strlen($licenseData['setid']) && isset($input2[$licenseData['setid']])) {
+				$licenseData['from']   = $input2[$licenseData['setid']];
+			} else {
+				$licenseData['lmode']  = "";
+				$licenseData['master'] = 1;
+			}
+			$licenseData['annot'] = ($licenseData['master'])
+				? $licenseData['product_name']
+				: $licenseData['product_name'].' <small class="muted">даунгрейд c '.$licenseData['from']."</small>";
+			array_push($output, $this->load->view("license/listitems/serverlistitem", $licenseData, true));
+		}
+		return implode($output, "\n");
+	}
+
+	public function contents(){
+		$output = "";
+		$result = $this->db->query("SELECT
 		CONCAT_WS(' - ', `inv_po_licensiars`.name, inv_po_licenses.number) as l_number,
 		inv_po_licenses.id as lid,
 		inv_po_licenses_sets.`max`,
@@ -135,68 +152,75 @@ class Licensestats extends CI_Controller {
 		LEFT OUTER JOIN inv_po_types ON (inv_po_licenses_items.type_id = inv_po_types.id)
 		LEFT OUTER JOIN `inv_po_licensiars` ON (inv_po_licenses.licensiar_id = `inv_po_licensiars`.id)
 		WHERE
-		inv_po_licenses_items.master = 1
-		AND inv_po_types.serverwise = 1
+		inv_po_licenses_items.master
+		AND inv_po_types.serverwise
 		AND NOT (inv_po_licenses_sets.deleted)
 		AND inv_po_licenses_items.`act`
 		ORDER BY
-		inv_po_licenses_items.master DESC,
-		l_number");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				if(!isset($input[$row->lid])){
-					$input[$row->lid] = array();
-					$input[$row->lid]['desc'] = $row->l_number;
-				}
-				if(!isset($input[$row->lid][$row->id])){
-					$input[$row->lid][$row->id] = array();
-				}
-				array_push($input[$row->lid][$row->id], array('name' => $row->name, 'count' => $row->max, 'pk' => $row->value, 'master' => $row->master));
+		inv_po_licenses_items.master DESC, l_number");
+		if ($result->num_rows()) {
+			$input  = $this->getServerLicenseContentData($result);
+			$output = $this->getServerLicenseContentTable($input);
+		}
+		$act  = array(
+			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
+			'content' => $this->load->view('license/serverlicensescontent', array('list' => $output), true),
+			'footer'  => $this->load->view('page_footer', array(), true)
+		);
+		$this->usefulmodel->no_cache();
+		$this->load->view('page_container', $act);
+	}
+
+	private function getServerLicenseContentData($result) {
+		$input = array();
+		foreach ($result->result() as $row) {
+			if (!isset($input[$row->lid])) {
+				$input[$row->lid] = array('desc' => $row->l_number);
 			}
-			$sid = 1;
-			foreach($input as $lid => $sets){
-				$string = '<tr>
-					<td colspan=4><a href="/licenses/statistics/'.$lid.'">'.$sets['desc'].'</a></td>
-				</tr>';
-				array_push($output, $string);
-				foreach($sets as $sid => $items){
-					if($sid == 'desc'){
-						continue;
-					}
+			if (!isset($input[$row->lid][$row->id])) {
+				$input[$row->lid][$row->id] = array();
+			}
+			$setItemData = array(
+				'name'   => $row->name,
+				'count'  => $row->max,
+				'pk'     => $row->value,
+				'master' => $row->master
+			);
+			array_push($input[$row->lid][$row->id], $setItemData);
+		}
+		return $input;
+	}
+
+	private function getServerLicenseContentTable($input) {
+		$output = array();
+		$sid    = 1;
+		foreach ($input as $lid => $sets) {
+			$string = '<tr>
+				<td colspan=4><a href="/licensestats/statistics/'.$lid.'">'.$sets['desc'].'</a></td>
+			</tr>';
+			array_push($output, $string);
+			foreach ($sets as $sid => $items) {
+				if ($sid !== 'desc'){
 					$rowspan = sizeof($items);
 					$rws = 0;
-					//print_r($items);
 					foreach($items as $item){
-						$style = ($sid % 2) ? 'style = "background-color:#f3f3f3"' : 'style = "background-color:#e0e0FF"';
-						$style2 = ($item['master']) ? "" : ' class="muted"';
+						$style    = ($sid % 2) ? 'style = "background-color:#f3f3f3"' : 'style = "background-color:#e0e0FF"';
+						$style2   = ($item['master']) ? "" : ' class="muted"';
 						$spanning = ($rws) ? "" : "<td rowspan=".$rowspan." ".$style.">&nbsp;</td>";
-						$string = "<tr>
+						$string   = "<tr>
 						".$spanning."
 						<td ".$style2.">".$item['name']."</td>
 						<td ".$style2.">".$item['count']."</td>
 						<td ".$style2.">".$item['pk']."</td>
 						</tr>";
 						array_push($output, $string);
-						$rws++;
+						$rws = 1;
 					}
 					$sid++;
 				}
 			}
 		}
-		//print_r($input);
-		$act = array(
-			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
-			'content' => '<h4>Лицензии общим списком</h4><table class="table table-bordered table-condensed">
-		<tr>
-			<th style="width:120px;">Лицензия</th>
-			<th>Название</th>
-			<th>Количество установок</th>
-			<th>Ключ</th>
-			</tr>'.implode($output, "\n").'</table>',
-			'footer'  => $this->load->view('page_footer', '', true)
-		);
-		$this->usefulmodel->no_cache();
-		$this->load->view('page_container', $act);
+		return implode($output, "\n");
 	}
 
 	public function usage(){

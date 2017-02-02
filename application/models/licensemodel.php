@@ -938,7 +938,7 @@ class Licensemodel extends CI_Model {
 	public function saveset() {
 		$result = $this->db->query("UPDATE 
 		inv_po_licenses_items
-		SET 
+		SET
 		inv_po_licenses_items.value = ?,
 		inv_po_licenses_items.master = 0,
 		inv_po_licenses_items.type = ?,
@@ -956,16 +956,8 @@ class Licensemodel extends CI_Model {
 		return $this->input->post("lid");
 	}
 
-	public function po_usage_get() {
+	private function getSWTypesTotalAmount() {
 		$stat   = array();
-		$output = array();
-		//
-		/*
-		Использование лицензий. Сначала делается выборка всех наборов софта с суммированием по типу ПО
-		Общее количество лицензированных установок ПО, вычисляется по имеющимся в базе лицензиям по каждому типу ПО,
-		включенному в отчёты
-		*/
-		//
 		$result = $this->db->query("SELECT
 		SUM(inv_po_licenses_sets.max) AS `totalsum`,
 		inv_po_types.name,
@@ -978,26 +970,23 @@ class Licensemodel extends CI_Model {
 		NOT inv_po_licenses_sets.deleted
 		AND inv_po_licenses_items.act
 		AND inv_po_licenses_items.`type` <> 'KMS'
-		AND inv_po_licenses_items.type_id IN (
-			SELECT
-			`inv_po_types`.`id`
-			FROM `inv_po_types`
-			WHERE 
-			`inv_po_types`.`inreport` = 'Y'
-		)
+		AND inv_po_licenses_items.type_id IN ( SELECT `inv_po_types`.`id` FROM `inv_po_types` WHERE `inv_po_types`.`inreport` = 'Y' )
 		GROUP BY
 		inv_po_licenses_items.type_id
 		ORDER BY
 		inv_po_types.name");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
 				$stat[$row->type_id] = array(
 					'name'     => $row->name,
 					'totalsum' => $row->totalsum
 				);
 			}
 		}
+		return $stat;
+	}
 
+	private function getSWTypesUsedByMasterTypeAmount($stat) {
 		$result = $this->db->query("SELECT
 		IFNULL(SUM(inv_po_licenses_sets.max), 0) AS difference,
 		inv_po_types.name,
@@ -1022,15 +1011,17 @@ class Licensemodel extends CI_Model {
 		inv_po_types.name
 		ORDER BY
 		inv_po_licenses_items.type_id");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
+		if ($result->num_rows()) {
+			foreach ($result->result() as $row) {
 				$stat[$row->type_id]['diff']  = $row->difference;
 			}
 		}
-		
+		return $stat;
+	}
 
+	private function getSWTypesUsageByPC() {
 		$use_count = array();
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		COUNT(ak_licenses.item_id) AS usage_sum,
 		ak_licenses.item_id,
 		`inv_po_types`.id
@@ -1050,30 +1041,38 @@ class Licensemodel extends CI_Model {
 				);
 			}
 		}
-		
-		$table = array();
-		//print_r($stat);
-		//return true;
-		foreach($stat as $key => $val){
-			//print $use_count[$key]['sum']."<br>";
+		return $use_count;
+	}
 
+	private function getSWUsageResultTable($stat, $use_count) {
+		$table = array();
+		foreach($stat as $key => $val) {
 			$val['diff']  = (isset($val['diff']))   ? $val['diff']  : 0 ;
 			$val['diff']  = (strlen($val['diff']))  ? $val['diff']  : 0 ;
-
-			$usage_qty  = (!isset($use_count[$key]['sum'])  || !strlen($use_count[$key]['sum']))  ? "-" : $use_count[$key]['sum'];
-			$usage_item = (!isset($use_count[$key]['item']) || !strlen($use_count[$key]['item'])) ? 0   : $use_count[$key]['item'];
-			$string ='<tr style="cursor:pointer" class="relShow" ref="'.$key.'">
-			<td>'.$val['name'].'</td>
-			<td>'.$val['diff'].'<span class="muted" title="С учётом даунгрейда"> / '.$val['totalsum'].'</span></td>
-			<td>'.$usage_qty.'</td>
-			</tr>
-			<tr class="relrow hide" id="relrow'.$key.'">
-				<td colspan=3 id="relation'.$key.'"></td>
-			</tr>';
+			$val['usage_qty']  = (!isset($use_count[$key]['sum'])  || !strlen($use_count[$key]['sum']))  ? "-" : $use_count[$key]['sum'];
+			$val['usage_item'] = (!isset($use_count[$key]['item']) || !strlen($use_count[$key]['item'])) ? 0   : $use_count[$key]['item'];
+			$val['key']        = $key;
+			$string = $this->load->view("license/listitems/usagelistitem", $val, true);
 			array_push($table, $string);
 		}
+		return implode($table, "\n");
+	}
 
-		$output['content'] = implode($table, "\n");
+
+	public function po_usage_get() {
+
+		$output = array();
+		//
+		/*
+		Использование лицензий. Сначала делается выборка всех наборов софта с суммированием по типу ПО
+		Общее количество лицензированных установок ПО, вычисляется по имеющимся в базе лицензиям по каждому типу ПО,
+		включенному в отчёты
+		*/
+		//
+		$stat      = $this->getSWTypesTotalAmount();
+		$stat      = $this->getSWTypesUsedByMasterTypeAmount($stat);
+		$use_count = $this->getSWTypesUsageByPC();
+		$output['content'] = $this->getSWUsageResultTable($stat, $use_count);
 		return $this->load->view('license/licenseusage', $output, true);
 	}
 
@@ -1089,20 +1088,14 @@ class Licensemodel extends CI_Model {
 		ORDER BY
 		inv_po_installed_software.po_name", array($this->input->post('host')));
 		if ($result->num_rows()) {
-			foreach($result->result() as $row) {
-				$localID = sizeof($output);
-				$string  = '<tr>
-				<td>
-					<input class="poCheck" type="checkbox" id="i'.$localID.'" title="'.$row->scandate.'" refn="'.$row->po_name.'">
-				</td>
-				<td>
-					<label for="i'.$localID.'" style="cursor:pointer;">'.$row->po_name.'</label>
-				</td>
-				</tr>';
-				array_push($output, $string);
+			foreach ($result->result_array() as $row) {
+				$row['localID'] = sizeof($output);
+				array_push($output, $this->load->view("license/listitems/swlistitem", array(), true));
 			}
 			print implode($output, "\n");
+			return true;
 		}
+		print "Ничего не найдено";
 	}
 }
 
