@@ -428,9 +428,6 @@ class Bidsfactorymodel extends CI_Model {
 				'inetReason' => $this->input->post('inet_reason')  ? iconv('utf-8', 'windows-1251', $this->input->post('inet_reason'))  : $this->defaultReason
 			);
 			$orderID = $this->insertNewOrder();									// вставляем в базу новую заявку, получаем индекс новой заявки
-			$subsdata= $this->getIMSubs( $orderID );
-			$this->insertResource($resdata);
-			$this->insertSubs($subsdata);
 			if ( isset($this->resList[100])) {
 				array_push( $resdata, array('uid' => $this->UID, 'order_id' => $orderID, 'rid' => 100) );
 				array_push( $templatedata['action'], "предоставить доступ к почтовому ящику электронной почты с адресом ".$inputData['mailBox']."@arhcity.ru на сервере электронной почты для ".$inputData['mailReason'] );
@@ -442,7 +439,10 @@ class Bidsfactorymodel extends CI_Model {
 				array_push( $templatedata['action'], 'доступ к сети "Интернет" для '.$inputData['inetReason'] );
 				array_push( $templatedata['decision'], $this->decisions[101] );
 			}
-			//print_r($templatedata);
+			$this->insertResource($resdata);
+			$subsdata= $this->getIMSubs( $orderID );
+
+			$this->insertSubs($subsdata);
 		}
 		if ( !$this->primary ) {
 			foreach ($this->pidData as $key=>$val) {
@@ -1144,8 +1144,8 @@ class Bidsfactorymodel extends CI_Model {
 		* Выдаёт строку в HTML, направляемую пользователю
 		*/
 		$this->dbwrite      = ((int)$this->session->userdata('admin_id') === 1) ? true : true;
-		$this->expose       = ((int)$this->session->userdata('admin_id') === 1) ? false  : false;
-		$this->wrap_to_word = ((int)$this->session->userdata('admin_id') === 1) ? true : true;
+		$this->expose       = ((int)$this->session->userdata('admin_id') === 1) ? true  : false;
+		$this->wrap_to_word = ((int)$this->session->userdata('admin_id') === 1) ? false : true;
 
 		if ($this->expose) {
 			$this->output->enable_profiler(TRUE);

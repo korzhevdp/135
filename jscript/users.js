@@ -205,6 +205,12 @@ function recode(){
 	$("#f_login").val(output);
 }
 */
+$("input[id^='ip_']").keyup(function() {
+	//alert($(this).val());
+	//str = $(this).val().replace(/\,\//gi, '.')
+	$(this).val(str);
+});
+
 $(".activate").click(function() {
 	var id = $(this).attr('prop');
 	$.ajax({

@@ -8,6 +8,8 @@ class Console extends CI_Controller {
 			$this->load->helper('url');
 			redirect('login/index/auth');
 		}
+
+		$this->session->set_userdata('pageHeader', 'Поиск людей');
 		(!$this->session->userdata('filter')) ? $this->session->set_userdata('filter', '') : "";
 		(!$this->session->userdata('uid'))    ? $this->session->set_userdata('uid', 1)     : "";
 		$this->load->model('consmodel');
@@ -40,6 +42,7 @@ class Console extends CI_Controller {
 	}
 
 	public function pcflow($user_id=0, $page=1){
+		$this->session->set_userdata('pageHeader', 'Движение компьютеров');
 		$data = array(
 			'filter' => (strlen($this->input->post('userid'))) ? $this->input->post('userid') : ""
 		);

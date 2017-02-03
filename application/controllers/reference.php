@@ -8,6 +8,8 @@ class Reference extends CI_Controller {
 			$this->load->helper('url');
 			redirect('login/index/auth');
 		}
+		$this->session->set_userdata('pageHeader', 'Справочники');
+
 		$this->load->model('refmodel');
 		$this->load->model('usefulmodel');
 		//$this->output->enable_profiler(TRUE);
@@ -115,6 +117,7 @@ class Reference extends CI_Controller {
 	}
 
 	public function useraccess($location=0){
+		$this->session->set_userdata('pageHeader', 'Управление операторами');
 		if($this->input->post("newpassword")){
 			$this->refmodel->new_password();
 		}

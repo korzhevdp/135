@@ -8,6 +8,8 @@ class Uvmr extends CI_Controller {
 			$this->load->helper('url');
 			redirect('login/index/auth');
 		}
+		$this->session->set_userdata('pageHeader', 'Îò÷¸òû ÓÌÂĞÃÎÇÈèÀÎ');
+
 		(!$this->session->userdata('filter')) ? $this->session->set_userdata('filter','') : "";
 		(!$this->session->userdata('uid')) ? $this->session->set_userdata('uid',1) : "";
 		$this->load->model('uvmrmodel');
@@ -29,6 +31,7 @@ class Uvmr extends CI_Controller {
 
 	public function passport($user_id=0){
 		//$this->output->enable_profiler(TRUE);
+		$this->session->set_userdata('pageHeader', 'Ïàñïîğò ğàáî÷åãî ìåñòà');
 		$act = array();
 		$user = $this->uvmrmodel->passport_get($user_id);
 		//print_r($user);

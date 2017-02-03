@@ -3,6 +3,7 @@
 class Adminmodel extends CI_Model {
 	function __construct(){
 		parent::__construct();	// Call the Model constructor
+		$this->load->model("usefulmodel");
 	}
 
 	public function userdata_get($user_id = 0, $page = 1) {
@@ -101,39 +102,28 @@ class Adminmodel extends CI_Model {
 	private function getUserServiceList($user) {
 		$result = $this->db->query("SELECT 
 		users.id,
-		CONCAT_WS(' ',users.name_f, users.name_i, users.name_o) AS serviceman
+		CONCAT_WS(' ',users.name_f, users.name_i, users.name_o) AS value
 		FROM
 		users
 		WHERE `users`.`sman` = 1
 		AND `users`.`fired` = 0
 		ORDER BY
-		CONCAT(users.name_f, users.name_i, users.name_o)", array($user['service']));
+		CONCAT(users.name_f, users.name_i, users.name_o)");
 		if ($result->num_rows()) {
-			$output = array();
-			foreach ($result->result() as $row) {
-				$selected = ($user['service'] == $row->id) ? ' selected="selected"' : '';
-				$string   = '<option value="'.$row->id.'"'.$selected.'>'.$row->serviceman.'</option>';
-				array_push($output, $string);
-			}
-			return implode($output, "\n");
+			return $this->usefulmodel->returnList($result, $user['service']);
 		}
+		return "";
 	}
 
 	private function getUserStaffList($user) {
 		$result = $this->db->query("SELECT
 		`staff`.id,
-		`staff`.staff
+		`staff`.staff as value
 		FROM
 		`staff`
 		ORDER BY `staff`.`staff`", array($user['staff_id']));
 		if ($result->num_rows()){
-			$output = array();
-			foreach($result->result() as $row) {
-				$selected = ($user['staff_id'] == $row->id) ? ' selected="selected"' : '';
-				$string   = '<option value="'.$row->id.'"'.$selected.'>'.$row->staff.'</option>';
-				array_push($output, $string);
-			}
-			return implode($output,"\n");
+			return $this->usefulmodel->returnList($result, $user['staff_id']);
 		}
 		return "";
 	}
@@ -141,19 +131,13 @@ class Adminmodel extends CI_Model {
 	private function getUserDeptList($user) {
 		$result = $this->db->query("SELECT
 		departments.id,
-		departments.dn
+		departments.dn AS value
 		FROM
 		departments
 		ORDER BY
-		departments.dn", array($user['dep_id']));
+		departments.dn");
 		if ($result->num_rows()) {
-			$output = array();
-			foreach ($result->result() as $row) {
-				$selected = ($user['dep_id'] == $row->id) ? ' selected="selected"' : "";
-				$string = '<option value="'.$row->id.'"'.$selected.'>'.$row->dn.'</option>';
-				array_push($output, $string);
-			}
-			return implode($output, "\n");
+			return $this->usefulmodel->returnList($result,  $user['dep_id']);
 		}
 		return "";
 	}
@@ -171,7 +155,7 @@ class Adminmodel extends CI_Model {
 			if ($result->num_rows()) {
 				$output = array();
 				foreach ($result->result() as $row) {
-					array_push($output,$row->networkcard_macaddress);
+					array_push($output, $row->networkcard_macaddress);
 				}
 				return implode($output, ";  ");
 			}

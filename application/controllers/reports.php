@@ -8,6 +8,8 @@ class Reports extends CI_Controller {
 			$this->load->helper('url');
 			redirect('login/index/auth');
 		}
+		$this->session->set_userdata('pageHeader', 'Стандартные отчёты');
+
 		(!$this->session->userdata('filter')) ? $this->session->set_userdata('filter', '') : "";
 		(!$this->session->userdata('uid'))    ? $this->session->set_userdata('uid', 1)     : "";
 		$this->load->model('usefulmodel');
@@ -117,6 +119,8 @@ class Reports extends CI_Controller {
 	}
 
 	public function timetable($year = 0, $month = 0, $mode="html") {
+		$this->session->set_userdata('pageHeader', 'Табель рабочего времени');
+
 		$year      = ($year)  ? $year  : date("Y");
 		$month     = ($month) ? $month : date("n");
 		$prevMth   = mktime(0, 0, 0, $month-1, 1, $year);
@@ -307,6 +311,7 @@ class Reports extends CI_Controller {
 	}
 
 	public function esia() {
+		$this->session->set_userdata('pageHeader', 'Взаимодествие с ЕСИА');
 		$act = array(
 			'menu'    => $this->load->view('menu/navigation', $this->usefulmodel->getNavMenuData(), true),
 			'content' => $this->getEsiaStates(),

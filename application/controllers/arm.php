@@ -8,6 +8,7 @@ class Arm extends CI_Controller {
 			$this->load->helper('url');
 			redirect('login/index/auth');
 		}
+		$this->session->set_userdata('pageHeader', 'Ó÷¸ò ÀÐÌ');
 		$this->load->model('armmodel');
 		$this->load->model('usefulmodel');
 		//$this->output->enable_profiler(TRUE);

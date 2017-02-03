@@ -9,6 +9,8 @@ class Bids extends CI_Controller {
 	
 	public function __construct() {
 		parent::__construct();
+		$this->session->set_userdata('pageHeader', 'Подача заявок на информационные ресурсы');
+
 		$this->load->model('bidsmodel2');								// подключается модель UI заявок
 		$this->load->model('bidsuimodel');								// подключается модель UI заявок
 		$this->load->model('usefulmodel');								// подключается модель утилит

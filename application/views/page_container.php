@@ -1,7 +1,9 @@
 <!doctype html>
 <html lang="ru">
 <head>
-	<title>Пользователь - детали</title>
+	<title><?=$this->session->userdata('pageHeader');?></title>
+	
+	<link rel="icon" type="image/png" href="/images/information-button.png" />
 	<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
 	<meta http-equiv="X-UA-Compatible" content="IE=9" />
 	<meta http-equiv="Expires" content="0">

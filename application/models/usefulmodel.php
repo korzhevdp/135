@@ -151,13 +151,11 @@ class Usefulmodel extends CI_Model {
 
 	public function returnList($result, $selectedValue=false) {
 		$output   = array('<option value="0">Не выбрано</option>');
-		$selected = "";
 		if ($result->num_rows()) {
 			foreach ($result->result() as $row) {
-				if ($selectedValue) {
-					if ($row->id == $selectedValue) {
-						$selected = ' selected="selected"';
-					}
+				$selected = "";
+				if ($selectedValue && $row->id == $selectedValue) {
+					$selected = ' selected="selected"';
 				}
 				$string = '<option value="'.$row->id.'"'.$selected.'>'.$row->value.'</option>';
 				array_push($output, $string);

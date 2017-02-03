@@ -69,14 +69,12 @@ class Events extends CI_Controller {
 		AND events.active_since < NOW()
 		".$where."
 		ORDER BY FIELD(events.recipient, 1) DESC, events.`id` DESC
-		LIMIT 50", array(
-			$this->session->userdata("canSee")
-		));
+		LIMIT 50", array($this->session->userdata("canSee")));
 
 		if($result->num_rows()){
 			foreach ($result->result() as $row) {
 				$string = '<table class="table table-condensed table-bordered">
-				<tr'.( ( (int) $row->recipient === 1) ? ' class="warning"' : "" ).'>
+				<tr'.(in_array((int) $row->recipient, array(1 , 0)) ? ' class="warning"' : "" ).'>
 				'.$row->text.'
 				<td class="date">'.$row->created.'</td>
 				<td class="control" title="Снять с контроля"><a href="/events/markdone/'.$row->id.'"><i class="icon-remove icon-white"></i></a></td>

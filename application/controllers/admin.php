@@ -8,6 +8,8 @@ class Admin extends CI_Controller {
 			$this->load->helper('url');
 			redirect('login/index/auth');
 		}
+		$this->session->set_userdata('pageHeader', 'Пользователь - детали');
+
 		(!$this->session->userdata('filter')) ? $this->session->set_userdata('filter', '') : "";
 		(!$this->session->userdata('uid'))    ? $this->session->set_userdata('uid', 1) : "";
 		$this->load->model('adminmodel');
@@ -20,6 +22,7 @@ class Admin extends CI_Controller {
 	}
 
 	public function index($user_id=0, $page=1){
+		$this->session->set_userdata('pageHeader', 'Движение заявок');
 		$data = array('tickets' => 0);
 		$this->load->model('startscreenmodel');
 		$act = array(
@@ -110,7 +113,6 @@ class Admin extends CI_Controller {
 		$res_id  = 0;
 		$user_id = 0;
 		$DB1     = $this->load->database('35', TRUE);
-		$DB2     = $this->load->database('web', TRUE);
 
 		$result = $DB1->query("SELECT
 		`resources_items`.rid,
@@ -162,51 +164,56 @@ class Admin extends CI_Controller {
 		}
 
 		if ($res_id == 13) {
-			$result = $DB1->query("SELECT
-			`departments`.dn,
-			`users`.phone,
-			CONCAT_WS(' ', locations1.address, `locations`.address) AS office,
-			CONCAT_WS(' ',`users`.name_f, `users`.name_i, `users`.name_o) AS fio,
-			LOWER(`users`.login) AS login
-			FROM
-			`departments`
-			RIGHT OUTER JOIN `users` ON (`departments`.id = `users`.dep_id)
-			LEFT OUTER JOIN `locations` ON (`users`.office_id = `locations`.id)
-			LEFT OUTER JOIN `locations` locations1 ON (`locations`.parent = locations1.id)
-			WHERE `users`.`id` = ?
-			LIMIT 1", array($user_id));
-			if ($result->num_rows()) {
-				//print "web";
-				$row       = $result->row();
-				$webString = implode(array($row->dn, ", ".$row->office, ", тел.: ".$row->phone), " ");
-				$result2   = $DB2->query("SELECT
-				`users`.id
-				FROM
-				`users`
-				WHERE LOWER(`users`.`fullname`) = LOWER('".$row->fio."')
-				OR LOWER(`users`.`username`) = '".$row->login."'");
-				if (!$result2->num_rows()) {
-					//print "\nweb insert";
-					$DB2->query("INSERT INTO
-					users(
-						username,
-						fullname,
-						userdescr
-					) VALUES ( ?, ?, ? )", array(
-						$row->login,
-						ucwords($row->fio),
-						$webString,
-					));
-					$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") добавил учётную запись на web-сервере www.arhcity.ru #".$row->login);
-				}
-				if ($result2->num_rows()) {
-					$this->usefulmodel->insert_audit("Учётная запись на web-сервере www.arhcity.ru #".$row->login." не добавлена. Пользователь существует.");
-				}
-
-			}
+			$this->insertWebServerAccount($user_id);
 		}
 
 		$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") выполнил заявку #".$itemID);
+	}
+
+	private function insertWebServerAccount($user_id) {
+		$DB1    = $this->load->database('35', TRUE);
+		$DB2    = $this->load->database('web', TRUE);
+		$result = $DB1->query("SELECT
+		`departments`.dn,
+		`users`.phone,
+		CONCAT_WS(' ', locations1.address, `locations`.address) AS office,
+		CONCAT_WS(' ',`users`.name_f, `users`.name_i, `users`.name_o) AS fio,
+		LOWER(`users`.login) AS login
+		FROM
+		`departments`
+		RIGHT OUTER JOIN `users` ON (`departments`.id = `users`.dep_id)
+		LEFT OUTER JOIN `locations` ON (`users`.office_id = `locations`.id)
+		LEFT OUTER JOIN `locations` locations1 ON (`locations`.parent = locations1.id)
+		WHERE `users`.`id` = ?
+		LIMIT 1", array($user_id));
+		if ($result->num_rows()) {
+			//print "web";
+			$row       = $result->row();
+			$webString = implode(array($row->dn, ", ".$row->office, ", тел.: ".$row->phone), " ");
+			$result2   = $DB2->query("SELECT
+			`users`.id
+			FROM
+			`users`
+			WHERE LOWER(`users`.`fullname`) = LOWER('".$row->fio."')
+			OR LOWER(`users`.`username`) = '".$row->login."'");
+			if (!$result2->num_rows()) {
+				//print "\nweb insert";
+				$DB2->query("INSERT INTO
+				users(
+					username,
+					fullname,
+					userdescr
+				) VALUES ( ?, ?, ? )", array(
+					$row->login,
+					ucwords($row->fio),
+					$webString,
+				));
+				$this->usefulmodel->insert_audit("Отдел сетевого администрирования (администратор #".$this->session->userdata('user_name').") добавил учётную запись на web-сервере www.arhcity.ru #".$row->login);
+				return true;
+			}
+			$this->usefulmodel->insert_audit("Учётная запись на web-сервере www.arhcity.ru #".$row->login." не добавлена. Пользователь существует.");
+			return false;
+		}
 	}
 
 	public function resexpire($itemID=0){
