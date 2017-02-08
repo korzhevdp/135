@@ -383,11 +383,13 @@ class Bidsfactorymodel extends CI_Model {
 		//print_r($this->resList);
 		$papers = array();
 		$IMStat = false;
-		foreach ( $this->resData as $key=>$val ) {
-			$this->itemID = ($this->primary) ? 0 : $val['orderID'];
+		foreach ( $this->resData as $key=>$val ) { // вот так вот, ага, смешно блин :) если не удастся отсортировывать по возрастанию массив - оставить так.
 			if ($val['rid'] == 102 ) {
 				array_push( $papers, $this->getSpecialDomain() );
 			}
+		}
+		foreach ( $this->resData as $key=>$val ) {
+			$this->itemID = ($this->primary) ? 0 : $val['orderID'];
 			if ( ($val['rid'] == 101 || $val['rid'] == 100) && !$IMStat ) {
 				array_push($papers, $this->getSpecialIM());
 				if ($this->primary) {
@@ -405,11 +407,11 @@ class Bidsfactorymodel extends CI_Model {
 	}
 
 	private function getSpecialDomain() {
-		$templatedata = $this->getTemplateData($this->itemID);						// получаем данные для заявки.
+		$templatedata = $this->getTemplateData($this->itemID);					// получаем данные для заявки.
 		if (!$this->session->userdata('uid')) {									// прерываем исполнение, если есть подозрение, что пользователь уже есть в базе
-			$userID  = $this->insertNewUser($templatedata);						// вставляем нового пользователя в базу данных, получаем индекс этой вставки
+			$this->UID = $this->insertNewUser($templatedata);			// вставляем нового пользователя в базу данных, получаем индекс этой вставки
 			$orderID = $this->insertNewOrder();									// вставляем в базу новую заявку, получаем индекс новой заявки
-			$resdata = array(array('uid' => $userID, 'order_id' => $orderID, 'rid' => 102));
+			$resdata = array(array('uid' => $this->UID, 'order_id' => $orderID, 'rid' => 102));
 			$this->insertResource($resdata);									// вставляем сущность ресурса с его привязкой к пользователю и заявке
 		}
 		return $this->load->view($this->wDirectory.'domain_p', $templatedata, true);
@@ -424,21 +426,28 @@ class Bidsfactorymodel extends CI_Model {
 		if ( $this->primary ) {
 			$inputData	= array(
 				'mailBox'    => strtolower($this->input->post('email_addr')),
-				'mailReason' => $this->input->post('email_reason') ? iconv('utf-8', 'windows-1251', $this->input->post('email_reason')) : $this->defaultReason,
-				'inetReason' => $this->input->post('inet_reason')  ? iconv('utf-8', 'windows-1251', $this->input->post('inet_reason'))  : $this->defaultReason
+				'mailReason' => $this->input->post('email_reason')
+					? iconv('utf-8', 'windows-1251', substr($this->input->post('email_reason'), 0, 1000))
+					: $this->defaultReason,
+				'inetReason' => $this->input->post('inet_reason')
+					? iconv('utf-8', 'windows-1251', substr($this->input->post('inet_reason'), 0, 1000))
+					: $this->defaultReason
 			);
 			$orderID = $this->insertNewOrder();									// вставляем в базу новую заявку, получаем индекс новой заявки
-			if ( isset($this->resList[100])) {
+
+			if ( isset($this->resList['100'])) {
 				array_push( $resdata, array('uid' => $this->UID, 'order_id' => $orderID, 'rid' => 100) );
 				array_push( $templatedata['action'], "предоставить доступ к почтовому ящику электронной почты с адресом ".$inputData['mailBox']."@arhcity.ru на сервере электронной почты для ".$inputData['mailReason'] );
 				array_push( $templatedata['decision'], $this->decisions[100] );
 			}
 
-			if ( isset($this->resList[101])) {
+			if ( isset($this->resList['101'])) {
 				array_push( $resdata, array('uid' => $this->UID, 'order_id' => $orderID, 'rid' => 101) );
 				array_push( $templatedata['action'], 'доступ к сети "Интернет" для '.$inputData['inetReason'] );
 				array_push( $templatedata['decision'], $this->decisions[101] );
 			}
+
+			//print_r($resdata);
 			$this->insertResource($resdata);
 			$subsdata= $this->getIMSubs( $orderID );
 
@@ -968,12 +977,14 @@ class Bidsfactorymodel extends CI_Model {
 	}
 
 	private function insertResource( $data ) {
+		//print_r($data);
 		if ( sizeof($data) && $this->dbwrite ) {
 			$output = array();
 			foreach ($data as $key => $val) {
 				$string = "( '".$val['uid']."', '".$val['order_id']."', '".$val['rid']."', NOW() )";
 				array_push($output, $string);
 			}
+
 			$this->db->query("INSERT INTO `resources_items` (
 				`resources_items`.uid,
 				`resources_items`.order_id,
@@ -1152,7 +1163,6 @@ class Bidsfactorymodel extends CI_Model {
 		}
 		$outfile            = "";
 		if ( $this->primary ) {
-			$this->UID      = $this->input->post('uid');
 			$this->resItems = explode( ",", $this->input->post("res") );
 			$this->mailBox  = $this->input->post("esiaMailAddr");
 			$this->bidsData = $this->getPrimaryBidsData();

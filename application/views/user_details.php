@@ -149,11 +149,10 @@
 			<div class="control-group" style="margin-bottom:20px;">
 				<label class="control-label span2">Курирует</label>
 				<div class="controls">
-				<select class="span12" name="service" id="service" <?=($supchange) ? '' : ' disabled="disabled"'; ?>>
-					<option value=0>Выберите куратора</option>
-					<?=$service;?>
-				</select>
-				<?=($supchange) ? '' : '<input type="hidden" name="service" id="service" value="'.$serviceman.'">';?>
+					<select class="span12" name="service" id="service" <?=($supchange) ? '' : ' disabled="disabled"'; ?>>
+						<?=$service;?>
+					</select>
+					<?=($supchange) ? '' : '<input type="hidden" name="service" id="service" value="'.$serviceman.'">';?>
 				</div>
 			</div>
 			<button type="button" class="btn btn-<?=(($fired) ? "inverse" : "info");?> <?=($saveable) ? "fireSw" : 'disabled' ;?>" id="fireSw" ref="<?=$id?>" style="width:100px;"><?=(($fired) ? "Уволен(а)" : "Уволить");?></button>

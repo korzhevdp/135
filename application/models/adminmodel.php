@@ -9,34 +9,9 @@ class Adminmodel extends CI_Model {
 	public function userdata_get($user_id = 0, $page = 1) {
 		$user_id = ($user_id) ? $user_id : (($this->input->post('userSelector')) ? $this->input->post('userSelector') : 0);
 		
-		$user = array(
-			'id'			=> 0,
-			'name_f'		=> '',
-			'name_i'		=> '',
-			'name_o'		=> '',
-			'dep_id'		=> 0,
-			'staff_id'		=> 0,
-			'office_id'		=> 0,
-			'host'			=> '',
-			'login'			=> '',
-			'memo'			=> '',
-			'phone'			=> '',
-			'service'		=> 0,
-			'fired'			=> 0,
-			'air'			=> 0,
-			'bir'			=> 0,
-			'sman'			=> 0,
-			'fired_date'	=> '',
-			'parent'		=> 1,
-			'sup_id'		=> 0,
-			'supervisor'	=> 0,
-			'is_io'			=> 0,
-			'io'			=> 0,
-			'servoperator'	=> '',
-			'superv'		=> 0
-		);
+		$user = $this->getEmptyUserDataArray();
 
-		$result = $this->db->query("SELECT 
+		$result = $this->db->query("SELECT
 		users.id,
 		TRIM(users.name_f) as name_f,
 		TRIM(users.name_i) as name_i,
@@ -69,20 +44,21 @@ class Adminmodel extends CI_Model {
 		if ($result->num_rows()){
 			$user = $result->row_array();
 		}
-		
-		$user['servop']     = ($user['servoperator'])	? 'checked="checked"' : "" ;
-		$user['air']        = ($user['air'])			? 'checked="checked"' : "" ;
-		$user['bir']        = ($user['bir'])			? 'checked="checked"' : "" ;
-		$user['sman']       = ($user['sman'])			? 'checked="checked"' : "" ;
-		$user['superv']     = ($user['superv'])			? 'checked="checked"' : "" ;
 		$user['serviceman'] = $user['service'];
-		$user['page']       = $page;
 		$user['dept']       = $this->getUserDeptList($user);
 		$user['staff_id']   = $this->getUserStaffList($user);
 		$user['mac']        = $this->getUserMAC($user);
 		$user['email']      = $this->getUserEMail($user);
 		$user['location']   = $this->getUserLocationList($user);
 		$user['service']    = $this->getUserServiceList($user);
+		
+		$user['servop']     = ($user['servoperator'])	? 'checked="checked"' : "" ;
+		$user['air']        = ($user['air'])			? 'checked="checked"' : "" ;
+		$user['bir']        = ($user['bir'])			? 'checked="checked"' : "" ;
+		$user['sman']       = ($user['sman'])			? 'checked="checked"' : "" ;
+		$user['superv']     = ($user['superv'])			? 'checked="checked"' : "" ;
+
+		$user['page']       = $page;
 		$user['is_io']      = ($user['io']) ? ' checked="checked"' : "";
 		$user['supchange']  = (
 			$this->session->userdata('rank')
@@ -97,6 +73,35 @@ class Adminmodel extends CI_Model {
 			|| $user['serviceman'] == $this->session->userdata('base_id') 
 		) ? 1 : 0 ;
 		return $user;
+	}
+
+	private function getEmptyUserDataArray() {
+		return array(
+			'id'			=> 0,
+			'name_f'		=> '',
+			'name_i'		=> '',
+			'name_o'		=> '',
+			'dep_id'		=> 0,
+			'staff_id'		=> 0,
+			'office_id'		=> 0,
+			'host'			=> '',
+			'login'			=> '',
+			'memo'			=> '',
+			'phone'			=> '',
+			'service'		=> 0,
+			'fired'			=> 0,
+			'air'			=> 0,
+			'bir'			=> 0,
+			'sman'			=> 0,
+			'fired_date'	=> '',
+			'parent'		=> 1,
+			'sup_id'		=> 0,
+			'supervisor'	=> 0,
+			'is_io'			=> 0,
+			'io'			=> 0,
+			'servoperator'	=> '',
+			'superv'		=> 0
+		);
 	}
 
 	private function getUserServiceList($user) {
@@ -223,8 +228,8 @@ class Adminmodel extends CI_Model {
 	}
 
 	public function user_resources_get($user_id) {
-		$res		= array();
-		$result = $this->db->query("SELECT 
+		$res    = array();
+		$result = $this->db->query("SELECT
 		resources_items.id,
 		resources_items.rid,
 		resources_items.uid,
@@ -234,8 +239,8 @@ class Adminmodel extends CI_Model {
 		resources_items.apply,
 		resources_items.applydate,
 		resources_items.ok,
-		DATE_FORMAT(resources_items.okdate, '%e.%m.%Y %H:%i') AS okdate,
 		resources_items.`exp`,
+		DATE_FORMAT(resources_items.okdate, '%e.%m.%Y %H:%i') AS okdate,
 		resources.shortname,
 		resources.location,
 		resources.`action`,
@@ -270,7 +275,7 @@ class Adminmodel extends CI_Model {
 	}
 
 	private function fillResourceListTemplate($res) {
-		$active	 = array();
+		$active  = array();
 		$expired = array();
 		foreach ($res as $key=>$row) {
 			$row['editAllowed'] = ($this->session->userdata('rank') || $this->session->userdata("admin_id") == 26) ? '' : ' disabled="disabled"';
@@ -279,13 +284,13 @@ class Adminmodel extends CI_Model {
 			$row['mnChunk']  = (in_array($row['rid'], array(100)))		? $this->load->view("mntemplate", $row, true) : '';
 			$row['osa_date'] = ( $row["ok"] ) ? "исполнено ОСА: ".$row['okdate'] : "";
 			#####################
-			$row['button1'] = $this->getButton1($row);
-			$row['button2'] = ($this->session->userdata('rank')) 
+			$row['button1']  = $this->getButton1($row);
+			$row['button2']  = ($this->session->userdata('rank'))
 				? '<span class="btn btn-warning btn-small expire" prop="'.$row['id'].'" title="Отменить"><i class="icon-remove-sign icon-white"></i>&nbsp;</span>
-				<span class="btn btn-danger btn-small delete" prop="'.$row['id'].'"  title="Удалить"><i class="icon-trash icon-white"></i>&nbsp;</span>
-				<span class="btn btn-info btn-small makeEvent" prop="'.$row['id'].'"  title="Создать поручение"><i class="icon-calendar icon-white"></i>&nbsp;</span>'
+				<span class="btn btn-danger btn-small delete"  prop="'.$row['id'].'" title="Удалить"><i class="icon-trash icon-white"></i>&nbsp;</span>
+				<span class="btn btn-info btn-small makeEvent" prop="'.$row['id'].'" title="Создать поручение"><i class="icon-calendar icon-white"></i>&nbsp;</span>'
 				: '';
-			$row['button2'] = ($this->session->userdata("admin_id") == 26 && $row['rid'] == 103) 
+			$row['button2']  = ($this->session->userdata("admin_id") == 26 && $row['rid'] == 103)
 				? '<span class="btn btn-warning btn-small expire" prop="'.$row['id'].'" title="Отменить"><i class="icon-remove-sign icon-white"></i>&nbsp;</span>'
 				: $row['button2'];
 
@@ -299,53 +304,58 @@ class Adminmodel extends CI_Model {
 			'expired'	=> implode($expired, "\n")
 		);
 	}
+
+	private function getAdminModeButton1($row) {
+		$color   = ($row["apply"])	? "success"   : "warning";
+		$hooking = ((int)$this->session->userdata('canSee') === (int)$row['supervisor']) ? ' hookup' : "";
+		$active  = ($row["ok"])		? "icon-edit" : "icon-ok-sign";
+		$applied = ($row["apply"])	? "Исполнено" : "Доложить об исполнении";
+		$button1 = '<span class="btn btn-'.$color.' btn-small'.$hooking.'" prop="'.$row['id'].'">
+			<i class="'.$active.' icon-white"></i>&nbsp;'.$applied.'&nbsp;
+		</span>
+		<span class="btn btn-info btn-small makeBackEvent" prop="'.$row['id'].'"  title="Создать сообщение администратору">
+			<i class="icon-calendar icon-white"></i>&nbsp;
+		</span>';
+		return $button1;
+	}
+
+	private function getUserModeButton1($row) {
+		$color = "primary";
+		$title = "Пометить исполненной отделом СА";
+		$icon  = "icon-ok-sign";
+		$label = "Активировать";
+		if ($row['ok']) {
+			$icon  = "icon-edit";
+			$color = ($row["apply"]) ? "success"   : "inverse";
+			$title = ($row["apply"]) ? "Архив"     : "Обновить данные заявки";
+			$label = ($row["apply"]) ? "Исполнено" : "Ждём куратора";
+		}
+		return '<span class="btn btn-'.$color.' btn-small activate" prop="'.$row['id'].'" title="'.$title.'">
+			<i class="'.$icon.' icon-white"></i>&nbsp;'.$label.
+		'</span>';
+	}
+
 	
 	private function getButton1($row) {
 		if ((int)$this->session->userdata('rank') === 0 || (int)$this->session->userdata("admin_id") === 26) {
-			$button1 = '<span class="btn btn-'.(($row["apply"])
-				? "success"
-				: "warning").' btn-small'
-				.(($this->session->userdata('canSee') == $row['supervisor'])
-					? ' hookup'
-					: "").'" prop="'.$row['id'].'"><i class="'.(($row["ok"])
-					? "icon-edit"
-					: "icon-ok-sign")
-				.' icon-white"></i>&nbsp;'.(($row["apply"])
-					? "Исполнено"
-					: "Доложить об исполнении")
-			.'&nbsp;</span>
-			<span class="btn btn-info btn-small makeBackEvent" prop="'.$row['id'].'"  title="Создать сообщение администратору"><i class="icon-calendar icon-white"></i>&nbsp;</span>';
-			return $button1;
+			return $this->getAdminModeButton1($row);
 		}
+		return $this->getUserModeButton1($row);
+	}
 
-		$button1  = '<span class="btn btn-'.(($row["ok"])
-			? (($row["apply"])
-				? "success"
-				: "inverse" )
-			: "primary").' btn-small activate" prop="'.$row['id'].'" title="'.(($row["ok"])
-				? (($row["apply"])
-					? "Архив"
-					: "Обновить данные заявки" )
-				: "Пометить исполненной отделом СА").'">
-		<i class="'.(($row["ok"])
-			? "icon-edit"
-			: "icon-ok-sign").' icon-white"></i>&nbsp;'.(($row["ok"])
-				? (($row["apply"])
-					? "Исполнено"
-					: "Ждём куратора" )
-				: "Активировать").'</span>';
-		return $button1;
+	private function getNullARM() {
+		return array(
+			'pcconfs'  => "Не выбран пользователь",
+			'pclist'   => "",
+			'pcused'   => "",
+			'pcpo'     => "",
+			'licenses' => ""
+		);
 	}
 
 	public function user_arm_get($user_id) {
 		if (!$user_id) {
-			return array(
-				'pcconfs'  => "Не выбран пользователь",
-				'pclist'   => "",
-				'pcused'   => "",
-				'pcpo'     => "",
-				'licenses' => ""
-			);
+			$this->getNullARM();
 		}
 		$output  = array();
 		$headers = array();
@@ -374,7 +384,7 @@ class Adminmodel extends CI_Model {
 		(`hosts`.uid = ?)
 		ORDER BY hash_items.hostname, hash_items.ts DESC", array($user_id));
 		if ($result->num_rows()) {
-			foreach($result->result_array() as $row) {
+			foreach ($result->result_array() as $row) {
 				$string1 = '<li title="'.$row['hostname'].'" act="'.$row['id'].'" class="armselector">'.$row['hostname'].'</li>';
 				($row['active'])
 					? array_push($pclist, $string1)
