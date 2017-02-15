@@ -1,7 +1,24 @@
 .DS_Store
 
+2pdf/*
+images/*
+jqplot/*
 jquery/*
 user_guide/*
+papers/*
+system/*
+bootstrap/*
+css/*
+application/cache/*
+application/config/*
+application/logs/*
+application/core/*
+application/helpers/*
+application/hooks/
+application/errors/*
+application/language/*
+application/libraries/
+application/third_party/
 application/models/bidsmodelold.php
 application/models/bidsmodel2.php
 application/models/bidsmodel.php
