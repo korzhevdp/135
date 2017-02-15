@@ -77,6 +77,24 @@ $('.button-order').click(function() {
 	});
 });
 
+$('.infoData').click(function() {
+	var id = $(this).attr('ref');
+	$.ajax({
+		url      : "/admin/getbidinfo",
+		dataType : "html",
+		type     : "POST",
+		data     : { id : id },
+		success  : function(data) {
+			$("#resCollection4").html(data);
+			$("#bidsInfo").html(id);
+			$("#modalRes4").modal('show');
+		},
+		error    : function(data,stat,err) {
+			$("#consoleContent").html([data,stat,err].join("<br>"));
+		}
+	});
+});
+
 function findIn( haystack, needle, ref ) {
 	if ( haystack.toLowerCase().indexOf(needle.toLowerCase()) !== (-1) ) {
 		$("#row" + ref).removeClass('hide');

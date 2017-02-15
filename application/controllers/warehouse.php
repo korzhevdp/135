@@ -16,17 +16,24 @@ class Warehouse extends CI_Controller {
 		NOT `users`.`fired` AND
 		`users`.`id` NOT IN( SELECT DISTINCT `arm_bind`.`uid` FROM `arm_bind`)
 		ORDER BY fio");
-		if($result->num_rows()){
-			foreach($result->result() as $row){
-				$string = '<tr><td><label for="m'.$row->id.'" style="cursor:pointer"><i class="icon-user"></i>&nbsp;&nbsp;&nbsp;'.$row->fio.'</label></td><td><input type="checkbox" name="users[]" id="m'.$row->id.'" value="'.$row->id.'"></td></tr>';
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$string = '<tr>
+				<td>
+					<label for="m'.$row->id.'" style="cursor:pointer"><i class="icon-user"></i>&nbsp;&nbsp;&nbsp;'.$row->fio.'</label>
+				</td>
+				<td>
+					<input type="checkbox" name="users[]" id="m'.$row->id.'" value="'.$row->id.'">
+				</td>
+				</tr>';
 				array_push($out, $string);
 			}
 		}
-		if($print){
+		if ($print) {
 			print  implode($out, "\n")."</table>";
-		} else {
-			return implode($out, "\n")."</table>";
+			return true;
 		}
+		return implode($out, "\n")."</table>";
 	}
 
 	public function pc_list_get($print){
@@ -94,27 +101,26 @@ class Warehouse extends CI_Controller {
 		INNER JOIN `hosts` hosts1 ON (hash_items1.hostname = hosts1.hostname)
 		WHERE
 		(`hosts`.uid = ?)
-		ORDER BY hash_items.id
-		", array($userid));
-		if($result->num_rows()){
+		ORDER BY hash_items.id", array($userid));
+		if ($result->num_rows()) {
 			foreach($result->result() as $row){
 				if(!isset($input[$row->all_md5])){
 					$input[$row->all_md5] = array();
 				}
 				$class  = (($row->hostname == $refhost) ? 'btn-success' : '');
-				$class  = (!$row->active) ? 'btn-inverse' : $class;
+				$class  = ($row->active) ? $class : 'btn-inverse';
 				$string = '<span class="btn btn-mini '.$class.' pcflowtab" style="min-width:120px;margin-top:7px;" ref="'.$row->id.'" title="Переименован: '.$row->ts.'. Конфигурация № '.$row->id.'">'.$row->hostname.'</span>';
 				array_push($input[$row->all_md5], $string);
 			}
 		}
-		foreach($input as $val){
+		foreach ($input as $val) {
 			array_push($output, '<div style="display:block;clear:both;padding-bottom:7px;border-bottom:1px dotted #A6A6A6">'.implode($val, ' <i class="icon-arrow-right"></i> ').'</div>');
 		}
-		if(!$print){
-			return $user.implode($output,"");
-		}else{
-			print $user.implode($output,"");
+		if (!$print) {
+			return $user.implode($output, "");
 		}
+		print $user.implode($output,"");
+
 	}
 
 	public function conf_get($print = 0){

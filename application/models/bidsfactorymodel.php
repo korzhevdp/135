@@ -158,10 +158,11 @@ class Bidsfactorymodel extends CI_Model {
 		// заполнение бланка заявки типовыми данными
 		// получаем данные массива _POST переданные со страницы
 		// пользователю предоставлена возможность исправить данные о себе
-		
-
+		//print_r($this->bidsData);
 		//$outdata = (is_array($outdata)) ? $outdata : $this->input->post();
 		$outdata = $this->bidsData[$this->itemID];
+		//print_r($outdata);
+		//return false;
 		$mod = 1;
 		if ($outdata && isset($outdata['sname']) && isset($outdata['name']) && isset($outdata['fname'])) {
 			$mod == 2;
@@ -228,7 +229,7 @@ class Bidsfactorymodel extends CI_Model {
 		if ( !isset($outdata['addr1']) ) {
 			$outdata['addr1'] = $outdata['office']; // нормализуем поля форм
 		}
-
+		//print_r($outdata);
 		$addrtag = (isset($outdata['addr2']) && strlen($outdata['addr2']))
 			? $outdata['addr2']
 			: $outdata['addr1'];
@@ -241,13 +242,14 @@ class Bidsfactorymodel extends CI_Model {
 			$addr = $result->row_array();
 			$outdata['fulladdress'] = $addr['fulladdress'];
 		}
-		
+
 		if ( $addrtag ) {
 			$query = "SELECT `address` FROM `locations` WHERE `id` IN ('".$addrtag."')";
 		} else {
-			if (!$addrtag) {
+			if ( !$addrtag || !strlen($addrtag)) {
 				$outdata['office'] = 1;
 			}
+
 			$query = "SELECT `address` FROM `locations` WHERE `id` = ".$addrtag;
 		}
 
@@ -381,12 +383,16 @@ class Bidsfactorymodel extends CI_Model {
 	######## выдача ТЕКСТОВ заявок #########
 	private function getSpecialPapers() {
 		//print_r($this->resList);
-		$papers = array();
-		$IMStat = false;
-		foreach ( $this->resData as $key=>$val ) { // вот так вот, ага, смешно блин :) если не удастся отсортировывать по возрастанию массив - оставить так.
+		$papers   = array();
+		$IMStat   = false;
+		foreach ( $this->resData as $val ) { // вот так вот, ага, смешно блин :) если не удастся отсортировывать по возрастанию массив - оставить так.
+			$this->itemID = ($this->primary) ? 0 : $val['orderID'];
 			if ($val['rid'] == 102 ) {
 				array_push( $papers, $this->getSpecialDomain() );
 			}
+		}
+		if ( (int)$this->UID == 0 && $this->input->post("uid") && (int)$this->input->post("uid") != 0 ) {
+			$this->UID = $this->input->post("uid");
 		}
 		foreach ( $this->resData as $key=>$val ) {
 			$this->itemID = ($this->primary) ? 0 : $val['orderID'];
@@ -409,7 +415,7 @@ class Bidsfactorymodel extends CI_Model {
 	private function getSpecialDomain() {
 		$templatedata = $this->getTemplateData($this->itemID);					// получаем данные для заявки.
 		if (!$this->session->userdata('uid')) {									// прерываем исполнение, если есть подозрение, что пользователь уже есть в базе
-			$this->UID = $this->insertNewUser($templatedata);			// вставляем нового пользователя в базу данных, получаем индекс этой вставки
+			$this->UID = $this->insertNewUser($templatedata);					// вставляем нового пользователя в базу данных, получаем индекс этой вставки
 			$orderID = $this->insertNewOrder();									// вставляем в базу новую заявку, получаем индекс новой заявки
 			$resdata = array(array('uid' => $this->UID, 'order_id' => $orderID, 'rid' => 102));
 			$this->insertResource($resdata);									// вставляем сущность ресурса с его привязкой к пользователю и заявке
@@ -433,8 +439,8 @@ class Bidsfactorymodel extends CI_Model {
 					? iconv('utf-8', 'windows-1251', substr($this->input->post('inet_reason'), 0, 1000))
 					: $this->defaultReason
 			);
-			$orderID = $this->insertNewOrder();									// вставляем в базу новую заявку, получаем индекс новой заявки
 
+			$orderID = $this->insertNewOrder();									// вставляем в базу новую заявку, получаем индекс новой заявки
 			if ( isset($this->resList['100'])) {
 				array_push( $resdata, array('uid' => $this->UID, 'order_id' => $orderID, 'rid' => 100) );
 				array_push( $templatedata['action'], "предоставить доступ к почтовому ящику электронной почты с адресом ".$inputData['mailBox']."@arhcity.ru на сервере электронной почты для ".$inputData['mailReason'] );
@@ -446,12 +452,10 @@ class Bidsfactorymodel extends CI_Model {
 				array_push( $templatedata['action'], 'доступ к сети "Интернет" для '.$inputData['inetReason'] );
 				array_push( $templatedata['decision'], $this->decisions[101] );
 			}
-
-			//print_r($resdata);
 			$this->insertResource($resdata);
 			$subsdata= $this->getIMSubs( $orderID );
-
 			$this->insertSubs($subsdata);
+
 		}
 		if ( !$this->primary ) {
 			foreach ($this->pidData as $key=>$val) {
@@ -1154,7 +1158,7 @@ class Bidsfactorymodel extends CI_Model {
 		* Получение заявок (первичное). Принимает на вход отсортированные данные из _POST
 		* Выдаёт строку в HTML, направляемую пользователю
 		*/
-		$this->dbwrite      = ((int)$this->session->userdata('admin_id') === 1) ? true : true;
+		$this->dbwrite      = ((int)$this->session->userdata('admin_id') === 1) ? true  : true;
 		$this->expose       = ((int)$this->session->userdata('admin_id') === 1) ? true  : false;
 		$this->wrap_to_word = ((int)$this->session->userdata('admin_id') === 1) ? false : true;
 
@@ -1178,9 +1182,7 @@ class Bidsfactorymodel extends CI_Model {
 
 		$this->resData      = $this->splitResFlow( $this->resItems );
 		$this->resList      = $this->getResList();
-
 		$papers             = $this->getSpecialPapers();
-
 		$this->fnFIO        = $this->getUserFIOByOrder($this->UID);
 
 		$this->wipeOutSpecials();

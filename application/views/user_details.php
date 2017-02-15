@@ -344,6 +344,8 @@
 				</div>
 			</div>
 
+
+
 			<!-- Плашка назначения произвольных лицензий -->
 			<div id="modalRes3" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel3" aria-hidden="true">
 				<div class="modal-header">
@@ -379,13 +381,28 @@
 				<input type="hidden" name="userid" value="<?=$userid;?>">
 			</form>
 			<!-- контролы управления лицензиями -->
-			
 			<?}?>
 		</div>
 	</div>
 <? } else { ?>
 	Полный список пользователей ЛВСМ находится выше
 <?}?>
+
+<!-- Плашка расширенной информации по заявке -->
+<div id="modalRes4" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel4" aria-hidden="true">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h4 id="myModalLabel4">Расширенная информация по заявке #<span id="bidsInfo"></span></h4>
+	</div>
+	<div class="modal-body">
+		<div id="resCollection4" class="span12">
+			<img id="gifLoader" src="/images/ajax-loader.gif" width="54" height="55" border="0" alt="loader" style="margin-left:45%">
+		</div>
+	</div>
+	<div class="modal-footer">
+		<button class="btn" data-dismiss="modal" aria-hidden="true" title="Закрыть">Закрыть</button>
+	</div>
+</div>
 
 <!-- <button type="button" class="btn btn-primary button-ask">Отправить</button> -->
 <script type="text/javascript" src="/jscript/lsmc.js"></script>

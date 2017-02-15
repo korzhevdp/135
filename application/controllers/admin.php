@@ -492,6 +492,51 @@ class Admin extends CI_Controller {
 		//phpinfo();
 	}
 
+	public function getbidinfo() {
+		$output = array();
+
+		$result = $this->db->query("SELECT 
+		resources_items.matrix, 
+		CASE
+			WHEN resources_items.ok  THEN concat_ws( ' ', 'выполнено:', DATE_FORMAT(resources_items.okdate,  '%d.%m.%Y %H:%i'))
+			WHEN resources_items.exp THEN concat_ws( ' ', 'отменено:',  DATE_FORMAT(resources_items.expdate, '%d.%m.%Y %H:%i'))
+			ELSE 'ожидает обработки ОСА'
+		END AS `status`,
+		DATE_FORMAT(resources_orders.docdate, '%d.%m.%Y') AS docdate,
+		resources_orders.docnum,
+		if (resources_items.apply, CONCAT_WS( ' ', 'отметка куратора от:', resources_items.applydate), 'также ожидается действие куратора') AS applystate,
+		resources_items.applyer
+		FROM
+		resources_items
+		LEFT OUTER JOIN resources_orders ON (resources_items.order_id = resources_orders.id)
+		WHERE resources_items.id = ?", array($this->input->post("id")));
+		if ($result->num_rows()) {
+			$row = $result->row();
+			$data = 'Статус: <strong>'.$row->status.'</strong><br>Дата заявки: <strong>'.$row->docdate."</strong><br>Номер заявки: <strong>".$row->docnum."</strong><br>".$row->applystate;
+		}
+
+		$result = $this->db->query("SELECT 
+		CASE
+		WHEN `resources_pid`.`pid` = 1 THEN CONCAT(resources_pid.pid_value, '@arhcity.ru')
+		WHEN `resources_pid`.`pid` = 6 THEN INET_NTOA(resources_pid.pid_value)
+		ELSE resources_pid.pid_value
+		END as descr,
+		`resources_desc`.pn
+		FROM
+		`resources_desc`
+		RIGHT OUTER JOIN resources_pid ON (`resources_desc`.id = resources_pid.pid)
+		WHERE
+		(resources_pid.item_id = ?)", array($this->input->post("id")));
+		if ($result->num_rows()) {
+			foreach($result->result() as $row) {
+				$string = '<tr><th>'.$row->pn.'</th><td>'.nl2br($row->descr).'</td></tr>';
+				array_push($output, $string);
+			}
+		}
+
+		print '<small>'.$data.'<table class="table table-condensed table-bordered"><tr><th>Поле</th><th>Значение</th></tr>'.implode($output, "\n")."</table></small>";
+	}
+
 }
 
 /* End of file admin.php */
